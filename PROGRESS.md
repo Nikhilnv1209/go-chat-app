@@ -1,8 +1,8 @@
 # BMAD Progress Tracker
 
-**Current Status**: 🟢 Phase 1 - F01 User Auth (Story 1.1) Completed
-**Last Action**: Implemented User Registration & Login.
-**Next Action**: Implement [F02] WebSocket Hub.
+**Current Status**: 🟢 Phase 1 - F02 WebSocket Hub (Story 1.2) Completed
+**Last Action**: Implemented WebSocket Hub & Connection.
+**Next Action**: Implement [F03] Direct Messaging.
 
 ---
 
@@ -10,8 +10,8 @@
 | Feature | ID | Status | Completion |
 |---------|----|--------|------------|
 | **User Authentication** | `F01` | ✅ **DONE** | 100% |
-| **WebSocket Hub** | `F02` | 🚧 **IN PROGRESS** | 0% |
-| **Direct Messaging** | `F03` | 🔴 TODO | 0% |
+| **WebSocket Hub** | `F02` | ✅ **DONE** | 100% |
+| **Direct Messaging** | `F03` | � **IN PROGRESS** | 0% |
 | **Group Messaging** | `F04` | 🔴 TODO | 0% |
 | **Inbox & History** | `F05` | 🔴 TODO | 0% |
 
@@ -48,12 +48,12 @@
 **Story 1.2: Connection & Hub** (`stories/1.2_websocket_hub.story.md`)
 | Task | Status | File(s) |
 |------|--------|---------|
-| Create Client Struct | ⬜ TODO | `internal/websocket/client.go` |
-| Create Hub Struct | ⬜ TODO | `internal/websocket/hub.go` |
-| Implement Register/Unregister | ⬜ TODO | `internal/websocket/hub.go` |
-| Implement WS Handler | ⬜ TODO | `internal/handlers/ws_handler.go` |
-| Wire up HTTP Upgrade | ⬜ TODO | `cmd/server/main.go` |
-| **Verification** | ⬜ TODO | Test connection with `wscat` |
+| Create Client Struct | ✅ DONE | `internal/websocket/client.go` |
+| Create Hub Struct | ✅ DONE | `internal/websocket/hub.go` |
+| Implement Register/Unregister | ✅ DONE | `internal/websocket/hub.go` |
+| Implement WS Handler | ✅ DONE | `internal/handlers/ws_handler.go` |
+| Wire up HTTP Upgrade | ✅ DONE | `cmd/server/main.go` |
+| **Verification** | ✅ DONE | Verified with `wscat` |
 
 ---
 

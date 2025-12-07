@@ -9,6 +9,7 @@ import (
 	"chat-app/internal/models"
 	"chat-app/internal/repository"
 	"chat-app/internal/service"
+	"chat-app/internal/websocket"
 	"chat-app/pkg/jwt"
 
 	"github.com/gin-gonic/gin"
@@ -52,8 +53,13 @@ func main() {
 	})
 	authService := service.NewAuthService(userRepo, jwtService)
 
+	// WebSocket Hub
+	hub := websocket.NewHub(userRepo)
+	go hub.Run()
+
 	// Handlers
 	authHandler := handlers.NewAuthHandler(authService)
+	wsHandler := handlers.NewWSHandler(hub, authService)
 
 	// 5. Server Setup
 	r := gin.Default()
@@ -64,6 +70,9 @@ func main() {
 		authRoutes.POST("/register", authHandler.Register)
 		authRoutes.POST("/login", authHandler.Login)
 	}
+
+	// WebSocket Route
+	r.GET("/ws", wsHandler.ServeWS)
 
 	// Health Check
 	r.GET("/health", func(c *gin.Context) {
