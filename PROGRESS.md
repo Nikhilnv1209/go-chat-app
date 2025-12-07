@@ -1,16 +1,16 @@
 # BMAD Progress Tracker
 
-**Current Status**: 🟢 Phase 1 Implementation Started
-**Last Action**: Database Migrations Completed.
-**Next Action**: Implement [F01] User Authentication.
+**Current Status**: 🟢 Phase 1 - F01 User Auth (Story 1.1) Completed
+**Last Action**: Implemented User Registration & Login.
+**Next Action**: Implement [F02] WebSocket Hub.
 
 ---
 
 ## 📊 Epic Status: MVP Chat Backend
 | Feature | ID | Status | Completion |
 |---------|----|--------|------------|
-| **User Authentication** | `F01` | 🚧 **IN PROGRESS** | 0% |
-| **WebSocket Hub** | `F02` | 🔴 TODO | 0% |
+| **User Authentication** | `F01` | ✅ **DONE** | 100% |
+| **WebSocket Hub** | `F02` | 🚧 **IN PROGRESS** | 0% |
 | **Direct Messaging** | `F03` | 🔴 TODO | 0% |
 | **Group Messaging** | `F04` | 🔴 TODO | 0% |
 | **Inbox & History** | `F05` | 🔴 TODO | 0% |
@@ -33,14 +33,14 @@
 **Story 1.1: Registration & Login** (`stories/1.1_user_auth.story.md`)
 | Task | Status | File(s) |
 |------|--------|---------|
-| Define Core Interfaces | ⬜ TODO | `repository/interfaces.go`, `service/interfaces.go` |
-| Define Custom Errors | ⬜ TODO | `internal/errors/errors.go` |
-| Implement Repository | ⬜ TODO | `internal/repository/user_repo.go` |
-| Implement JWT Logic | ⬜ TODO | `pkg/jwt/jwt.go` |
-| Implement Service | ⬜ TODO | `internal/service/auth_service.go` |
-| Implement Handlers | ⬜ TODO | `internal/handlers/auth_handler.go` |
-| Wire up in `main.go` | ⬜ TODO | `cmd/server/main.go` |
-| **Verification** | ⬜ TODO | Run Curl / Postman Tests |
+| Define Core Interfaces | ✅ DONE | `internal/repository/interfaces.go`, `internal/service/interfaces.go` |
+| Define Custom Errors | ✅ DONE | `internal/errors/errors.go` |
+| Implement Repository | ✅ DONE | `internal/repository/user_repo.go` |
+| Implement JWT Logic | ✅ DONE | `pkg/jwt/jwt.go` |
+| Implement Service | ✅ DONE | `internal/service/auth_service.go` |
+| Implement Handlers | ✅ DONE | `internal/handlers/auth_handler.go` |
+| Wire up in `main.go` | ✅ DONE | `cmd/server/main.go` |
+| **Verification** | ✅ DONE | Verified via Curl |
 
 ---
 

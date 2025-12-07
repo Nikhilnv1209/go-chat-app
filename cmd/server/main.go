@@ -3,9 +3,15 @@ package main
 import (
 	"log"
 
+	"chat-app/internal/config"
 	"chat-app/internal/database"
+	"chat-app/internal/handlers"
 	"chat-app/internal/models"
+	"chat-app/internal/repository"
+	"chat-app/internal/service"
+	"chat-app/pkg/jwt"
 
+	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 )
 
@@ -14,6 +20,7 @@ func main() {
 	if err := godotenv.Load(); err != nil {
 		log.Println("No .env file found, using system environment variables")
 	}
+	cfg := config.Load()
 
 	// 2. Initialize Database
 	database.InitDB()
@@ -34,7 +41,37 @@ func main() {
 	}
 	log.Println("Database Migration Clean!")
 
-	// 4. Server Start (Placeholder)
-	log.Println("Server started on :8080 (Placeholder)")
-	select {} // Block forever for now
+	// 4. Initialization
+	// Repositories
+	userRepo := repository.NewUserRepository(db)
+
+	// Services
+	jwtService := jwt.NewService(jwt.Config{
+		Secret:     cfg.JWT.Secret,
+		Expiration: cfg.JWT.Expiration,
+	})
+	authService := service.NewAuthService(userRepo, jwtService)
+
+	// Handlers
+	authHandler := handlers.NewAuthHandler(authService)
+
+	// 5. Server Setup
+	r := gin.Default()
+
+	// Routes
+	authRoutes := r.Group("/auth")
+	{
+		authRoutes.POST("/register", authHandler.Register)
+		authRoutes.POST("/login", authHandler.Login)
+	}
+
+	// Health Check
+	r.GET("/health", func(c *gin.Context) {
+		c.JSON(200, gin.H{"status": "ok"})
+	})
+
+	log.Printf("Server started on :%s", cfg.Server.Port)
+	if err := r.Run(":" + cfg.Server.Port); err != nil {
+		log.Fatal("Server failed: ", err)
+	}
 }
