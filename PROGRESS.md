@@ -1,8 +1,8 @@
 # BMAD Progress Tracker
 
-**Current Status**: 🟢 Phase 1 - F02 WebSocket Hub (Story 1.2) Completed
-**Last Action**: Implemented WebSocket Hub & Connection.
-**Next Action**: Implement [F03] Direct Messaging.
+**Current Status**: 🟢 Phase 1 - F03 Direct Messaging (Story 1.3) Completed & UUID Refactor Completed
+**Last Action**: Refactored entire codebase to use UUIDs and Verified F03.
+**Next Action**: Implement [F04] Group Messaging.
 
 ---
 
@@ -11,9 +11,10 @@
 |---------|----|--------|------------|
 | **User Authentication** | `F01` | ✅ **DONE** | 100% |
 | **WebSocket Hub** | `F02` | ✅ **DONE** | 100% |
-| **Direct Messaging** | `F03` | � **IN PROGRESS** | 0% |
+| **Direct Messaging** | `F03` | ✅ **DONE** | 100% |
 | **Group Messaging** | `F04` | 🔴 TODO | 0% |
 | **Inbox & History** | `F05` | 🔴 TODO | 0% |
+| **Refactor: UUIDs** | `Refactor` | ✅ **DONE** | 100% |
 
 ---
 
@@ -61,12 +62,12 @@
 **Story 1.3: One-on-One Messaging** (`stories/1.3_direct_messaging.story.md`)
 | Task | Status | File(s) |
 |------|--------|---------|
-| Implement Message Repository | ⬜ TODO | `internal/repository/message_repo.go` |
-| Implement Conversation Repository | ⬜ TODO | `internal/repository/conversation_repo.go` |
-| Implement Message Service (DM) | ⬜ TODO | `internal/service/message_service.go` |
-| Implement WS WritePump | ⬜ TODO | `internal/websocket/client.go` |
-| Implement WS ReadPump (Event Loop) | ⬜ TODO | `internal/websocket/client.go` |
-| **Verification** | ⬜ TODO | Send message between 2 users |
+| Implement Message Repository | ✅ DONE | `internal/repository/message_repo.go` |
+| Implement Conversation Repository | ✅ DONE | `internal/repository/conversation_repo.go` |
+| Implement Message Service (DM) | ✅ DONE | `internal/service/message_service.go` |
+| Implement WS WritePump | ✅ DONE | `internal/websocket/client.go` |
+| Implement WS ReadPump (Event Loop) | ✅ DONE | `internal/websocket/client.go` |
+| **Verification** | ✅ DONE | Tests passed & Tables Recreated |
 
 ---
 

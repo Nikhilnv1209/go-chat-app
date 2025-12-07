@@ -2,23 +2,25 @@ package service
 
 import (
 	"chat-app/internal/models"
+
+	"github.com/google/uuid"
 )
 
 type AuthService interface {
 	Register(username, email, password string) (*models.User, error)
 	Login(email, password string) (string, *models.User, error)
-	ValidateToken(tokenString string) (uint, error)
+	ValidateToken(tokenString string) (uuid.UUID, error)
 }
 
 type MessageService interface {
-	SendDirectMessage(senderID, receiverID uint, content string) (*models.Message, error)
-	SendGroupMessage(senderID, groupID uint, content string) (*models.Message, error)
-	GetHistory(userID, targetID uint, convType string, limit, beforeID int) ([]models.Message, error)
-	MarkAsRead(userID uint, messageIDs []uint) error
+	SendDirectMessage(senderID, receiverID uuid.UUID, content string) (*models.Message, error)
+	SendGroupMessage(senderID, groupID uuid.UUID, content string) (*models.Message, error)
+	GetHistory(userID, targetID uuid.UUID, convType string, limit, beforeID int) ([]models.Message, error)
+	MarkAsRead(userID uuid.UUID, messageIDs []uuid.UUID) error
 }
 
 type GroupService interface {
-	Create(creatorID uint, name string, memberIDs []uint) (*models.Group, error)
-	AddMember(adminID, groupID, newMemberID uint) error
-	RemoveMember(adminID, groupID, memberID uint) error
+	Create(creatorID uuid.UUID, name string, memberIDs []uuid.UUID) (*models.Group, error)
+	AddMember(adminID, groupID, newMemberID uuid.UUID) error
+	RemoveMember(adminID, groupID, memberID uuid.UUID) error
 }

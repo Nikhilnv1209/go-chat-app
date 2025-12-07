@@ -4,37 +4,39 @@ import (
 	"time"
 
 	"chat-app/internal/models"
+
+	"github.com/google/uuid"
 )
 
 type UserRepository interface {
 	Create(user *models.User) error
-	FindByID(id uint) (*models.User, error)
+	FindByID(id uuid.UUID) (*models.User, error)
 	FindByEmail(email string) (*models.User, error)
-	UpdateOnlineStatus(userID uint, isOnline bool, lastSeen time.Time) error
+	UpdateOnlineStatus(userID uuid.UUID, isOnline bool, lastSeen time.Time) error
 }
 
 type MessageRepository interface {
 	Create(msg *models.Message) error
-	FindByConversation(userID, targetID uint, msgType string, limit, beforeID int) ([]models.Message, error)
+	FindByConversation(userID, targetID uuid.UUID, msgType string, limit, beforeID int) ([]models.Message, error)
 }
 
 type MessageReceiptRepository interface {
 	Create(receipt *models.MessageReceipt) error
-	UpdateStatus(messageID, userID uint, status string) error
-	FindUnreadCount(userID uint) (int, error)
+	UpdateStatus(messageID, userID uuid.UUID, status string) error
+	FindUnreadCount(userID uuid.UUID) (int, error)
 }
 
 type GroupRepository interface {
 	Create(group *models.Group) error
-	FindByID(id uint) (*models.Group, error)
-	GetMembers(groupID uint) ([]models.GroupMember, error)
-	IsMember(groupID, userID uint) (bool, error)
-	AddMember(groupID, userID uint, role string) error
+	FindByID(id uuid.UUID) (*models.Group, error)
+	GetMembers(groupID uuid.UUID) ([]models.GroupMember, error)
+	IsMember(groupID, userID uuid.UUID) (bool, error)
+	AddMember(groupID, userID uuid.UUID, role string) error
 }
 
 type ConversationRepository interface {
 	Upsert(conv *models.Conversation) error
-	FindByUser(userID uint) ([]models.Conversation, error)
-	IncrementUnread(userID uint, convType string, targetID uint) error
-	ResetUnread(userID uint, convType string, targetID uint) error
+	FindByUser(userID uuid.UUID) ([]models.Conversation, error)
+	IncrementUnread(userID uuid.UUID, convType string, targetID uuid.UUID) error
+	ResetUnread(userID uuid.UUID, convType string, targetID uuid.UUID) error
 }

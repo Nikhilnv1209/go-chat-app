@@ -14,6 +14,7 @@ import (
 type WSHandler struct {
 	hub         *websocket.Hub
 	authService service.AuthService
+	MsgService  service.MessageService
 }
 
 func NewWSHandler(hub *websocket.Hub, authService service.AuthService) *WSHandler {
@@ -55,10 +56,11 @@ func (h *WSHandler) ServeWS(c *gin.Context) {
 
 	// 3. Register Client
 	client := &websocket.Client{
-		Hub:    h.hub,
-		Conn:   conn,
-		Send:   make(chan []byte, 256),
-		UserID: userID,
+		Hub:        h.hub,
+		Conn:       conn,
+		Send:       make(chan []byte, 256),
+		UserID:     userID,
+		MsgService: h.MsgService,
 	}
 
 	h.hub.Register <- client

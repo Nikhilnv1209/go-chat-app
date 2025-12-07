@@ -45,6 +45,13 @@ func main() {
 	// 4. Initialization
 	// Repositories
 	userRepo := repository.NewUserRepository(db)
+	msgRepo := repository.NewMessageRepository(db)
+	convRepo := repository.NewConversationRepository(db)
+
+	// WebSocket Hub
+	// We create this early because MessageService needs it
+	hub := websocket.NewHub(userRepo)
+	go hub.Run()
 
 	// Services
 	jwtService := jwt.NewService(jwt.Config{
@@ -52,14 +59,17 @@ func main() {
 		Expiration: cfg.JWT.Expiration,
 	})
 	authService := service.NewAuthService(userRepo, jwtService)
-
-	// WebSocket Hub
-	hub := websocket.NewHub(userRepo)
-	go hub.Run()
+	msgService := service.NewMessageService(msgRepo, convRepo, hub)
 
 	// Handlers
 	authHandler := handlers.NewAuthHandler(authService)
 	wsHandler := handlers.NewWSHandler(hub, authService)
+
+	// INJECT MessageService into Hub/Client factory if needed?
+	// Actually, the new handlers.WSHandler logic just passes the hub.
+	// But the Client needs the msgService.
+	// Clients are created in wsHandler.ServeWS. We need to pass msgService to wsHandler.
+	wsHandler.MsgService = msgService
 
 	// 5. Server Setup
 	r := gin.Default()

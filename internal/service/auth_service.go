@@ -6,6 +6,8 @@ import (
 	"chat-app/internal/repository"
 	"chat-app/pkg/jwt"
 
+	"github.com/google/uuid"
+
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -75,6 +77,6 @@ func (s *authService) Login(email, password string) (string, *models.User, error
 	return token, user, nil
 }
 
-func (s *authService) ValidateToken(tokenString string) (uint, error) {
+func (s *authService) ValidateToken(tokenString string) (uuid.UUID, error) {
 	return s.jwtService.ValidateToken(tokenString)
 }

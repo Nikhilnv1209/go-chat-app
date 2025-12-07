@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/google/uuid"
 )
 
 type Config struct {
@@ -13,8 +14,8 @@ type Config struct {
 }
 
 type Service interface {
-	GenerateToken(userID uint) (string, error)
-	ValidateToken(tokenString string) (uint, error)
+	GenerateToken(userID uuid.UUID) (string, error)
+	ValidateToken(tokenString string) (uuid.UUID, error)
 }
 
 type service struct {
@@ -25,9 +26,9 @@ func NewService(config Config) Service {
 	return &service{config: config}
 }
 
-func (s *service) GenerateToken(userID uint) (string, error) {
+func (s *service) GenerateToken(userID uuid.UUID) (string, error) {
 	claims := jwt.MapClaims{
-		"sub": userID,
+		"sub": userID.String(),
 		"exp": time.Now().Add(s.config.Expiration).Unix(),
 		"iat": time.Now().Unix(),
 	}
@@ -36,7 +37,7 @@ func (s *service) GenerateToken(userID uint) (string, error) {
 	return token.SignedString([]byte(s.config.Secret))
 }
 
-func (s *service) ValidateToken(tokenString string) (uint, error) {
+func (s *service) ValidateToken(tokenString string) (uuid.UUID, error) {
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, errors.New("unexpected signing method")
@@ -45,15 +46,19 @@ func (s *service) ValidateToken(tokenString string) (uint, error) {
 	})
 
 	if err != nil {
-		return 0, err
+		return uuid.Nil, err
 	}
 
 	if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
-		if sub, ok := claims["sub"].(float64); ok {
-			return uint(sub), nil
+		if sub, ok := claims["sub"].(string); ok {
+			id, err := uuid.Parse(sub)
+			if err != nil {
+				return uuid.Nil, errors.New("invalid subject UUID")
+			}
+			return id, nil
 		}
-		return 0, errors.New("invalid subject claim")
+		return uuid.Nil, errors.New("invalid subject claim")
 	}
 
-	return 0, errors.New("invalid token")
+	return uuid.Nil, errors.New("invalid token")
 }

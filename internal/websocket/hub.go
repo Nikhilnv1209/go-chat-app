@@ -6,13 +6,15 @@ import (
 	"time"
 
 	"chat-app/internal/repository"
+
+	"github.com/google/uuid"
 )
 
 // Hub maintains the set of active clients and broadcasts messages to the
 // clients.
 type Hub struct {
 	// Registered clients (UserID -> List of Clients)
-	Clients map[uint][]*Client
+	Clients map[uuid.UUID][]*Client
 
 	// Register requests from the clients.
 	Register chan *Client
@@ -31,7 +33,7 @@ func NewHub(userRepo repository.UserRepository) *Hub {
 	return &Hub{
 		Register:   make(chan *Client),
 		Unregister: make(chan *Client),
-		Clients:    make(map[uint][]*Client),
+		Clients:    make(map[uuid.UUID][]*Client),
 		userRepo:   userRepo,
 	}
 }
@@ -75,16 +77,16 @@ func (h *Hub) Run() {
 	}
 }
 
-func (h *Hub) updateUserStatus(userID uint, isOnline bool) {
+func (h *Hub) updateUserStatus(userID uuid.UUID, isOnline bool) {
 	// We might want to pass context later
 	if err := h.userRepo.UpdateOnlineStatus(userID, isOnline, time.Now()); err != nil {
 		// Log error but don't crash
-		log.Printf("Failed to update user status for %d: %v", userID, err)
+		log.Printf("Failed to update user status for %s: %v", userID, err)
 	}
 }
 
 // SendToUser sends a message to all connected devices of a specific user.
-func (h *Hub) SendToUser(userID uint, message []byte) {
+func (h *Hub) SendToUser(userID uuid.UUID, message []byte) {
 	h.mu.RLock()
 	defer h.mu.RUnlock()
 

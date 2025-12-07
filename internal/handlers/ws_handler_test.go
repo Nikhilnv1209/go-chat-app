@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 	gorilla "github.com/gorilla/websocket"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -25,7 +26,7 @@ func (m *MockUserRepository) Create(user *models.User) error {
 	args := m.Called(user)
 	return args.Error(0)
 }
-func (m *MockUserRepository) FindByID(id uint) (*models.User, error) {
+func (m *MockUserRepository) FindByID(id uuid.UUID) (*models.User, error) {
 	args := m.Called(id)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
@@ -39,7 +40,7 @@ func (m *MockUserRepository) FindByEmail(email string) (*models.User, error) {
 	}
 	return args.Get(0).(*models.User), args.Error(1)
 }
-func (m *MockUserRepository) UpdateOnlineStatus(userID uint, isOnline bool, lastSeen time.Time) error {
+func (m *MockUserRepository) UpdateOnlineStatus(userID uuid.UUID, isOnline bool, lastSeen time.Time) error {
 	args := m.Called(userID, isOnline, lastSeen)
 	return args.Error(0)
 }
@@ -72,7 +73,7 @@ func TestServeWS_InvalidToken(t *testing.T) {
 	handler, mockService, _, r := setupWSTest()
 	r.GET("/ws", handler.ServeWS)
 
-	mockService.On("ValidateToken", "invalid_token").Return(uint(0), errors.ErrUnauthorized)
+	mockService.On("ValidateToken", "invalid_token").Return(uuid.Nil, errors.ErrUnauthorized)
 
 	req, _ := http.NewRequest("GET", "/ws?token=invalid_token", nil)
 	w := httptest.NewRecorder()
@@ -85,7 +86,7 @@ func TestServeWS_Success(t *testing.T) {
 	handler, mockService, mockRepo, r := setupWSTest()
 	r.GET("/ws", handler.ServeWS)
 
-	userID := uint(1)
+	userID := uuid.New()
 	mockService.On("ValidateToken", "valid_token").Return(userID, nil)
 
 	// Expect UpdateOnlineStatus to be called with true (Online)

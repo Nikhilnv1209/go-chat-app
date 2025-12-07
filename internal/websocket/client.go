@@ -1,10 +1,11 @@
 package websocket
 
 import (
-	"encoding/json"
+	"chat-app/internal/service"
 	"log"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
 )
 
@@ -33,7 +34,10 @@ type Client struct {
 	Send chan []byte
 
 	// UserID associated with this client
-	UserID uint
+	UserID uuid.UUID
+
+	// Service to handle incoming messages
+	MsgService service.MessageService
 }
 
 // readPump pumps messages from the websocket connection to the hub.
@@ -61,11 +65,7 @@ func (c *Client) ReadPump() {
 		// though gorilla handles ping/pong control frames automatically)
 		// For MVP, we might expect specific JSON formats.
 		// For now, we'll just parse to see if it's valid JSON, or pass it to a handler.
-		var msg map[string]interface{}
-		if err := json.Unmarshal(message, &msg); err == nil {
-			// Basic event routing could happen here or in the Hub
-			// c.Hub.Broadcast <- message
-		}
+		HandleMessage(message, c, c.MsgService)
 	}
 }
 

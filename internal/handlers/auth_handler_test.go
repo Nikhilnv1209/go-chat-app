@@ -11,6 +11,7 @@ import (
 	"testing"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -36,9 +37,9 @@ func (m *MockAuthService) Login(email, password string) (string, *models.User, e
 	return args.String(0), args.Get(1).(*models.User), args.Error(2)
 }
 
-func (m *MockAuthService) ValidateToken(tokenString string) (uint, error) {
+func (m *MockAuthService) ValidateToken(tokenString string) (uuid.UUID, error) {
 	args := m.Called(tokenString)
-	return args.Get(0).(uint), args.Error(1)
+	return args.Get(0).(uuid.UUID), args.Error(1)
 }
 
 func setupAuthTest() (*handlers.AuthHandler, *MockAuthService, *gin.Engine) {
