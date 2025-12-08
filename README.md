@@ -5,6 +5,7 @@ A high-performance, real-time chat application backend built with Go (Golang).
 ## 🚀 Features
 - **Real-time Messaging**: Powered by WebSockets for instant communication.
 - **Direct Messaging**: One-on-one private conversations with unified receipt tracking.
+- **Group Messaging**: Create groups and broadcast messages to multiple members.
 - **Authentication**: Secure JWT-based signup and login flow.
 - **Data Persistence**: Robust PostgreSQL database integration using GORM.
 - **Scalable Architecture**: Refactored to use UUIDs for all primary and foreign keys.
@@ -130,6 +131,42 @@ go test ./...
   }
   ```
 
+### Group Messaging
+
+#### Create a new group
+- **Endpoint**: `POST /groups`
+- **Headers**: `Authorization: Bearer <YOUR_JWT_TOKEN>`
+- **Body**:
+  ```json
+  {
+    "name": "Family",
+    "member_ids": ["uuid-1", "uuid-2", "uuid-3"]
+  }
+  ```
+- **Response**: `201 Created`
+  ```json
+  {
+    "id": "group-uuid",
+    "name": "Family"
+  }
+  ```
+
+#### Add member to group
+- **Endpoint**: `POST /groups/:id/members`
+- **Headers**: `Authorization: Bearer <YOUR_JWT_TOKEN>`
+- **Body**:
+  ```json
+  {
+    "user_id": "uuid-of-new-member"
+  }
+  ```
+- **Response**: `200 OK`
+  ```json
+  {
+    "message": "member added successfully"
+  }
+  ```
+
 ### Real-time Communication (WebSocket)
 
 #### Connect to Hub
@@ -138,13 +175,24 @@ go test ./...
 - **Description**: Upgrades the HTTP connection to a WebSocket connection. Authenticates user via JWT.
 
 **Events (Client -> Server):**
-- **Send Message**:
+- **Send Direct Message**:
   ```json
   {
     "type": "send_message",
     "payload": {
       "to_user_id": "uuid-string-of-recipient",
       "content": "Hello, World!"
+    }
+  }
+  ```
+
+- **Send Group Message**:
+  ```json
+  {
+    "type": "send_message",
+    "payload": {
+      "group_id": "uuid-string-of-group",
+      "content": "Hello Team!"
     }
   }
   ```
@@ -175,8 +223,8 @@ go test ./...
   - Check if the server logs show any authentication errors.
 
 ## 📝 Future Roadmap
-- [ ] **Group Messaging**: Create groups and broadcast messages.
-- [ ] **Message History API**: REST endpoints to fetch conversation history.
+- [x] **Group Messaging**: Create groups and broadcast messages.
+- [ ] **Inbox & History API**: REST endpoints to fetch conversation list and message history.
 - [ ] **Frontend**: React/Vue/Mobile client implementation.
 - [ ] **Media Support**: Image and file sharing.
 
