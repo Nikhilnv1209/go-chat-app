@@ -47,6 +47,7 @@ func main() {
 	userRepo := repository.NewUserRepository(db)
 	msgRepo := repository.NewMessageRepository(db)
 	convRepo := repository.NewConversationRepository(db)
+	groupRepo := repository.NewGroupRepository(db)
 
 	// WebSocket Hub
 	// We create this early because MessageService needs it
@@ -59,11 +60,13 @@ func main() {
 		Expiration: cfg.JWT.Expiration,
 	})
 	authService := service.NewAuthService(userRepo, jwtService)
-	msgService := service.NewMessageService(msgRepo, convRepo, hub)
+	msgService := service.NewMessageService(msgRepo, convRepo, groupRepo, hub)
+	groupService := service.NewGroupService(groupRepo)
 
 	// Handlers
 	authHandler := handlers.NewAuthHandler(authService)
 	wsHandler := handlers.NewWSHandler(hub, authService)
+	groupHandler := handlers.NewGroupHandler(groupService, authService)
 
 	// INJECT MessageService into Hub/Client factory if needed?
 	// Actually, the new handlers.WSHandler logic just passes the hub.
@@ -79,6 +82,13 @@ func main() {
 	{
 		authRoutes.POST("/register", authHandler.Register)
 		authRoutes.POST("/login", authHandler.Login)
+	}
+
+	// Group Routes
+	groupRoutes := r.Group("/groups")
+	{
+		groupRoutes.POST("", groupHandler.CreateGroup)
+		groupRoutes.POST("/:id/members", groupHandler.AddMember)
 	}
 
 	// WebSocket Route
