@@ -2,6 +2,7 @@ package service
 
 import (
 	"encoding/json"
+	"errors"
 	"time"
 
 	"chat-app/internal/models"
@@ -17,20 +18,23 @@ type Hub interface {
 }
 
 type messageService struct {
-	msgRepo  repository.MessageRepository
-	convRepo repository.ConversationRepository
-	hub      Hub
+	msgRepo   repository.MessageRepository
+	convRepo  repository.ConversationRepository
+	groupRepo repository.GroupRepository
+	hub       Hub
 }
 
 func NewMessageService(
 	msgRepo repository.MessageRepository,
 	convRepo repository.ConversationRepository,
+	groupRepo repository.GroupRepository,
 	hub Hub,
 ) MessageService {
 	return &messageService{
-		msgRepo:  msgRepo,
-		convRepo: convRepo,
-		hub:      hub,
+		msgRepo:   msgRepo,
+		convRepo:  convRepo,
+		groupRepo: groupRepo,
+		hub:       hub,
 	}
 }
 
@@ -75,9 +79,66 @@ func (s *messageService) SendDirectMessage(senderID, receiverID uuid.UUID, conte
 }
 
 func (s *messageService) SendGroupMessage(senderID, groupID uuid.UUID, content string) (*models.Message, error) {
-	// TODO: Implement in F04
-	return nil, nil
+	// 1. Verify sender is a member of the group
+	isMember, err := s.groupRepo.IsMember(groupID, senderID)
+	if err != nil {
+		return nil, err
+	}
+	if !isMember {
+		return nil, ErrNotGroupMember
+	}
+
+	// 2. Create Message
+	msg := &models.Message{
+		BaseModel: models.BaseModel{
+			CreatedAt: time.Now(),
+		},
+		SenderID: senderID,
+		GroupID:  &groupID,
+		Content:  content,
+		MsgType:  "group",
+	}
+
+	if err := s.msgRepo.Create(msg); err != nil {
+		return nil, err
+	}
+
+	// 3. Get all group members
+	members, err := s.groupRepo.GetMembers(groupID)
+	if err != nil {
+		return nil, err
+	}
+
+	// 4. For each member (except sender), update conversation and broadcast
+	for _, member := range members {
+		if member.UserID == senderID {
+			// Update sender's conversation without incrementing unread
+			s.convRepo.Upsert(&models.Conversation{
+				UserID:        senderID,
+				Type:          "group",
+				TargetID:      groupID,
+				LastMessageAt: msg.CreatedAt,
+				UnreadCount:   0,
+			})
+			continue
+		}
+
+		// Update receiver's conversation and increment unread
+		s.convRepo.IncrementUnread(member.UserID, "group", groupID)
+
+		// Real-time delivery via WebSocket
+		payload, _ := json.Marshal(map[string]interface{}{
+			"type":    "new_message",
+			"payload": msg,
+		})
+		s.hub.SendToUser(member.UserID, payload)
+	}
+
+	return msg, nil
 }
+
+// Custom error for group messaging
+var ErrNotGroupMember = errors.New("sender is not a member of the group")
 
 func (s *messageService) GetHistory(userID, targetID uuid.UUID, convType string, limit, beforeID int) ([]models.Message, error) {
 	return s.msgRepo.FindByConversation(userID, targetID, convType, limit, beforeID)
