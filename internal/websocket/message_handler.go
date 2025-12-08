@@ -50,9 +50,22 @@ func HandleMessage(message []byte, client *Client, msgService service.MessageSer
 				"payload": msg,
 			})
 			client.Send <- ack
-		}
+		} else if payload.GroupID != uuid.Nil {
+			// Group Message
+			msg, err := msgService.SendGroupMessage(client.UserID, payload.GroupID, payload.Content)
+			if err != nil {
+				log.Printf("Failed to send group message: %v", err)
+				// TODO: Send error back to client
+				return
+			}
 
-		// TODO: Group Message logic
+			// Ack to Sender
+			ack, _ := json.Marshal(map[string]interface{}{
+				"type":    "message_sent",
+				"payload": msg,
+			})
+			client.Send <- ack
+		}
 
 	default:
 		log.Printf("Unknown message type: %s", wsMsg.Type)
