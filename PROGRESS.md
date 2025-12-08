@@ -1,8 +1,8 @@
 # BMAD Progress Tracker
 
-**Current Status**: 🟢 Phase 1 - F03 Direct Messaging (Story 1.3) Completed & UUID Refactor Completed
-**Last Action**: Refactored entire codebase to use UUIDs and Verified F03.
-**Next Action**: Implement [F04] Group Messaging.
+**Current Status**: 🟢 Phase 1 - F04 Group Messaging Completed
+**Last Action**: Implemented F04 - Group Messaging with REST endpoints and WebSocket support.
+**Next Action**: Implement [F05] Inbox & History.
 
 ---
 
@@ -12,7 +12,7 @@
 | **User Authentication** | `F01` | ✅ **DONE** | 100% |
 | **WebSocket Hub** | `F02` | ✅ **DONE** | 100% |
 | **Direct Messaging** | `F03` | ✅ **DONE** | 100% |
-| **Group Messaging** | `F04` | 🔴 TODO | 0% |
+| **Group Messaging** | `F04` | ✅ **DONE** | 100% |
 | **Inbox & History** | `F05` | 🔴 TODO | 0% |
 | **Refactor: UUIDs** | `Refactor` | ✅ **DONE** | 100% |
 
@@ -75,11 +75,12 @@
 **Story 1.4: Group Management** (`stories/1.4_group_messaging.story.md`)
 | Task | Status | File(s) |
 |------|--------|---------|
-| Implement Group Repository | ⬜ TODO | `internal/repository/group_repo.go` |
-| Implement Group Service | ⬜ TODO | `internal/service/group_service.go` |
-| Implement Group Handlers | ⬜ TODO | `internal/handlers/group_handler.go` |
-| Update Message Service for Broadcast | ⬜ TODO | `internal/service/message_service.go` |
-| **Verification** | ⬜ TODO | Create group & broadcast message |
+| Implement Group Repository | ✅ DONE | `internal/repository/group_repo.go` |
+| Implement Group Service | ✅ DONE | `internal/service/group_service.go` |
+| Implement Group Handlers | ✅ DONE | `internal/handlers/group_handler.go` |
+| Update Message Service for Broadcast | ✅ DONE | `internal/service/message_service.go` |
+| Update WebSocket Handler | ✅ DONE | `internal/websocket/message_handler.go` |
+| **Verification** | ✅ DONE | 18 comprehensive tests - ALL PASSING ✅ |
 
 ---
 
