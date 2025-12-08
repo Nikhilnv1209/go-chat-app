@@ -48,6 +48,39 @@ func (m *MockConversationRepo) ResetUnread(userID uuid.UUID, convType string, ta
 	return args.Error(0)
 }
 
+// MockGroupRepo
+type MockGroupRepo struct {
+	mock.Mock
+}
+
+func (m *MockGroupRepo) Create(group *models.Group) error {
+	args := m.Called(group)
+	return args.Error(0)
+}
+
+func (m *MockGroupRepo) FindByID(id uuid.UUID) (*models.Group, error) {
+	args := m.Called(id)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*models.Group), args.Error(1)
+}
+
+func (m *MockGroupRepo) GetMembers(groupID uuid.UUID) ([]models.GroupMember, error) {
+	args := m.Called(groupID)
+	return args.Get(0).([]models.GroupMember), args.Error(1)
+}
+
+func (m *MockGroupRepo) IsMember(groupID, userID uuid.UUID) (bool, error) {
+	args := m.Called(groupID, userID)
+	return args.Bool(0), args.Error(1)
+}
+
+func (m *MockGroupRepo) AddMember(groupID, userID uuid.UUID, role string) error {
+	args := m.Called(groupID, userID, role)
+	return args.Error(0)
+}
+
 // MockHub
 type MockHub struct {
 	mock.Mock
@@ -60,9 +93,10 @@ func (m *MockHub) SendToUser(userID uuid.UUID, message []byte) {
 func TestSendDirectMessage(t *testing.T) {
 	mockMsgRepo := new(MockMessageRepo)
 	mockConvRepo := new(MockConversationRepo)
+	mockGroupRepo := new(MockGroupRepo)
 	mockHub := new(MockHub)
 
-	svc := service.NewMessageService(mockMsgRepo, mockConvRepo, mockHub)
+	svc := service.NewMessageService(mockMsgRepo, mockConvRepo, mockGroupRepo, mockHub)
 
 	senderID := uuid.New()
 	receiverID := uuid.New()
@@ -105,9 +139,10 @@ func TestSendDirectMessage(t *testing.T) {
 func TestGetHistory_Conversation(t *testing.T) {
 	mockMsgRepo := new(MockMessageRepo)
 	mockConvRepo := new(MockConversationRepo)
+	mockGroupRepo := new(MockGroupRepo)
 	mockHub := new(MockHub)
 
-	svc := service.NewMessageService(mockMsgRepo, mockConvRepo, mockHub)
+	svc := service.NewMessageService(mockMsgRepo, mockConvRepo, mockGroupRepo, mockHub)
 
 	userID := uuid.New()
 	targetID := uuid.New()
@@ -138,9 +173,10 @@ func TestGetHistory_Conversation(t *testing.T) {
 func TestLongConversationFlow(t *testing.T) {
 	mockMsgRepo := new(MockMessageRepo)
 	mockConvRepo := new(MockConversationRepo)
+	mockGroupRepo := new(MockGroupRepo)
 	mockHub := new(MockHub)
 
-	svc := service.NewMessageService(mockMsgRepo, mockConvRepo, mockHub)
+	svc := service.NewMessageService(mockMsgRepo, mockConvRepo, mockGroupRepo, mockHub)
 
 	user1 := uuid.New()
 	user2 := uuid.New()
@@ -176,4 +212,237 @@ func TestLongConversationFlow(t *testing.T) {
 	mockMsgRepo.AssertExpectations(t)
 	mockConvRepo.AssertExpectations(t)
 	mockHub.AssertExpectations(t)
+}
+
+// ===== GROUP MESSAGING TESTS =====
+
+func TestSendGroupMessage_Success(t *testing.T) {
+	mockMsgRepo := new(MockMessageRepo)
+	mockConvRepo := new(MockConversationRepo)
+	mockGroupRepo := new(MockGroupRepo)
+	mockHub := new(MockHub)
+
+	svc := service.NewMessageService(mockMsgRepo, mockConvRepo, mockGroupRepo, mockHub)
+
+	senderID := uuid.New()
+	groupID := uuid.New()
+	member1 := uuid.New()
+	member2 := uuid.New()
+	content := "Hello Group!"
+
+	// Mock: Sender is a member
+	mockGroupRepo.On("IsMember", groupID, senderID).Return(true, nil)
+
+	// Mock: Create message
+	mockMsgRepo.On("Create", mock.MatchedBy(func(msg *models.Message) bool {
+		return msg.SenderID == senderID && msg.GroupID != nil && *msg.GroupID == groupID && msg.Content == content
+	})).Return(nil)
+
+	// Mock: Get group members
+	members := []models.GroupMember{
+		{GroupID: groupID, UserID: senderID, Role: "ADMIN"},
+		{GroupID: groupID, UserID: member1, Role: "MEMBER"},
+		{GroupID: groupID, UserID: member2, Role: "MEMBER"},
+	}
+	mockGroupRepo.On("GetMembers", groupID).Return(members, nil)
+
+	// Mock: Upsert sender's conversation
+	mockConvRepo.On("Upsert", mock.MatchedBy(func(conv *models.Conversation) bool {
+		return conv.UserID == senderID && conv.TargetID == groupID && conv.Type == "group"
+	})).Return(nil)
+
+	// Mock: Increment unread for other members
+	mockConvRepo.On("IncrementUnread", member1, "group", groupID).Return(nil)
+	mockConvRepo.On("IncrementUnread", member2, "group", groupID).Return(nil)
+
+	// Mock: Send to hub for other members
+	mockHub.On("SendToUser", member1, mock.MatchedBy(func(payload []byte) bool {
+		var msg map[string]interface{}
+		json.Unmarshal(payload, &msg)
+		return msg["type"] == "new_message"
+	})).Return()
+
+	mockHub.On("SendToUser", member2, mock.MatchedBy(func(payload []byte) bool {
+		var msg map[string]interface{}
+		json.Unmarshal(payload, &msg)
+		return msg["type"] == "new_message"
+	})).Return()
+
+	// Execute
+	msg, err := svc.SendGroupMessage(senderID, groupID, content)
+
+	// Assert
+	assert.NoError(t, err)
+	assert.NotNil(t, msg)
+	assert.Equal(t, content, msg.Content)
+	assert.Equal(t, groupID, *msg.GroupID)
+
+	mockMsgRepo.AssertExpectations(t)
+	mockConvRepo.AssertExpectations(t)
+	mockGroupRepo.AssertExpectations(t)
+	mockHub.AssertExpectations(t)
+}
+
+func TestSendGroupMessage_FailsForNonMember(t *testing.T) {
+	mockMsgRepo := new(MockMessageRepo)
+	mockConvRepo := new(MockConversationRepo)
+	mockGroupRepo := new(MockGroupRepo)
+	mockHub := new(MockHub)
+
+	svc := service.NewMessageService(mockMsgRepo, mockConvRepo, mockGroupRepo, mockHub)
+
+	nonMemberID := uuid.New()
+	groupID := uuid.New()
+	content := "I shouldn't be able to send this"
+
+	// Mock: Sender is NOT a member
+	mockGroupRepo.On("IsMember", groupID, nonMemberID).Return(false, nil)
+
+	// Execute
+	msg, err := svc.SendGroupMessage(nonMemberID, groupID, content)
+
+	// Assert
+	assert.Error(t, err)
+	assert.Nil(t, msg)
+	assert.Equal(t, "sender is not a member of the group", err.Error())
+
+	mockGroupRepo.AssertExpectations(t)
+	// Message should NOT be created
+	mockMsgRepo.AssertNotCalled(t, "Create")
+}
+
+func TestSendGroupMessage_BroadcastsToAllMembers(t *testing.T) {
+	mockMsgRepo := new(MockMessageRepo)
+	mockConvRepo := new(MockConversationRepo)
+	mockGroupRepo := new(MockGroupRepo)
+	mockHub := new(MockHub)
+
+	svc := service.NewMessageService(mockMsgRepo, mockConvRepo, mockGroupRepo, mockHub)
+
+	senderID := uuid.New()
+	groupID := uuid.New()
+	// Create 5 members total (sender + 4 others)
+	members := []models.GroupMember{
+		{GroupID: groupID, UserID: senderID, Role: "ADMIN"},
+	}
+	otherMemberIDs := []uuid.UUID{}
+	for i := 0; i < 4; i++ {
+		memberID := uuid.New()
+		members = append(members, models.GroupMember{
+			GroupID: groupID,
+			UserID:  memberID,
+			Role:    "MEMBER",
+		})
+		otherMemberIDs = append(otherMemberIDs, memberID)
+	}
+
+	// Mock setup
+	mockGroupRepo.On("IsMember", groupID, senderID).Return(true, nil)
+	mockMsgRepo.On("Create", mock.Anything).Return(nil)
+	mockGroupRepo.On("GetMembers", groupID).Return(members, nil)
+	mockConvRepo.On("Upsert", mock.Anything).Return(nil)
+
+	// Mock for each other member
+	for _, memberID := range otherMemberIDs {
+		mockConvRepo.On("IncrementUnread", memberID, "group", groupID).Return(nil)
+		mockHub.On("SendToUser", memberID, mock.Anything).Return()
+	}
+
+	// Execute
+	msg, err := svc.SendGroupMessage(senderID, groupID, "Test broadcast")
+
+	// Assert
+	assert.NoError(t, err)
+	assert.NotNil(t, msg)
+
+	// Verify each other member received the message
+	for _, memberID := range otherMemberIDs {
+		mockHub.AssertCalled(t, "SendToUser", memberID, mock.Anything)
+	}
+
+	mockGroupRepo.AssertExpectations(t)
+}
+
+func TestSendGroupMessage_UpdatesConversationForAllMembers(t *testing.T) {
+	mockMsgRepo := new(MockMessageRepo)
+	mockConvRepo := new(MockConversationRepo)
+	mockGroupRepo := new(MockGroupRepo)
+	mockHub := new(MockHub)
+
+	svc := service.NewMessageService(mockMsgRepo, mockConvRepo, mockGroupRepo, mockHub)
+
+	senderID := uuid.New()
+	member1 := uuid.New()
+	member2 := uuid.New()
+	groupID := uuid.New()
+
+	members := []models.GroupMember{
+		{GroupID: groupID, UserID: senderID, Role: "MEMBER"},
+		{GroupID: groupID, UserID: member1, Role: "MEMBER"},
+		{GroupID: groupID, UserID: member2, Role: "MEMBER"},
+	}
+
+	mockGroupRepo.On("IsMember", groupID, senderID).Return(true, nil)
+	mockMsgRepo.On("Create", mock.Anything).Return(nil)
+	mockGroupRepo.On("GetMembers", groupID).Return(members, nil)
+
+	// Expect conversation upsert for sender (unread = 0)
+	mockConvRepo.On("Upsert", mock.MatchedBy(func(conv *models.Conversation) bool {
+		return conv.UserID == senderID && conv.UnreadCount == 0
+	})).Return(nil)
+
+	// Expect increment unread for other members
+	mockConvRepo.On("IncrementUnread", member1, "group", groupID).Return(nil)
+	mockConvRepo.On("IncrementUnread", member2, "group", groupID).Return(nil)
+
+	mockHub.On("SendToUser", mock.Anything, mock.Anything).Return()
+
+	// Execute
+	_, err := svc.SendGroupMessage(senderID, groupID, "Update conversations")
+
+	// Assert
+	assert.NoError(t, err)
+
+	// Verify conversations were updated
+	mockConvRepo.AssertCalled(t, "Upsert", mock.MatchedBy(func(conv *models.Conversation) bool {
+		return conv.UserID == senderID
+	}))
+	mockConvRepo.AssertCalled(t, "IncrementUnread", member1, "group", groupID)
+	mockConvRepo.AssertCalled(t, "IncrementUnread", member2, "group", groupID)
+}
+
+func TestSendGroupMessage_SenderDoesNotReceiveOwnMessage(t *testing.T) {
+	mockMsgRepo := new(MockMessageRepo)
+	mockConvRepo := new(MockConversationRepo)
+	mockGroupRepo := new(MockGroupRepo)
+	mockHub := new(MockHub)
+
+	svc := service.NewMessageService(mockMsgRepo, mockConvRepo, mockGroupRepo, mockHub)
+
+	senderID := uuid.New()
+	member1 := uuid.New()
+	groupID := uuid.New()
+
+	members := []models.GroupMember{
+		{GroupID: groupID, UserID: senderID, Role: "ADMIN"},
+		{GroupID: groupID, UserID: member1, Role: "MEMBER"},
+	}
+
+	mockGroupRepo.On("IsMember", groupID, senderID).Return(true, nil)
+	mockMsgRepo.On("Create", mock.Anything).Return(nil)
+	mockGroupRepo.On("GetMembers", groupID).Return(members, nil)
+	mockConvRepo.On("Upsert", mock.Anything).Return(nil)
+	mockConvRepo.On("IncrementUnread", member1, "group", groupID).Return(nil)
+	mockHub.On("SendToUser", member1, mock.Anything).Return()
+
+	// Execute
+	_, err := svc.SendGroupMessage(senderID, groupID, "Own message test")
+
+	// Assert
+	assert.NoError(t, err)
+
+	// Sender should NOT receive the message via hub
+	mockHub.AssertNotCalled(t, "SendToUser", senderID, mock.Anything)
+	// But member1 should receive it
+	mockHub.AssertCalled(t, "SendToUser", member1, mock.Anything)
 }
