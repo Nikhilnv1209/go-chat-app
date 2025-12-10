@@ -26,6 +26,14 @@ func (m *MockMessageRepo) FindByConversation(userID, targetID uuid.UUID, msgType
 	return args.Get(0).([]models.Message), args.Error(1)
 }
 
+func (m *MockMessageRepo) FindByID(id uuid.UUID) (*models.Message, error) {
+	args := m.Called(id)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*models.Message), args.Error(1)
+}
+
 // MockConversationRepo
 type MockConversationRepo struct {
 	mock.Mock
@@ -90,13 +98,45 @@ func (m *MockHub) SendToUser(userID uuid.UUID, message []byte) {
 	m.Called(userID, message)
 }
 
+// MockMessageReceiptRepo [F06]
+type MockMessageReceiptRepo struct {
+	mock.Mock
+}
+
+func (m *MockMessageReceiptRepo) Create(receipt *models.MessageReceipt) error {
+	args := m.Called(receipt)
+	return args.Error(0)
+}
+
+func (m *MockMessageReceiptRepo) CreateBatch(receipts []*models.MessageReceipt) error {
+	args := m.Called(receipts)
+	return args.Error(0)
+}
+
+func (m *MockMessageReceiptRepo) UpdateStatus(messageID, userID uuid.UUID, status string) error {
+	args := m.Called(messageID, userID, status)
+	return args.Error(0)
+}
+
+func (m *MockMessageReceiptRepo) FindByMessageID(messageID uuid.UUID) ([]models.MessageReceipt, error) {
+	args := m.Called(messageID)
+	return args.Get(0).([]models.MessageReceipt), args.Error(1)
+}
+
+func (m *MockMessageReceiptRepo) FindUnreadCount(userID uuid.UUID) (int64, error) {
+	args := m.Called(userID)
+	return args.Get(0).(int64), args.Error(1)
+}
+
 func TestSendDirectMessage(t *testing.T) {
 	mockMsgRepo := new(MockMessageRepo)
 	mockConvRepo := new(MockConversationRepo)
 	mockGroupRepo := new(MockGroupRepo)
 	mockHub := new(MockHub)
 
-	svc := service.NewMessageService(mockMsgRepo, mockConvRepo, mockGroupRepo, mockHub)
+	mockReceiptRepo := new(MockMessageReceiptRepo)
+
+	svc := service.NewMessageService(mockMsgRepo, mockConvRepo, mockGroupRepo, mockReceiptRepo, mockHub)
 
 	senderID := uuid.New()
 	receiverID := uuid.New()
@@ -108,7 +148,12 @@ func TestSendDirectMessage(t *testing.T) {
 		return msg.SenderID == senderID && *msg.ReceiverID == receiverID && msg.Content == content
 	})).Return(nil)
 
-	// 2. Upsert Conversation for Sender
+	// 2. Create Receipt [F06]
+	mockReceiptRepo.On("Create", mock.MatchedBy(func(receipt *models.MessageReceipt) bool {
+		return receipt.UserID == receiverID && receipt.Status == "SENT"
+	})).Return(nil)
+
+	// 3. Upsert Conversation for Sender
 	mockConvRepo.On("Upsert", mock.MatchedBy(func(conv *models.Conversation) bool {
 		return conv.UserID == senderID && conv.TargetID == receiverID
 	})).Return(nil)
@@ -142,7 +187,9 @@ func TestGetHistory_Conversation(t *testing.T) {
 	mockGroupRepo := new(MockGroupRepo)
 	mockHub := new(MockHub)
 
-	svc := service.NewMessageService(mockMsgRepo, mockConvRepo, mockGroupRepo, mockHub)
+	mockReceiptRepo := new(MockMessageReceiptRepo)
+
+	svc := service.NewMessageService(mockMsgRepo, mockConvRepo, mockGroupRepo, mockReceiptRepo, mockHub)
 
 	userID := uuid.New()
 	targetID := uuid.New()
@@ -176,7 +223,9 @@ func TestLongConversationFlow(t *testing.T) {
 	mockGroupRepo := new(MockGroupRepo)
 	mockHub := new(MockHub)
 
-	svc := service.NewMessageService(mockMsgRepo, mockConvRepo, mockGroupRepo, mockHub)
+	mockReceiptRepo := new(MockMessageReceiptRepo)
+
+	svc := service.NewMessageService(mockMsgRepo, mockConvRepo, mockGroupRepo, mockReceiptRepo, mockHub)
 
 	user1 := uuid.New()
 	user2 := uuid.New()
@@ -194,6 +243,11 @@ func TestLongConversationFlow(t *testing.T) {
 		// Expectations for each message
 		mockMsgRepo.On("Create", mock.MatchedBy(func(msg *models.Message) bool {
 			return msg.SenderID == sender && *msg.ReceiverID == receiver && msg.Content == content
+		})).Return(nil).Once()
+
+		// Receipt creation [F06]
+		mockReceiptRepo.On("Create", mock.MatchedBy(func(receipt *models.MessageReceipt) bool {
+			return receipt.UserID == receiver && receipt.Status == "SENT"
 		})).Return(nil).Once()
 
 		mockConvRepo.On("Upsert", mock.MatchedBy(func(conv *models.Conversation) bool {
@@ -222,7 +276,9 @@ func TestSendGroupMessage_Success(t *testing.T) {
 	mockGroupRepo := new(MockGroupRepo)
 	mockHub := new(MockHub)
 
-	svc := service.NewMessageService(mockMsgRepo, mockConvRepo, mockGroupRepo, mockHub)
+	mockReceiptRepo := new(MockMessageReceiptRepo)
+
+	svc := service.NewMessageService(mockMsgRepo, mockConvRepo, mockGroupRepo, mockReceiptRepo, mockHub)
 
 	senderID := uuid.New()
 	groupID := uuid.New()
@@ -237,6 +293,12 @@ func TestSendGroupMessage_Success(t *testing.T) {
 	mockMsgRepo.On("Create", mock.MatchedBy(func(msg *models.Message) bool {
 		return msg.SenderID == senderID && msg.GroupID != nil && *msg.GroupID == groupID && msg.Content == content
 	})).Return(nil)
+
+	// Mock: Create Receipts [F06]
+	// Mock: Create Receipts [F06] - Batch
+	mockReceiptRepo.On("CreateBatch", mock.MatchedBy(func(receipts []*models.MessageReceipt) bool {
+		return len(receipts) == 2 && receipts[0].Status == "SENT"
+	})).Return(nil).Once()
 
 	// Mock: Get group members
 	members := []models.GroupMember{
@@ -289,7 +351,9 @@ func TestSendGroupMessage_FailsForNonMember(t *testing.T) {
 	mockGroupRepo := new(MockGroupRepo)
 	mockHub := new(MockHub)
 
-	svc := service.NewMessageService(mockMsgRepo, mockConvRepo, mockGroupRepo, mockHub)
+	mockReceiptRepo := new(MockMessageReceiptRepo)
+
+	svc := service.NewMessageService(mockMsgRepo, mockConvRepo, mockGroupRepo, mockReceiptRepo, mockHub)
 
 	nonMemberID := uuid.New()
 	groupID := uuid.New()
@@ -317,7 +381,9 @@ func TestSendGroupMessage_BroadcastsToAllMembers(t *testing.T) {
 	mockGroupRepo := new(MockGroupRepo)
 	mockHub := new(MockHub)
 
-	svc := service.NewMessageService(mockMsgRepo, mockConvRepo, mockGroupRepo, mockHub)
+	mockReceiptRepo := new(MockMessageReceiptRepo)
+
+	svc := service.NewMessageService(mockMsgRepo, mockConvRepo, mockGroupRepo, mockReceiptRepo, mockHub)
 
 	senderID := uuid.New()
 	groupID := uuid.New()
@@ -339,6 +405,11 @@ func TestSendGroupMessage_BroadcastsToAllMembers(t *testing.T) {
 	// Mock setup
 	mockGroupRepo.On("IsMember", groupID, senderID).Return(true, nil)
 	mockMsgRepo.On("Create", mock.Anything).Return(nil)
+	// Mock: Create Receipts [F06]
+	// Mock: Create Receipts [F06] - Batch
+	mockReceiptRepo.On("CreateBatch", mock.MatchedBy(func(receipts []*models.MessageReceipt) bool {
+		return len(receipts) == 4
+	})).Return(nil).Once()
 	mockGroupRepo.On("GetMembers", groupID).Return(members, nil)
 	mockConvRepo.On("Upsert", mock.Anything).Return(nil)
 
@@ -369,7 +440,9 @@ func TestSendGroupMessage_UpdatesConversationForAllMembers(t *testing.T) {
 	mockGroupRepo := new(MockGroupRepo)
 	mockHub := new(MockHub)
 
-	svc := service.NewMessageService(mockMsgRepo, mockConvRepo, mockGroupRepo, mockHub)
+	mockReceiptRepo := new(MockMessageReceiptRepo)
+
+	svc := service.NewMessageService(mockMsgRepo, mockConvRepo, mockGroupRepo, mockReceiptRepo, mockHub)
 
 	senderID := uuid.New()
 	member1 := uuid.New()
@@ -384,6 +457,11 @@ func TestSendGroupMessage_UpdatesConversationForAllMembers(t *testing.T) {
 
 	mockGroupRepo.On("IsMember", groupID, senderID).Return(true, nil)
 	mockMsgRepo.On("Create", mock.Anything).Return(nil)
+	// Mock: Create Receipts [F06]
+	// Mock: Create Receipts [F06] - Batch
+	mockReceiptRepo.On("CreateBatch", mock.MatchedBy(func(receipts []*models.MessageReceipt) bool {
+		return len(receipts) == 2
+	})).Return(nil).Once()
 	mockGroupRepo.On("GetMembers", groupID).Return(members, nil)
 
 	// Expect conversation upsert for sender (unread = 0)
@@ -417,7 +495,9 @@ func TestSendGroupMessage_SenderDoesNotReceiveOwnMessage(t *testing.T) {
 	mockGroupRepo := new(MockGroupRepo)
 	mockHub := new(MockHub)
 
-	svc := service.NewMessageService(mockMsgRepo, mockConvRepo, mockGroupRepo, mockHub)
+	mockReceiptRepo := new(MockMessageReceiptRepo)
+
+	svc := service.NewMessageService(mockMsgRepo, mockConvRepo, mockGroupRepo, mockReceiptRepo, mockHub)
 
 	senderID := uuid.New()
 	member1 := uuid.New()
@@ -430,6 +510,11 @@ func TestSendGroupMessage_SenderDoesNotReceiveOwnMessage(t *testing.T) {
 
 	mockGroupRepo.On("IsMember", groupID, senderID).Return(true, nil)
 	mockMsgRepo.On("Create", mock.Anything).Return(nil)
+	// Mock: Create Receipts [F06]
+	// Mock: Create Receipts [F06] - Batch
+	mockReceiptRepo.On("CreateBatch", mock.MatchedBy(func(receipts []*models.MessageReceipt) bool {
+		return len(receipts) == 1
+	})).Return(nil).Once()
 	mockGroupRepo.On("GetMembers", groupID).Return(members, nil)
 	mockConvRepo.On("Upsert", mock.Anything).Return(nil)
 	mockConvRepo.On("IncrementUnread", member1, "group", groupID).Return(nil)
@@ -445,4 +530,57 @@ func TestSendGroupMessage_SenderDoesNotReceiveOwnMessage(t *testing.T) {
 	mockHub.AssertNotCalled(t, "SendToUser", senderID, mock.Anything)
 	// But member1 should receive it
 	mockHub.AssertCalled(t, "SendToUser", member1, mock.Anything)
+}
+
+func TestGetMessageReceipts_Success_Sender(t *testing.T) {
+	mockMsgRepo := new(MockMessageRepo)
+	mockConvRepo := new(MockConversationRepo)
+	mockGroupRepo := new(MockGroupRepo)
+	mockHub := new(MockHub)
+	mockReceiptRepo := new(MockMessageReceiptRepo)
+
+	svc := service.NewMessageService(mockMsgRepo, mockConvRepo, mockGroupRepo, mockReceiptRepo, mockHub)
+
+	userID := uuid.New()
+	msgID := uuid.New()
+
+	msg := &models.Message{
+		BaseModel: models.BaseModel{ID: msgID},
+		SenderID:  userID,
+	}
+
+	mockMsgRepo.On("FindByID", msgID).Return(msg, nil)
+
+	mockReceipts := []models.MessageReceipt{{Status: "READ"}}
+	mockReceiptRepo.On("FindByMessageID", msgID).Return(mockReceipts, nil)
+
+	res, err := svc.GetMessageReceipts(userID, msgID)
+	assert.NoError(t, err)
+	assert.Len(t, res, 1)
+}
+
+func TestGetMessageReceipts_Forbidden(t *testing.T) {
+	mockMsgRepo := new(MockMessageRepo)
+	mockConvRepo := new(MockConversationRepo)
+	mockGroupRepo := new(MockGroupRepo)
+	mockHub := new(MockHub)
+	mockReceiptRepo := new(MockMessageReceiptRepo)
+
+	svc := service.NewMessageService(mockMsgRepo, mockConvRepo, mockGroupRepo, mockReceiptRepo, mockHub)
+
+	userID := uuid.New()
+	otherUser := uuid.New()
+	msgID := uuid.New()
+
+	msg := &models.Message{
+		BaseModel: models.BaseModel{ID: msgID},
+		SenderID:  otherUser, // Not sender
+		// No ReceiverID, No GroupID -> generic forbidden
+	}
+
+	mockMsgRepo.On("FindByID", msgID).Return(msg, nil)
+
+	_, err := svc.GetMessageReceipts(userID, msgID)
+	assert.Error(t, err)
+	assert.Equal(t, "access denied", err.Error())
 }
