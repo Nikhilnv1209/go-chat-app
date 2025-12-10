@@ -67,6 +67,7 @@ func main() {
 	authHandler := handlers.NewAuthHandler(authService)
 	wsHandler := handlers.NewWSHandler(hub, authService)
 	groupHandler := handlers.NewGroupHandler(groupService, authService)
+	chatHandler := handlers.NewChatHandler(convRepo, msgRepo, userRepo, groupRepo, authService)
 
 	// INJECT MessageService into Hub/Client factory if needed?
 	// Actually, the new handlers.WSHandler logic just passes the hub.
@@ -90,6 +91,10 @@ func main() {
 		groupRoutes.POST("", groupHandler.CreateGroup)
 		groupRoutes.POST("/:id/members", groupHandler.AddMember)
 	}
+
+	// Chat Routes (Inbox & History)
+	r.GET("/conversations", chatHandler.GetConversations)
+	r.GET("/messages", chatHandler.GetMessages)
 
 	// WebSocket Route
 	r.GET("/ws", wsHandler.ServeWS)

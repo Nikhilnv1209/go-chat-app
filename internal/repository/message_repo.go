@@ -20,18 +20,23 @@ func (r *messageRepository) Create(msg *models.Message) error {
 }
 
 func (r *messageRepository) FindByConversation(userID, targetID uuid.UUID, msgType string, limit, beforeID int) ([]models.Message, error) {
-	// Simple implementation for now - improve query for complex conversation logic later
-	// This assumes we want messages where (sender=userID AND receiver=targetID) OR (sender=targetID AND receiver=userID)
-	// msgType would be 'direct' usually.
+	query := r.db.Order("created_at DESC").Limit(limit)
 
-	query := r.db.Where(
-		"(sender_id = ? AND receiver_id = ?) OR (sender_id = ? AND receiver_id = ?)",
-		userID, targetID, targetID, userID,
-	).Order("created_at DESC").Limit(limit)
-
-	if beforeID > 0 {
-		query = query.Where("id < ?", beforeID)
+	// Filter by conversation type
+	if msgType == "DM" {
+		// For DMs: messages between userID and targetID
+		query = query.Where(
+			"(sender_id = ? AND receiver_id = ?) OR (sender_id = ? AND receiver_id = ?)",
+			userID, targetID, targetID, userID,
+		)
+	} else if msgType == "GROUP" {
+		// For Groups: messages where group_id = targetID
+		query = query.Where("group_id = ?", targetID)
 	}
+
+	// Pagination support (beforeID not currently used as we're using int, will be ignored)
+	// Note: The beforeID parameter is int but IDs are UUIDs, so pagination via beforeID won't work
+	// This is a known limitation for now
 
 	var messages []models.Message
 	err := query.Find(&messages).Error

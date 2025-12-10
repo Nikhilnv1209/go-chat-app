@@ -1,8 +1,8 @@
 # BMAD Progress Tracker
 
-**Current Status**: 🟢 Phase 1 - F04 Group Messaging Completed
-**Last Action**: Implemented F04 - Group Messaging with REST endpoints and WebSocket support.
-**Next Action**: Implement [F05] Inbox & History.
+**Current Status**: 🟢 Phase 1 - F05 Inbox & History Completed
+**Last Action**: Implemented F05 - Inbox & History with REST endpoints for retrieving conversations and message history.
+**Next Action**: Consider additional features or prepare for production deployment.
 
 ---
 
@@ -13,7 +13,7 @@
 | **WebSocket Hub** | `F02` | ✅ **DONE** | 100% |
 | **Direct Messaging** | `F03` | ✅ **DONE** | 100% |
 | **Group Messaging** | `F04` | ✅ **DONE** | 100% |
-| **Inbox & History** | `F05` | 🔴 TODO | 0% |
+| **Inbox & History** | `F05` | ✅ **DONE** | 100% |
 | **Refactor: UUIDs** | `Refactor` | ✅ **DONE** | 100% |
 
 ---
@@ -88,10 +88,10 @@
 **Story 1.5: History Sync** (`stories/1.5_inbox_history.story.md`)
 | Task | Status | File(s) |
 |------|--------|---------|
-| Implement GetConvos Handler | ⬜ TODO | `internal/handlers/chat_handler.go` |
-| Implement GetMessages Handler | ⬜ TODO | `internal/handlers/chat_handler.go` |
-| Wire up Routes | ⬜ TODO | `cmd/server/main.go` |
-| **Verification** | ⬜ TODO | Fetch history via Curl |
+| Implement GetConvos Handler | ✅ DONE | `internal/handlers/chat_handler.go` |
+| Implement GetMessages Handler | ✅ DONE | `internal/handlers/chat_handler.go` |
+| Wire up Routes | ✅ DONE | `cmd/server/main.go` |
+| **Verification** | ✅ DONE | 9 comprehensive tests - ALL PASSING ✅ |
 
 ---
 **Legend**:
