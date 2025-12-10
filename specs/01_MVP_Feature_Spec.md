@@ -89,15 +89,49 @@ The goal of this Epic is to deliver a functional "WhatsApp-lite" backend. It bri
     *   `GET /conversations`: Returns list of chats.
     *   `GET /messages`: Returns paginated history.
 *   **Acceptance Criteria**:
-    *   [ ] Returns correct list of DMs and Groups.
-    *   [ ] History loads in correct chronological order.
+    *   [x] Returns correct list of DMs and Groups.
+    *   [x] History loads in correct chronological order.
+
+### Story 1.6: Read Receipts [F06]
+**As a** user,
+**I want to** see if my message has been delivered and read,
+**So that** I know the recipient has seen my message.
+
+*   **Context**: Implements the existing `MessageReceipt` model with SENT/DELIVERED/READ statuses.
+*   **Technical Implementation**:
+    *   Create `MessageReceiptRepository`.
+    *   Update `MessageService` to create receipts on send.
+    *   Add `POST /messages/:id/read` endpoint.
+    *   Handle `message_delivered` WebSocket event.
+*   **Acceptance Criteria**:
+    *   [ ] Receipt with status SENT is created when message is sent.
+    *   [ ] Receipt updates to DELIVERED when receiver acknowledges.
+    *   [ ] Receipt updates to READ when receiver marks as read.
+    *   [ ] Sender receives `receipt_update` WebSocket event.
+
+### Story 1.7: Typing Indicators [F07]
+**As a** user,
+**I want to** see when someone is typing a message to me,
+**So that** I know they are actively responding.
+
+*   **Context**: Stateless, WebSocket-only feature for real-time UX.
+*   **Technical Implementation**:
+    *   Handle `typing_start` and `typing_stop` WebSocket events.
+    *   Broadcast typing status to conversation participants.
+    *   No database persistence required.
+*   **Acceptance Criteria**:
+    *   [ ] When User A types, User B receives `user_typing` event.
+    *   [ ] When User A stops, User B receives `user_stopped_typing` event.
+    *   [ ] Works for both DMs and Group chats.
 
 ---
 
 ## 4. Work Order (for Development Agent)
 1.  [x] **Initialize**: Setup Go Modules, Directory Structure, Docker. (Turbo)
 2.  [x] **Database**: Run Migrations (GORM AutoMigrate).
-3.  **Auth Module**: Implement Story 1.1.
-4.  **WS Module**: Implement Story 1.2.
-5.  **Messaging Logic**: Implement Story 1.3 and 1.4.
-6.  **REST API**: Implement Story 1.5.
+3.  [x] **Auth Module**: Implement Story 1.1.
+4.  [x] **WS Module**: Implement Story 1.2.
+5.  [x] **Messaging Logic**: Implement Story 1.3 and 1.4.
+6.  [x] **REST API**: Implement Story 1.5.
+7.  [ ] **Read Receipts**: Implement Story 1.6.
+8.  [ ] **Typing Indicators**: Implement Story 1.7.

@@ -72,6 +72,22 @@ We will strictly follow the testing pyramid to ensure reliability without slowin
 | T05.02 | Get Messages | GET /messages?target_id=2 | Returns paginated history. |
 | T05.03 | Pagination | GET /messages?before_id=100 | Returns only messages with ID < 100. |
 
+### F. Read Receipts [F06]
+| ID | Test Case | Scenario | Validation |
+| :--- | :--- | :--- | :--- |
+| T06.01 | Receipt Creation | A sends message to B | `MessageReceipt` created with status=SENT |
+| T06.02 | Delivery Update | B's client sends `message_delivered` | Receipt status updates to DELIVERED |
+| T06.03 | Read Update | B calls POST /messages/:id/read | Receipt status updates to READ, A receives `receipt_update` event |
+| T06.04 | Query Receipts | GET /messages/:id/receipts | Returns receipt status for all recipients |
+
+### G. Typing Indicators [F07]
+| ID | Test Case | Scenario | Validation |
+| :--- | :--- | :--- | :--- |
+| T07.01 | Typing Start DM | A sends `typing_start` to B | B receives `user_typing` event |
+| T07.02 | Typing Stop DM | A sends `typing_stop` | B receives `user_stopped_typing` event |
+| T07.03 | Typing in Group | A sends `typing_start` in Group(A,B,C) | B and C receive `user_typing` (not A) |
+| T07.04 | Rate Limiting | A spams typing events | Server throttles to max 1/second |
+
 ---
 
 ## 3. Manual Verification Steps (Post-Implementation)
@@ -90,6 +106,10 @@ Since we don't have a frontend, we will use **Postman** and **Websocket Client**
 6.  **Connect WS** (Bob): `wscat -c ws://localhost:8080/ws?token=TokenB`
 7.  **Send (Alice)**: `{"type":"send", "to": 2, "content":"Hi Bob"}`
 8.  **Verify**: Bob's terminal shows the JSON message.
+9.  **Typing (Alice)**: `{"type":"typing_start", "conversation_type":"DM", "target_id":"bob-uuid"}`
+10. **Verify**: Bob receives `user_typing` event.
+11. **Read Receipt (Bob)**: `POST /messages/:id/read`
+12. **Verify**: Alice receives `receipt_update` event with status=READ.
 
 ---
 

@@ -9,11 +9,13 @@
 
 | Feature ID | Name | Story File | Status |
 |------------|------|------------|--------|
-| **F01** | User Authentication | `stories/1.1_user_auth.story.md` | TODO |
-| **F02** | WebSocket Hub | `stories/1.2_websocket_hub.story.md` | TODO |
-| **F03** | Direct Messaging | `stories/1.3_direct_messaging.story.md` | TODO |
-| **F04** | Group Messaging | `stories/1.4_group_messaging.story.md` | TODO |
-| **F05** | Inbox & History | `stories/1.5_inbox_history.story.md` | TODO |
+| **F01** | User Authentication | `stories/1.1_user_auth.story.md` | DONE |
+| **F02** | WebSocket Hub | `stories/1.2_websocket_hub.story.md` | DONE |
+| **F03** | Direct Messaging | `stories/1.3_direct_messaging.story.md` | DONE |
+| **F04** | Group Messaging | `stories/1.4_group_messaging.story.md` | DONE |
+| **F05** | Inbox & History | `stories/1.5_inbox_history.story.md` | DONE |
+| **F06** | Read Receipts | `stories/1.6_read_receipts.story.md` | TODO |
+| **F07** | Typing Indicators | `stories/1.7_typing_indicators.story.md` | TODO |
 
 ---
 
@@ -51,6 +53,19 @@
 | S05.01 | Get Conversation List | T05.01 |
 | S05.02 | Get Message History | T05.02, T05.03 |
 
+### F06: Read Receipts
+| Story ID | Description | Test Cases |
+|----------|-------------|------------|
+| S06.01 | Create Receipt on Send | T06.01 |
+| S06.02 | Update to DELIVERED | T06.02 |
+| S06.03 | Update to READ | T06.03 |
+
+### F07: Typing Indicators
+| Story ID | Description | Test Cases |
+|----------|-------------|------------|
+| S07.01 | Typing Start Event | T07.01 |
+| S07.02 | Typing Stop Event | T07.02 |
+
 ---
 
 ## Requirements Traceability
@@ -65,6 +80,10 @@
 | R06 | Message persistence | F03, F04 |
 | R07 | Unified MessageReceipt for DM & Group | F03, F04 |
 | R08 | Inbox sorted by last_message_at | F05 |
+| R09 | Message delivery confirmation (SENT/DELIVERED/READ) | F06 |
+| R10 | Receipt status queryable via API | F06 |
+| R11 | Real-time typing status broadcast | F07 |
+| R12 | Automatic timeout for stale typing indicators | F07 |
 
 ---
 
@@ -76,4 +95,6 @@ Use these tags in code comments and commit messages:
 // [S01.02] Login Implementation
 // [R03] JWT 24h expiry
 // [T01.04] Wrong password test
+// [F06] Read Receipts
+// [F07] Typing Indicators
 ```

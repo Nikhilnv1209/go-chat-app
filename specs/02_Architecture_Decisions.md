@@ -127,6 +127,44 @@ sqlDB.SetConnMaxLifetime(time.Hour)
 
 ---
 
+### ADR-001.8: Read Receipts with Three-State Model [F06]
+**Decision**: Implement read receipts using a three-state model: SENT → DELIVERED → READ.
+
+**Rationale**:
+*   **SENT**: Created when message is saved to database.
+*   **DELIVERED**: Updated when receiver's client acknowledges receipt via WebSocket.
+*   **READ**: Updated when user explicitly views the message (REST endpoint).
+
+**Implementation**:
+*   `MessageReceipt` table with `status` field.
+*   WebSocket event `message_delivered` for client acknowledgment.
+*   REST endpoint `POST /messages/:id/read` for marking as read.
+*   Broadcast `receipt_update` event to sender when status changes.
+
+**Consequence**: Provides WhatsApp-like delivery confirmation UX.
+
+---
+
+### ADR-001.9: Stateless Typing Indicators [F07]
+**Decision**: Implement typing indicators as stateless WebSocket events with no database persistence.
+
+**Rationale**:
+*   Typing status is ephemeral and doesn't need historical tracking.
+*   Reduces database writes significantly (typing events are frequent).
+*   Simpler implementation with no cleanup logic needed.
+
+**Implementation**:
+*   Client sends `typing_start` and `typing_stop` events.
+*   Server broadcasts to conversation participants immediately.
+*   No state stored in Hub or database.
+*   Client responsible for auto-stopping after 3 seconds of inactivity.
+
+**Consequence**:
+*   **Positive**: Zero database overhead, instant propagation.
+*   **Negative**: If server restarts, typing state is lost (acceptable for this feature).
+
+---
+
 ## 3. Alternatives Considered
 
 | Decision | Alternative | Why Rejected |
@@ -135,9 +173,11 @@ sqlDB.SetConnMaxLifetime(time.Hour)
 | GORM | Raw SQL | Slower development |
 | Mutex in Hub | sync.Map | Less control, harder to debug |
 | godotenv | Viper | Simpler for MVP |
+| Read Receipts: 3-state | 2-state (Sent/Read) | Less granular, doesn't show delivery |
+| Typing Indicators: Stateless | Store in Redis | Unnecessary complexity for MVP |
 
 ---
 
 ## 4. Consequences
-*   **Positive**: Clear structure, testable, maintainable.
+*   **Positive**: Clear structure, testable, maintainable, feature-rich UX.
 *   **Negative**: Slight overhead from abstraction layers.

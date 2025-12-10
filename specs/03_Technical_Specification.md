@@ -433,7 +433,122 @@ CREATE TABLE conversations (
 *   `POST /groups`
 *   `GET /conversations`
 *   `GET /messages`
+*   `POST /messages/:id/read` **[F06]** - Mark message as read
+*   `GET /messages/:id/receipts` **[F06]** - Query receipt status
 
 ### WebSocket Events
-*   **Client**: `send_message`, `mark_read`
-*   **Server**: `new_message`, `receipt_update`
+
+#### Client → Server
+*   `send_message` - Send a DM or group message
+*   `message_delivered` **[F06]** - Acknowledge message delivery
+*   `typing_start` **[F07]** - User started typing
+*   `typing_stop` **[F07]** - User stopped typing
+
+#### Server → Client
+*   `new_message` - Incoming message notification
+*   `receipt_update` **[F06]** - Receipt status changed (SENT/DELIVERED/READ)
+*   `user_typing` **[F07]** - Another user is typing
+*   `user_stopped_typing` **[F07]** - Another user stopped typing
+
+---
+
+## 10. WebSocket Event Schemas
+
+### Client Events
+
+#### send_message
+```json
+{
+  "type": "send_message",
+  "payload": {
+    "conversation_type": "DM",  // or "GROUP"
+    "target_id": "uuid",
+    "content": "Hello!"
+  }
+}
+```
+
+#### message_delivered [F06]
+```json
+{
+  "type": "message_delivered",
+  "payload": {
+    "message_id": "uuid"
+  }
+}
+```
+
+#### typing_start [F07]
+```json
+{
+  "type": "typing_start",
+  "payload": {
+    "conversation_type": "DM",  // or "GROUP"
+    "target_id": "uuid"
+  }
+}
+```
+
+#### typing_stop [F07]
+```json
+{
+  "type": "typing_stop",
+  "payload": {
+    "conversation_type": "DM",
+    "target_id": "uuid"
+  }
+}
+```
+
+### Server Events
+
+#### new_message
+```json
+{
+  "type": "new_message",
+  "payload": {
+    "id": "uuid",
+    "sender_id": "uuid",
+    "content": "Hello!",
+    "created_at": "2025-12-11T00:30:00Z"
+  }
+}
+```
+
+#### receipt_update [F06]
+```json
+{
+  "type": "receipt_update",
+  "payload": {
+    "message_id": "uuid",
+    "user_id": "uuid",
+    "status": "READ",  // SENT, DELIVERED, READ
+    "updated_at": "2025-12-11T00:30:00Z"
+  }
+}
+```
+
+#### user_typing [F07]
+```json
+{
+  "type": "user_typing",
+  "payload": {
+    "user_id": "uuid",
+    "username": "Alice",
+    "conversation_type": "DM",
+    "target_id": "uuid"
+  }
+}
+```
+
+#### user_stopped_typing [F07]
+```json
+{
+  "type": "user_stopped_typing",
+  "payload": {
+    "user_id": "uuid",
+    "conversation_type": "DM",
+    "target_id": "uuid"
+  }
+}
+```
