@@ -14,7 +14,7 @@
 | **F03** | Direct Messaging | `stories/1.3_direct_messaging.story.md` | DONE |
 | **F04** | Group Messaging | `stories/1.4_group_messaging.story.md` | DONE |
 | **F05** | Inbox & History | `stories/1.5_inbox_history.story.md` | DONE |
-| **F06** | Read Receipts | `stories/1.6_read_receipts.story.md` | TODO |
+| **F06** | Read Receipts | `stories/1.6_read_receipts.story.md` | DONE |
 | **F07** | Typing Indicators | `stories/1.7_typing_indicators.story.md` | TODO |
 
 ---

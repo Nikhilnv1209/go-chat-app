@@ -1,8 +1,8 @@
 # BMAD Progress Tracker
 
-**Current Status**: 🟢 Phase 1 - F05 Inbox & History Completed
-**Last Action**: Implemented F05 - Inbox & History with REST endpoints for retrieving conversations and message history.
-**Next Action**: Consider additional features or prepare for production deployment.
+**Current Status**: 🟢 Phase 1 - F06 Read Receipts Completed
+**Last Action**: Implemented F06 - Read Receipts with receipt creation, delivery/read status updates, and receipt query API.
+**Next Action**: Implement F07 (Typing Indicators) or prepare for production deployment.
 
 ---
 
@@ -14,6 +14,8 @@
 | **Direct Messaging** | `F03` | ✅ **DONE** | 100% |
 | **Group Messaging** | `F04` | ✅ **DONE** | 100% |
 | **Inbox & History** | `F05` | ✅ **DONE** | 100% |
+| **Read Receipts** | `F06` | ✅ **DONE** | 100% |
+| **Typing Indicators** | `F07` | ⬜ **TODO** | 0% |
 | **Refactor: UUIDs** | `Refactor` | ✅ **DONE** | 100% |
 
 ---
@@ -92,6 +94,32 @@
 | Implement GetMessages Handler | ✅ DONE | `internal/handlers/chat_handler.go` |
 | Wire up Routes | ✅ DONE | `cmd/server/main.go` |
 | **Verification** | ✅ DONE | 9 comprehensive tests - ALL PASSING ✅ |
+
+---
+
+### [F06] Read Receipts
+**Story 1.6: Read Receipts** (`stories/1.6_read_receipts.story.md`)
+| Task | Status | File(s) |
+|------|--------|---------|
+| Implement MessageReceipt Repository | ✅ DONE | `internal/repository/message_receipt_repo.go` |
+| Create Receipt on Message Send | ✅ DONE | `internal/service/message_service.go` |
+| Handle `message_delivered` WebSocket Event | ✅ DONE | `internal/websocket/message_handler.go` |
+| Implement `POST /messages/:id/read` Endpoint | ✅ DONE | `internal/handlers/chat_handler.go` |
+| Implement `GET /messages/:id/receipts` Endpoint | ✅ DONE | `internal/handlers/chat_handler.go` |
+| Broadcast `receipt_update` Event | ✅ DONE | `internal/service/message_service.go` |
+| Wire up Receipt Repository in `main.go` | ✅ DONE | `cmd/server/main.go` |
+| **Verification** | ✅ DONE | 6 receipt-related tests - ALL PASSING ✅ |
+
+---
+
+### [F07] Typing Indicators
+**Story 1.7: Typing Indicators** (`stories/1.7_typing_indicators.story.md`)
+| Task | Status | File(s) |
+|------|--------|---------|
+| Implement `typing_start` in WS Handler | ⬜ TODO | `internal/websocket/message_handler.go` |
+| Implement `typing_stop` in WS Handler | ⬜ TODO | `internal/websocket/message_handler.go` |
+| Add Broadcast Logic to Hub/Service | ⬜ TODO | `internal/service/message_service.go` |
+| **Verification** | ⬜ TODO | Verify real-time events via WS |
 
 ---
 **Legend**:
