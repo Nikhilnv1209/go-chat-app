@@ -6,6 +6,7 @@ A high-performance, real-time chat application backend built with Go (Golang).
 - **Real-time Messaging**: Powered by WebSockets for instant communication.
 - **Direct Messaging**: One-on-one private conversations with unified receipt tracking.
 - **Group Messaging**: Create groups and broadcast messages to multiple members.
+- **Inbox & History**: REST APIs to fetch conversation list and message history.
 - **Authentication**: Secure JWT-based signup and login flow.
 - **Data Persistence**: Robust PostgreSQL database integration using GORM.
 - **Scalable Architecture**: Refactored to use UUIDs for all primary and foreign keys.
@@ -47,6 +48,10 @@ go-chat-app/
 ```
 
 ## ⚙️ Setup & Installation
+
+> **Looking to deploy?**
+> - [Docker Deployment Guide](docs/deployment/docker-compose.md) (Local/VPS)
+> - [Free Hosting Guide](docs/deployment/free-tier.md) (Render + Neon)
 
 ### 1. Clone the repository
 ```bash
@@ -97,6 +102,8 @@ To run the automated unit tests for services and handlers:
 ```bash
 go test ./...
 ```
+
+For comprehensive manual testing scenarios (including WebSocket verify), see the [Manual Testing Guide](docs/testing/manual-guide.md).
 
 ## 🔌 API Documentation
 
@@ -167,6 +174,63 @@ go test ./...
   }
   ```
 
+### Inbox & History
+
+#### Get Conversations (Inbox)
+- **Endpoint**: `GET /conversations`
+- **Headers**: `Authorization: Bearer <YOUR_JWT_TOKEN>`
+- **Description**: Returns all conversations (DMs and Groups) for the authenticated user, sorted by last message time.
+- **Response**: `200 OK`
+  ```json
+  [
+    {
+      "id": "conversation-uuid",
+      "type": "DM",
+      "target_id": "user-uuid",
+      "target_name": "Bob",
+      "last_message_at": "2023-10-27T10:00:00Z",
+      "unread_count": 3
+    },
+    {
+      "id": "conversation-uuid-2",
+      "type": "GROUP",
+      "target_id": "group-uuid",
+      "target_name": "Family",
+      "last_message_at": "2023-10-26T09:00:00Z",
+      "unread_count": 0
+    }
+  ]
+  ```
+
+#### Get Message History
+- **Endpoint**: `GET /messages`
+- **Headers**: `Authorization: Bearer <YOUR_JWT_TOKEN>`
+- **Query Parameters**:
+  - `target_id` (required): UUID of the user (for DM) or group (for GROUP)
+  - `type` (optional): `DM` or `GROUP` (defaults to `DM`)
+  - `limit` (optional): Maximum number of messages to return (defaults to 50)
+- **Description**: Returns message history for a specific conversation. Automatically resets unread count.
+- **Example**: `GET /messages?target_id=uuid-of-user&type=DM&limit=20`
+- **Response**: `200 OK`
+  ```json
+  [
+    {
+      "id": "msg-uuid-1",
+      "sender_id": "user-uuid",
+      "receiver_id": "your-uuid",
+      "content": "Hello!",
+      "created_at": "2023-10-27T10:01:00Z"
+    },
+    {
+      "id": "msg-uuid-2",
+      "sender_id": "your-uuid",
+      "receiver_id": "user-uuid",
+      "content": "Hey there!",
+      "created_at": "2023-10-27T10:00:00Z"
+    }
+  ]
+  ```
+
 ### Real-time Communication (WebSocket)
 
 #### Connect to Hub
@@ -224,7 +288,7 @@ go test ./...
 
 ## 📝 Future Roadmap
 - [x] **Group Messaging**: Create groups and broadcast messages.
-- [ ] **Inbox & History API**: REST endpoints to fetch conversation list and message history.
+- [x] **Inbox & History API**: REST endpoints to fetch conversation list and message history.
 - [ ] **Frontend**: React/Vue/Mobile client implementation.
 - [ ] **Media Support**: Image and file sharing.
 
