@@ -48,6 +48,7 @@ func main() {
 	msgRepo := repository.NewMessageRepository(db)
 	convRepo := repository.NewConversationRepository(db)
 	groupRepo := repository.NewGroupRepository(db)
+	receiptRepo := repository.NewMessageReceiptRepository(db) // [F06]
 
 	// WebSocket Hub
 	// We create this early because MessageService needs it
@@ -60,14 +61,15 @@ func main() {
 		Expiration: cfg.JWT.Expiration,
 	})
 	authService := service.NewAuthService(userRepo, jwtService)
-	msgService := service.NewMessageService(msgRepo, convRepo, groupRepo, hub)
+	msgService := service.NewMessageService(msgRepo, convRepo, groupRepo, receiptRepo, hub) // [F06]
+
 	groupService := service.NewGroupService(groupRepo)
 
 	// Handlers
 	authHandler := handlers.NewAuthHandler(authService)
 	wsHandler := handlers.NewWSHandler(hub, authService)
 	groupHandler := handlers.NewGroupHandler(groupService, authService)
-	chatHandler := handlers.NewChatHandler(convRepo, msgRepo, userRepo, groupRepo, authService)
+	chatHandler := handlers.NewChatHandler(convRepo, msgRepo, userRepo, groupRepo, authService, msgService)
 
 	// INJECT MessageService into Hub/Client factory if needed?
 	// Actually, the new handlers.WSHandler logic just passes the hub.
@@ -85,16 +87,22 @@ func main() {
 		authRoutes.POST("/login", authHandler.Login)
 	}
 
+	// Chat Routes (Inbox & History)
+	// Grouping chat-related routes for better organization
+	chatRoutes := r.Group("/") // Use root path for chat routes to maintain existing URLs
+	{
+		chatRoutes.GET("/conversations", chatHandler.GetConversations)
+		chatRoutes.GET("/messages", chatHandler.GetMessages)
+		chatRoutes.POST("/messages/:id/read", chatHandler.MarkRead)
+		chatRoutes.GET("/messages/:id/receipts", chatHandler.GetReceipts)
+	}
+
 	// Group Routes
 	groupRoutes := r.Group("/groups")
 	{
 		groupRoutes.POST("", groupHandler.CreateGroup)
 		groupRoutes.POST("/:id/members", groupHandler.AddMember)
 	}
-
-	// Chat Routes (Inbox & History)
-	r.GET("/conversations", chatHandler.GetConversations)
-	r.GET("/messages", chatHandler.GetMessages)
 
 	// WebSocket Route
 	r.GET("/ws", wsHandler.ServeWS)

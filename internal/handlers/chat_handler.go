@@ -17,6 +17,7 @@ type ChatHandler struct {
 	userRepo    repository.UserRepository
 	groupRepo   repository.GroupRepository
 	authService service.AuthService
+	msgService  service.MessageService
 }
 
 func NewChatHandler(
@@ -25,6 +26,7 @@ func NewChatHandler(
 	userRepo repository.UserRepository,
 	groupRepo repository.GroupRepository,
 	authService service.AuthService,
+	msgService service.MessageService,
 ) *ChatHandler {
 	return &ChatHandler{
 		convRepo:    convRepo,
@@ -32,6 +34,7 @@ func NewChatHandler(
 		userRepo:    userRepo,
 		groupRepo:   groupRepo,
 		authService: authService,
+		msgService:  msgService,
 	}
 }
 
@@ -170,7 +173,8 @@ func (h *ChatHandler) GetMessages(c *gin.Context) {
 	}
 
 	// 4. Fetch messages
-	messages, err := h.msgRepo.FindByConversation(userID, targetID, msgType, limit, 0)
+	// We rely on repository here but ideally could go through service
+	messages, err := h.msgService.GetHistory(userID, targetID, msgType, limit, 0)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to fetch messages"})
 		return
@@ -181,4 +185,70 @@ func (h *ChatHandler) GetMessages(c *gin.Context) {
 
 	// 6. Return messages
 	c.JSON(http.StatusOK, messages)
+}
+
+// MarkRead handles POST /messages/:id/read
+func (h *ChatHandler) MarkRead(c *gin.Context) {
+	// 1. Auth check
+	tokenString := c.GetHeader("Authorization")
+	if tokenString == "" {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "authorization token required"})
+		return
+	}
+	if len(tokenString) > 7 && tokenString[:7] == "Bearer " {
+		tokenString = tokenString[7:]
+	}
+	userID, err := h.authService.ValidateToken(tokenString)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid token"})
+		return
+	}
+
+	// 2. Parse ID param
+	messageIDStr := c.Param("id")
+	messageID, err := uuid.Parse(messageIDStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid message id"})
+		return
+	}
+
+	// 3. Mark as read
+	if err := h.msgService.MarkAsRead(userID, []uuid.UUID{messageID}); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to mark as read"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"status": "READ", "message_id": messageID})
+}
+
+func (h *ChatHandler) GetReceipts(c *gin.Context) {
+	// 1. Auth check
+	tokenString := c.GetHeader("Authorization")
+	if tokenString == "" {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "authorization token required"})
+		return
+	}
+	if len(tokenString) > 7 && tokenString[:7] == "Bearer " {
+		tokenString = tokenString[7:]
+	}
+	userID, err := h.authService.ValidateToken(tokenString)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid token"})
+		return
+	}
+
+	messageIDStr := c.Param("id")
+	messageID, err := uuid.Parse(messageIDStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid message ID"})
+		return
+	}
+
+	receipts, err := h.msgService.GetMessageReceipts(userID, messageID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, receipts)
 }

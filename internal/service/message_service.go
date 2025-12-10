@@ -18,23 +18,26 @@ type Hub interface {
 }
 
 type messageService struct {
-	msgRepo   repository.MessageRepository
-	convRepo  repository.ConversationRepository
-	groupRepo repository.GroupRepository
-	hub       Hub
+	msgRepo     repository.MessageRepository
+	convRepo    repository.ConversationRepository
+	groupRepo   repository.GroupRepository
+	receiptRepo repository.MessageReceiptRepository
+	hub         Hub
 }
 
 func NewMessageService(
 	msgRepo repository.MessageRepository,
 	convRepo repository.ConversationRepository,
 	groupRepo repository.GroupRepository,
+	receiptRepo repository.MessageReceiptRepository,
 	hub Hub,
 ) MessageService {
 	return &messageService{
-		msgRepo:   msgRepo,
-		convRepo:  convRepo,
-		groupRepo: groupRepo,
-		hub:       hub,
+		msgRepo:     msgRepo,
+		convRepo:    convRepo,
+		groupRepo:   groupRepo,
+		receiptRepo: receiptRepo,
+		hub:         hub,
 	}
 }
 
@@ -54,7 +57,18 @@ func (s *messageService) SendDirectMessage(senderID, receiverID uuid.UUID, conte
 		return nil, err
 	}
 
-	// 2. Update Conversations (Sender)
+	// 2. Create Receipt with SENT status [F06]
+	receipt := &models.MessageReceipt{
+		MessageID: msg.ID,
+		UserID:    receiverID,
+		Status:    "SENT",
+	}
+	if err := s.receiptRepo.Create(receipt); err != nil {
+		// Log error but don't fail the message send
+		// In production, use proper logging
+	}
+
+	// 3. Update Conversations (Sender)
 	// Upsert Sender's conversation with Receiver
 	s.convRepo.Upsert(&models.Conversation{
 		UserID:        senderID,
@@ -64,11 +78,11 @@ func (s *messageService) SendDirectMessage(senderID, receiverID uuid.UUID, conte
 		UnreadCount:   0, // Sender doesn't have unread
 	})
 
-	// 3. Update Conversations (Receiver)
+	// 4. Update Conversations (Receiver)
 	// Increment Receiver's unread count for conversation with Sender
 	s.convRepo.IncrementUnread(receiverID, "private", senderID)
 
-	// 4. Real-time Delivery via WebSocket
+	// 5. Real-time Delivery via WebSocket
 	payload, _ := json.Marshal(map[string]interface{}{
 		"type":    "new_message",
 		"payload": msg,
@@ -103,14 +117,40 @@ func (s *messageService) SendGroupMessage(senderID, groupID uuid.UUID, content s
 		return nil, err
 	}
 
-	// 3. Get all group members
+	// 3. Create Receipts for all members except sender [F06] - Batch Optimized
 	members, err := s.groupRepo.GetMembers(groupID)
 	if err != nil {
 		return nil, err
 	}
 
+	var receipts []*models.MessageReceipt
+	for _, member := range members {
+		if member.UserID != senderID {
+			receipt := &models.MessageReceipt{
+				BaseModel: models.BaseModel{
+					CreatedAt: time.Now(),
+				},
+				MessageID: msg.ID,
+				UserID:    member.UserID,
+				Status:    "SENT",
+				UpdatedAt: time.Now(),
+			}
+			receipts = append(receipts, receipt)
+		}
+	}
+
+	if len(receipts) > 0 {
+		if err := s.receiptRepo.CreateBatch(receipts); err != nil {
+			// Log error but continue? Or fail?
+			// Ideally fail if data integrity is key, but for chat performant delivery
+			// we might log. For now, strict: return error.
+			return nil, err
+		}
+	}
+
 	// 4. For each member (except sender), update conversation and broadcast
 	for _, member := range members {
+
 		if member.UserID == senderID {
 			// Update sender's conversation without incrementing unread
 			s.convRepo.Upsert(&models.Conversation{
@@ -145,7 +185,69 @@ func (s *messageService) GetHistory(userID, targetID uuid.UUID, convType string,
 }
 
 func (s *messageService) MarkAsRead(userID uuid.UUID, messageIDs []uuid.UUID) error {
-	// Placeholder: In a real app we'd mark specific messages.
-	// For MVP, we likely just rely on checking the conversation unread count via specific endpoint
+	return s.updateReceiptStatus(userID, messageIDs, "READ")
+}
+
+func (s *messageService) MarkAsDelivered(userID uuid.UUID, messageIDs []uuid.UUID) error {
+	return s.updateReceiptStatus(userID, messageIDs, "DELIVERED")
+}
+
+func (s *messageService) updateReceiptStatus(userID uuid.UUID, messageIDs []uuid.UUID, status string) error {
+	for _, msgID := range messageIDs {
+		// 1. Update Receipt Status
+		if err := s.receiptRepo.UpdateStatus(msgID, userID, status); err != nil {
+			// Skip or log error, but continue for other messages
+			continue
+		}
+
+		// 2. Find Message to identify Sender
+		msg, err := s.msgRepo.FindByID(msgID)
+		if err != nil {
+			continue
+		}
+
+		// 3. Broadcast receipt_update to Sender [F06]
+		// Don't broadcast to self if it's a note to self (unlikely)
+		if msg.SenderID != userID {
+			payload, _ := json.Marshal(map[string]interface{}{
+				"type": "receipt_update",
+				"payload": map[string]interface{}{
+					"message_id": msgID,
+					"user_id":    userID, // Who read/received it
+					"status":     status,
+					"updated_at": time.Now(),
+				},
+			})
+			s.hub.SendToUser(msg.SenderID, payload)
+		}
+	}
 	return nil
+}
+
+func (s *messageService) GetMessageReceipts(userID, messageID uuid.UUID) ([]models.MessageReceipt, error) {
+	// 1. Fetch Message to verify access
+	msg, err := s.msgRepo.FindByID(messageID)
+	if err != nil {
+		return nil, err
+	}
+
+	// 2. Validate Access
+	hasAccess := false
+	if msg.SenderID == userID {
+		hasAccess = true
+	} else if msg.ReceiverID != nil && *msg.ReceiverID == userID {
+		hasAccess = true
+	} else if msg.GroupID != nil {
+		isMember, err := s.groupRepo.IsMember(*msg.GroupID, userID)
+		if err == nil && isMember {
+			hasAccess = true
+		}
+	}
+
+	if !hasAccess {
+		return nil, errors.New("access denied")
+	}
+
+	// 3. Fetch Receipts
+	return s.receiptRepo.FindByMessageID(messageID)
 }

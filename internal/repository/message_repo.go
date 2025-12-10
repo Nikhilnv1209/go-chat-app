@@ -19,6 +19,15 @@ func (r *messageRepository) Create(msg *models.Message) error {
 	return r.db.Create(msg).Error
 }
 
+func (r *messageRepository) FindByID(id uuid.UUID) (*models.Message, error) {
+	var msg models.Message
+	err := r.db.First(&msg, "id = ?", id).Error
+	if err != nil {
+		return nil, err
+	}
+	return &msg, nil
+}
+
 func (r *messageRepository) FindByConversation(userID, targetID uuid.UUID, msgType string, limit, beforeID int) ([]models.Message, error) {
 	query := r.db.Order("created_at DESC").Limit(limit)
 

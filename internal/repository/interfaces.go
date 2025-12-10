@@ -17,13 +17,16 @@ type UserRepository interface {
 
 type MessageRepository interface {
 	Create(msg *models.Message) error
+	FindByID(id uuid.UUID) (*models.Message, error)
 	FindByConversation(userID, targetID uuid.UUID, msgType string, limit, beforeID int) ([]models.Message, error)
 }
 
 type MessageReceiptRepository interface {
 	Create(receipt *models.MessageReceipt) error
+	CreateBatch(receipts []*models.MessageReceipt) error
 	UpdateStatus(messageID, userID uuid.UUID, status string) error
-	FindUnreadCount(userID uuid.UUID) (int, error)
+	FindByMessageID(messageID uuid.UUID) ([]models.MessageReceipt, error)
+	FindUnreadCount(userID uuid.UUID) (int64, error)
 }
 
 type GroupRepository interface {

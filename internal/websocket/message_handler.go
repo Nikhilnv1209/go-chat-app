@@ -19,6 +19,10 @@ type SendMessagePayload struct {
 	Content  string    `json:"content"`
 }
 
+type MessageDeliveredPayload struct {
+	MessageID uuid.UUID `json:"message_id"`
+}
+
 // HandleMessage routes incoming WS messages to appropriate services
 func HandleMessage(message []byte, client *Client, msgService service.MessageService) {
 	var wsMsg WSMessage
@@ -40,7 +44,6 @@ func HandleMessage(message []byte, client *Client, msgService service.MessageSer
 			msg, err := msgService.SendDirectMessage(client.UserID, payload.ToUserID, payload.Content)
 			if err != nil {
 				log.Printf("Failed to send DM: %v", err)
-				// TODO: Send error back to client
 				return
 			}
 
@@ -55,7 +58,6 @@ func HandleMessage(message []byte, client *Client, msgService service.MessageSer
 			msg, err := msgService.SendGroupMessage(client.UserID, payload.GroupID, payload.Content)
 			if err != nil {
 				log.Printf("Failed to send group message: %v", err)
-				// TODO: Send error back to client
 				return
 			}
 
@@ -65,6 +67,17 @@ func HandleMessage(message []byte, client *Client, msgService service.MessageSer
 				"payload": msg,
 			})
 			client.Send <- ack
+		}
+
+	case "message_delivered":
+		var payload MessageDeliveredPayload
+		if err := json.Unmarshal(wsMsg.Payload, &payload); err != nil {
+			log.Printf("Invalid Payload for message_delivered: %v", err)
+			return
+		}
+
+		if err := msgService.MarkAsDelivered(client.UserID, []uuid.UUID{payload.MessageID}); err != nil {
+			log.Printf("Failed to mark delivered: %v", err)
 		}
 
 	default:

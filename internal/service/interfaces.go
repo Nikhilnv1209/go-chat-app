@@ -17,6 +17,8 @@ type MessageService interface {
 	SendGroupMessage(senderID, groupID uuid.UUID, content string) (*models.Message, error)
 	GetHistory(userID, targetID uuid.UUID, convType string, limit, beforeID int) ([]models.Message, error)
 	MarkAsRead(userID uuid.UUID, messageIDs []uuid.UUID) error
+	MarkAsDelivered(userID uuid.UUID, messageIDs []uuid.UUID) error
+	GetMessageReceipts(userID, messageID uuid.UUID) ([]models.MessageReceipt, error)
 }
 
 type GroupService interface {
