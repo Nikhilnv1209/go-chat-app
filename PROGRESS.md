@@ -1,8 +1,8 @@
 # BMAD Progress Tracker
 
-**Current Status**: 🟢 Phase 1 - F06 Read Receipts Completed
-**Last Action**: Implemented F06 - Read Receipts with receipt creation, delivery/read status updates, and receipt query API.
-**Next Action**: Implement F07 (Typing Indicators) or prepare for production deployment.
+**Current Status**: 🟢 Phase 1 - F07 Typing Indicators Completed
+**Last Action**: Implemented F07 - Typing Indicators with WebSocket event handlers for typing_start/typing_stop in both DM and GROUP conversations.
+**Next Action**: Ready for production deployment or frontend integration.
 
 ---
 
@@ -15,7 +15,7 @@
 | **Group Messaging** | `F04` | ✅ **DONE** | 100% |
 | **Inbox & History** | `F05` | ✅ **DONE** | 100% |
 | **Read Receipts** | `F06` | ✅ **DONE** | 100% |
-| **Typing Indicators** | `F07` | ⬜ **TODO** | 0% |
+| **Typing Indicators** | `F07` | ✅ **DONE** | 100% |
 | **Refactor: UUIDs** | `Refactor` | ✅ **DONE** | 100% |
 
 ---
@@ -116,10 +116,12 @@
 **Story 1.7: Typing Indicators** (`stories/1.7_typing_indicators.story.md`)
 | Task | Status | File(s) |
 |------|--------|---------|
-| Implement `typing_start` in WS Handler | ⬜ TODO | `internal/websocket/message_handler.go` |
-| Implement `typing_stop` in WS Handler | ⬜ TODO | `internal/websocket/message_handler.go` |
-| Add Broadcast Logic to Hub/Service | ⬜ TODO | `internal/service/message_service.go` |
-| **Verification** | ⬜ TODO | Verify real-time events via WS |
+| Implement `typing_start` in WS Handler | ✅ DONE | `internal/websocket/message_handler.go` |
+| Implement `typing_stop` in WS Handler | ✅ DONE | `internal/websocket/message_handler.go` |
+| Add Broadcast Logic to Hub/Service | ✅ DONE | `internal/service/message_service.go` |
+| Add GetUserInfo and BroadcastTypingIndicator to Service Interface | ✅ DONE | `internal/service/interfaces.go` |
+| Wire up userRepo in MessageService | ✅ DONE | `cmd/server/main.go`, `internal/service/message_service.go` |
+| **Verification** | ✅ DONE | 5 typing-related tests - ALL PASSING ✅ |
 
 ---
 **Legend**:

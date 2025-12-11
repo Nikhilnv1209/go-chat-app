@@ -7,6 +7,8 @@ A high-performance, real-time chat application backend built with Go (Golang).
 - **Direct Messaging**: One-on-one private conversations with unified receipt tracking.
 - **Group Messaging**: Create groups and broadcast messages to multiple members.
 - **Inbox & History**: REST APIs to fetch conversation list and message history.
+- **Read Receipts**: Track message delivery and read status for all conversations.
+- **Typing Indicators**: Real-time typing status for enhanced user experience.
 - **Authentication**: Secure JWT-based signup and login flow.
 - **Data Persistence**: Robust PostgreSQL database integration using GORM.
 - **Scalable Architecture**: Refactored to use UUIDs for all primary and foreign keys.
@@ -261,6 +263,38 @@ For comprehensive manual testing scenarios (including WebSocket verify), see the
   }
   ```
 
+- **Typing Start** (DM or Group):
+  ```json
+  {
+    "type": "typing_start",
+    "payload": {
+      "conversation_type": "DM",
+      "target_id": "uuid-of-recipient-or-group"
+    }
+  }
+  ```
+
+- **Typing Stop** (DM or Group):
+  ```json
+  {
+    "type": "typing_stop",
+    "payload": {
+      "conversation_type": "DM",
+      "target_id": "uuid-of-recipient-or-group"
+    }
+  }
+  ```
+
+- **Message Delivered** (Acknowledge receipt):
+  ```json
+  {
+    "type": "message_delivered",
+    "payload": {
+      "message_id": "uuid-of-message"
+    }
+  }
+  ```
+
 **Events (Server -> Client):**
 - **New Message**:
   ```json
@@ -273,6 +307,88 @@ For comprehensive manual testing scenarios (including WebSocket verify), see the
       "created_at": "timestamp"
     }
   }
+  ```
+
+- **Message Sent** (Acknowledgment):
+  ```json
+  {
+    "type": "message_sent",
+    "payload": {
+      "id": "msg-uuid",
+      "content": "Hello, World!",
+      "sender_id": "your-uuid",
+      "created_at": "timestamp"
+    }
+  }
+  ```
+
+- **User Typing**:
+  ```json
+  {
+    "type": "user_typing",
+    "payload": {
+      "user_id": "uuid-of-typing-user",
+      "username": "Alice",
+      "conversation_type": "DM",
+      "target_id": "conversation-id"
+    }
+  }
+  ```
+
+- **User Stopped Typing**:
+  ```json
+  {
+    "type": "user_stopped_typing",
+    "payload": {
+      "user_id": "uuid-of-user",
+      "conversation_type": "DM",
+      "target_id": "conversation-id"
+    }
+  }
+  ```
+
+- **Receipt Update**:
+  ```json
+  {
+    "type": "receipt_update",
+    "payload": {
+      "message_id": "msg-uuid",
+      "user_id": "uuid-who-read-it",
+      "status": "READ",
+      "updated_at": "timestamp"
+    }
+  }
+  ```
+
+### Read Receipts
+
+#### Mark Message as Read
+- **Endpoint**: `POST /messages/:id/read`
+- **Headers**: `Authorization: Bearer <YOUR_JWT_TOKEN>`
+- **Description**: Marks a message as read by the authenticated user.
+- **Response**: `200 OK`
+  ```json
+  {
+    "message": "message marked as read"
+  }
+  ```
+
+#### Get Message Receipts
+- **Endpoint**: `GET /messages/:id/receipts`
+- **Headers**: `Authorization: Bearer <YOUR_JWT_TOKEN>`
+- **Description**: Retrieves read receipt status for a specific message.
+- **Response**: `200 OK`
+  ```json
+  [
+    {
+      "id": "receipt-uuid",
+      "message_id": "msg-uuid",
+      "user_id": "reader-uuid",
+      "status": "READ",
+      "created_at": "timestamp",
+      "updated_at": "timestamp"
+    }
+  ]
   ```
 
 ## ❓ Troubleshooting
@@ -289,8 +405,11 @@ For comprehensive manual testing scenarios (including WebSocket verify), see the
 ## 📝 Future Roadmap
 - [x] **Group Messaging**: Create groups and broadcast messages.
 - [x] **Inbox & History API**: REST endpoints to fetch conversation list and message history.
+- [x] **Read Receipts**: Track message delivery and read status.
+- [x] **Typing Indicators**: Real-time typing status for DM and group conversations.
 - [ ] **Frontend**: React/Vue/Mobile client implementation.
 - [ ] **Media Support**: Image and file sharing.
+- [ ] **Voice/Video Calling**: WebRTC integration for call support.
 
 ## 📄 License
 This project is licensed under the MIT License.
