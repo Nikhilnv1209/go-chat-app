@@ -211,8 +211,10 @@ For comprehensive manual testing scenarios (including WebSocket verify), see the
   - `target_id` (required): UUID of the user (for DM) or group (for GROUP)
   - `type` (optional): `DM` or `GROUP` (defaults to `DM`)
   - `limit` (optional): Maximum number of messages to return (defaults to 50)
-- **Description**: Returns message history for a specific conversation. Automatically resets unread count.
-- **Example**: `GET /messages?target_id=uuid-of-user&type=DM&limit=20`
+  - `before_id` (optional): Message UUID cursor for pagination - returns messages older than this
+- **Description**: Returns message history for a specific conversation. Supports cursor-based pagination for infinite scroll.
+- **Example (initial)**: `GET /messages?target_id=uuid-of-user&type=DM&limit=20`
+- **Example (pagination)**: `GET /messages?target_id=uuid-of-user&type=DM&limit=20&before_id=oldest-msg-uuid`
 - **Response**: `200 OK`
   ```json
   [
