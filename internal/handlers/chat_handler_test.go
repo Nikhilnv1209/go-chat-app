@@ -50,7 +50,7 @@ func (m *MockMessageRepo) Create(msg *models.Message) error {
 	return args.Error(0)
 }
 
-func (m *MockMessageRepo) FindByConversation(userID, targetID uuid.UUID, msgType string, limit, beforeID int) ([]models.Message, error) {
+func (m *MockMessageRepo) FindByConversation(userID, targetID uuid.UUID, msgType string, limit int, beforeID *uuid.UUID) ([]models.Message, error) {
 	args := m.Called(userID, targetID, msgType, limit, beforeID)
 	return args.Get(0).([]models.Message), args.Error(1)
 }
@@ -171,7 +171,7 @@ func (m *MockMessageService) SendGroupMessage(senderID, groupID uuid.UUID, conte
 	return args.Get(0).(*models.Message), args.Error(1)
 }
 
-func (m *MockMessageService) GetHistory(userID, targetID uuid.UUID, convType string, limit, beforeID int) ([]models.Message, error) {
+func (m *MockMessageService) GetHistory(userID, targetID uuid.UUID, convType string, limit int, beforeID *uuid.UUID) ([]models.Message, error) {
 	args := m.Called(userID, targetID, convType, limit, beforeID)
 	return args.Get(0).([]models.Message), args.Error(1)
 }
@@ -374,7 +374,7 @@ func TestGetMessages_DM_Success(t *testing.T) {
 	// Mock expectations
 	mockAuthService.On("ValidateToken", "test-token").Return(userID, nil)
 	// Change to use Service mock instead of Repo mock
-	mockMsgService.On("GetHistory", userID, targetID, "DM", 50, 0).Return(messages, nil)
+	mockMsgService.On("GetHistory", userID, targetID, mock.Anything, 50, (*uuid.UUID)(nil)).Return(messages, nil)
 	// mockConvRepo.On("ResetUnread"...) removed because it's assumed handled by Service or separate logic if not in Service
 	// But in ChatHandler.GetMessages, we still call convRepo.ResetUnread manually unless we moved that too.
 	// Oh right, I kept ResetUnread inside ChatHandler in my "replace_file_content" logic earlier?
@@ -438,7 +438,7 @@ func TestGetMessages_Group_Success(t *testing.T) {
 	// Mock expectations
 	mockAuthService.On("ValidateToken", "test-token").Return(userID, nil)
 	mockGroupRepo.On("IsMember", groupID, userID).Return(true, nil)
-	mockMsgService.On("GetHistory", userID, groupID, "GROUP", 50, 0).Return(messages, nil)
+	mockMsgService.On("GetHistory", userID, groupID, mock.Anything, 50, (*uuid.UUID)(nil)).Return(messages, nil)
 	mockConvRepo.On("ResetUnread", userID, "GROUP", groupID).Return(nil)
 
 	// Create request
@@ -593,7 +593,7 @@ func TestGetMessages_CustomLimit(t *testing.T) {
 
 	// Mock expectations - should use limit=20
 	mockAuthService.On("ValidateToken", "test-token").Return(userID, nil)
-	mockMsgService.On("GetHistory", userID, targetID, "DM", 20, 0).Return(messages, nil)
+	mockMsgService.On("GetHistory", userID, targetID, mock.Anything, 20, (*uuid.UUID)(nil)).Return(messages, nil)
 	mockConvRepo.On("ResetUnread", userID, "DM", targetID).Return(nil)
 
 	// Create request with custom limit

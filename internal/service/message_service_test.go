@@ -21,7 +21,7 @@ func (m *MockMessageRepo) Create(msg *models.Message) error {
 	args := m.Called(msg)
 	return args.Error(0)
 }
-func (m *MockMessageRepo) FindByConversation(userID, targetID uuid.UUID, msgType string, limit, beforeID int) ([]models.Message, error) {
+func (m *MockMessageRepo) FindByConversation(userID, targetID uuid.UUID, msgType string, limit int, beforeID *uuid.UUID) ([]models.Message, error) {
 	args := m.Called(userID, targetID, msgType, limit, beforeID)
 	return args.Get(0).([]models.Message), args.Error(1)
 }
@@ -238,9 +238,9 @@ func TestGetHistory_Conversation(t *testing.T) {
 		}
 	}
 
-	mockMsgRepo.On("FindByConversation", userID, targetID, "private", limit, 0).Return(mockMessages, nil)
+	mockMsgRepo.On("FindByConversation", userID, targetID, "private", limit, (*uuid.UUID)(nil)).Return(mockMessages, nil)
 
-	history, err := svc.GetHistory(userID, targetID, "private", limit, 0)
+	history, err := svc.GetHistory(userID, targetID, "private", limit, nil)
 	assert.NoError(t, err)
 	assert.Len(t, history, 10)
 	assert.Equal(t, "Message \x00", history[0].Content)
