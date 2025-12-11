@@ -12,9 +12,10 @@ This document outlines the step-by-step execution plan for the coding agents.
     *   `@tanstack/react-query`, `@reduxjs/toolkit`, `react-redux`, `lucide-react`, `clsx`.
 *   [ ] **Task 1.3**: Configure Providers (`app/providers.tsx`). **[Trace: S-SYS-03]**
     *   Wrap app in `ReduxProvider` and `QueryClientProvider`.
-*   [ ] **Task 1.4**: Setup Shadcn/UI (Manual or CLI). **[Trace: S-SYS-04]**
-    *   Create `cn()` utility.
-    *   Add `Button`, `Input`, `Card` components.
+*   [ ] **Task 1.4**: Setup Shadcn/UI. **[Trace: S-SYS-04]**
+    *   Initialize: `npx shadcn@latest init --yes --defaults --base-color slate --template next-16`
+    *   Add components: `npx shadcn@latest add button input card avatar badge scroll-area textarea`
+    *   Creates `cn()` utility automatically in `lib/utils.ts`.
 
 ## Phase 2: Authentication Module
 *   [ ] **Task 2.1**: Implement `authSlice` (Redux) and `api` utility. **[Trace: F-FAU-02]**

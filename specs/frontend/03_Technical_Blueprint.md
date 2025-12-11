@@ -70,13 +70,18 @@ The `SocketService` is a singleton class exposed via `useSocket`.
     *   *Note*: This bypasses Redux to keep message streams performant.
 
 ## 4. Dependencies
-*   `next`: ^15.0.0
-*   `react`: ^19.0.0 (RC/Stable)
+*   `next`: ^16.0.0 (Latest)
+*   `react`: ^19.0.0 (Stable)
 *   `@tanstack/react-query`: ^5.0.0
 *   `@reduxjs/toolkit`: ^2.0.0
 *   `react-redux`: ^9.0.0
-*   `lucide-react`: Latest
+*   `lucide-react`: Latest (Icon library)
+*   `shadcn/ui`: Latest (CLI-based component library)
+    *   Uses Radix UI primitives for accessibility
+    *   Components copied into `@/components/ui`
+    *   Full customization, zero runtime overhead
 *   `clsx`, `tailwind-merge`: For dynamic classes.
+*   `class-variance-authority`: For component variants.
 
 ## 5. Error Handling Strategy
 
