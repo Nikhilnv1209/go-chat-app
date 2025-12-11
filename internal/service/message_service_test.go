@@ -98,6 +98,37 @@ func (m *MockHub) SendToUser(userID uuid.UUID, message []byte) {
 	m.Called(userID, message)
 }
 
+// MockUserRepo [F07]
+type MockUserRepo struct {
+	mock.Mock
+}
+
+func (m *MockUserRepo) Create(user *models.User) error {
+	args := m.Called(user)
+	return args.Error(0)
+}
+
+func (m *MockUserRepo) FindByID(id uuid.UUID) (*models.User, error) {
+	args := m.Called(id)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*models.User), args.Error(1)
+}
+
+func (m *MockUserRepo) FindByEmail(email string) (*models.User, error) {
+	args := m.Called(email)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*models.User), args.Error(1)
+}
+
+func (m *MockUserRepo) UpdateOnlineStatus(userID uuid.UUID, isOnline bool, lastSeen time.Time) error {
+	args := m.Called(userID, isOnline, lastSeen)
+	return args.Error(0)
+}
+
 // MockMessageReceiptRepo [F06]
 type MockMessageReceiptRepo struct {
 	mock.Mock
@@ -136,7 +167,7 @@ func TestSendDirectMessage(t *testing.T) {
 
 	mockReceiptRepo := new(MockMessageReceiptRepo)
 
-	svc := service.NewMessageService(mockMsgRepo, mockConvRepo, mockGroupRepo, mockReceiptRepo, mockHub)
+	svc := service.NewMessageService(mockMsgRepo, mockConvRepo, mockGroupRepo, mockReceiptRepo, new(MockUserRepo), mockHub)
 
 	senderID := uuid.New()
 	receiverID := uuid.New()
@@ -189,7 +220,7 @@ func TestGetHistory_Conversation(t *testing.T) {
 
 	mockReceiptRepo := new(MockMessageReceiptRepo)
 
-	svc := service.NewMessageService(mockMsgRepo, mockConvRepo, mockGroupRepo, mockReceiptRepo, mockHub)
+	svc := service.NewMessageService(mockMsgRepo, mockConvRepo, mockGroupRepo, mockReceiptRepo, new(MockUserRepo), mockHub)
 
 	userID := uuid.New()
 	targetID := uuid.New()
@@ -225,7 +256,7 @@ func TestLongConversationFlow(t *testing.T) {
 
 	mockReceiptRepo := new(MockMessageReceiptRepo)
 
-	svc := service.NewMessageService(mockMsgRepo, mockConvRepo, mockGroupRepo, mockReceiptRepo, mockHub)
+	svc := service.NewMessageService(mockMsgRepo, mockConvRepo, mockGroupRepo, mockReceiptRepo, new(MockUserRepo), mockHub)
 
 	user1 := uuid.New()
 	user2 := uuid.New()
@@ -278,7 +309,7 @@ func TestSendGroupMessage_Success(t *testing.T) {
 
 	mockReceiptRepo := new(MockMessageReceiptRepo)
 
-	svc := service.NewMessageService(mockMsgRepo, mockConvRepo, mockGroupRepo, mockReceiptRepo, mockHub)
+	svc := service.NewMessageService(mockMsgRepo, mockConvRepo, mockGroupRepo, mockReceiptRepo, new(MockUserRepo), mockHub)
 
 	senderID := uuid.New()
 	groupID := uuid.New()
@@ -353,7 +384,7 @@ func TestSendGroupMessage_FailsForNonMember(t *testing.T) {
 
 	mockReceiptRepo := new(MockMessageReceiptRepo)
 
-	svc := service.NewMessageService(mockMsgRepo, mockConvRepo, mockGroupRepo, mockReceiptRepo, mockHub)
+	svc := service.NewMessageService(mockMsgRepo, mockConvRepo, mockGroupRepo, mockReceiptRepo, new(MockUserRepo), mockHub)
 
 	nonMemberID := uuid.New()
 	groupID := uuid.New()
@@ -383,7 +414,7 @@ func TestSendGroupMessage_BroadcastsToAllMembers(t *testing.T) {
 
 	mockReceiptRepo := new(MockMessageReceiptRepo)
 
-	svc := service.NewMessageService(mockMsgRepo, mockConvRepo, mockGroupRepo, mockReceiptRepo, mockHub)
+	svc := service.NewMessageService(mockMsgRepo, mockConvRepo, mockGroupRepo, mockReceiptRepo, new(MockUserRepo), mockHub)
 
 	senderID := uuid.New()
 	groupID := uuid.New()
@@ -442,7 +473,7 @@ func TestSendGroupMessage_UpdatesConversationForAllMembers(t *testing.T) {
 
 	mockReceiptRepo := new(MockMessageReceiptRepo)
 
-	svc := service.NewMessageService(mockMsgRepo, mockConvRepo, mockGroupRepo, mockReceiptRepo, mockHub)
+	svc := service.NewMessageService(mockMsgRepo, mockConvRepo, mockGroupRepo, mockReceiptRepo, new(MockUserRepo), mockHub)
 
 	senderID := uuid.New()
 	member1 := uuid.New()
@@ -497,7 +528,7 @@ func TestSendGroupMessage_SenderDoesNotReceiveOwnMessage(t *testing.T) {
 
 	mockReceiptRepo := new(MockMessageReceiptRepo)
 
-	svc := service.NewMessageService(mockMsgRepo, mockConvRepo, mockGroupRepo, mockReceiptRepo, mockHub)
+	svc := service.NewMessageService(mockMsgRepo, mockConvRepo, mockGroupRepo, mockReceiptRepo, new(MockUserRepo), mockHub)
 
 	senderID := uuid.New()
 	member1 := uuid.New()
@@ -539,7 +570,7 @@ func TestGetMessageReceipts_Success_Sender(t *testing.T) {
 	mockHub := new(MockHub)
 	mockReceiptRepo := new(MockMessageReceiptRepo)
 
-	svc := service.NewMessageService(mockMsgRepo, mockConvRepo, mockGroupRepo, mockReceiptRepo, mockHub)
+	svc := service.NewMessageService(mockMsgRepo, mockConvRepo, mockGroupRepo, mockReceiptRepo, new(MockUserRepo), mockHub)
 
 	userID := uuid.New()
 	msgID := uuid.New()
@@ -566,7 +597,7 @@ func TestGetMessageReceipts_Forbidden(t *testing.T) {
 	mockHub := new(MockHub)
 	mockReceiptRepo := new(MockMessageReceiptRepo)
 
-	svc := service.NewMessageService(mockMsgRepo, mockConvRepo, mockGroupRepo, mockReceiptRepo, mockHub)
+	svc := service.NewMessageService(mockMsgRepo, mockConvRepo, mockGroupRepo, mockReceiptRepo, new(MockUserRepo), mockHub)
 
 	userID := uuid.New()
 	otherUser := uuid.New()

@@ -191,6 +191,19 @@ func (m *MockMessageService) GetMessageReceipts(userID, messageID uuid.UUID) ([]
 	return args.Get(0).([]models.MessageReceipt), args.Error(1)
 }
 
+func (m *MockMessageService) GetUserInfo(userID uuid.UUID) (*models.User, error) {
+	args := m.Called(userID)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*models.User), args.Error(1)
+}
+
+func (m *MockMessageService) BroadcastTypingIndicator(userID uuid.UUID, username, convType string, targetID uuid.UUID, isTyping bool) error {
+	args := m.Called(userID, username, convType, targetID, isTyping)
+	return args.Error(0)
+}
+
 // Tests
 
 func TestGetConversations_Success(t *testing.T) {
