@@ -12,6 +12,8 @@ export const metadata: Metadata = {
   description: "Real-time chat application with instant messaging, read receipts, and typing indicators",
 };
 
+import Providers from "./providers";
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -22,7 +24,9 @@ export default function RootLayout({
       <body
         className={`${inter.variable} antialiased`}
       >
-        {children}
+        <Providers>
+          {children}
+        </Providers>
       </body>
     </html>
   );
