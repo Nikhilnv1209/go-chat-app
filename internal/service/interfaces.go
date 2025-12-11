@@ -19,6 +19,8 @@ type MessageService interface {
 	MarkAsRead(userID uuid.UUID, messageIDs []uuid.UUID) error
 	MarkAsDelivered(userID uuid.UUID, messageIDs []uuid.UUID) error
 	GetMessageReceipts(userID, messageID uuid.UUID) ([]models.MessageReceipt, error)
+	GetUserInfo(userID uuid.UUID) (*models.User, error)
+	BroadcastTypingIndicator(userID uuid.UUID, username, convType string, targetID uuid.UUID, isTyping bool) error
 }
 
 type GroupService interface {

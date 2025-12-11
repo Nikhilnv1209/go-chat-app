@@ -61,7 +61,7 @@ func main() {
 		Expiration: cfg.JWT.Expiration,
 	})
 	authService := service.NewAuthService(userRepo, jwtService)
-	msgService := service.NewMessageService(msgRepo, convRepo, groupRepo, receiptRepo, hub) // [F06]
+	msgService := service.NewMessageService(msgRepo, convRepo, groupRepo, receiptRepo, userRepo, hub) // [F06][F07]
 
 	groupService := service.NewGroupService(groupRepo)
 

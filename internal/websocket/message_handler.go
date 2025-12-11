@@ -23,6 +23,11 @@ type MessageDeliveredPayload struct {
 	MessageID uuid.UUID `json:"message_id"`
 }
 
+type TypingPayload struct {
+	ConversationType string    `json:"conversation_type"` // "DM" or "GROUP"
+	TargetID         uuid.UUID `json:"target_id"`         // user ID for DM, group ID for GROUP
+}
+
 // HandleMessage routes incoming WS messages to appropriate services
 func HandleMessage(message []byte, client *Client, msgService service.MessageService) {
 	var wsMsg WSMessage
@@ -80,7 +85,67 @@ func HandleMessage(message []byte, client *Client, msgService service.MessageSer
 			log.Printf("Failed to mark delivered: %v", err)
 		}
 
+	case "typing_start":
+		handleTypingStart(client, wsMsg.Payload, msgService)
+
+	case "typing_stop":
+		handleTypingStop(client, wsMsg.Payload, msgService)
+
 	default:
 		log.Printf("Unknown message type: %s", wsMsg.Type)
+	}
+}
+
+// handleTypingStart broadcasts typing indicator to relevant users
+func handleTypingStart(client *Client, payload json.RawMessage, msgService service.MessageService) {
+	var typingPayload TypingPayload
+	if err := json.Unmarshal(payload, &typingPayload); err != nil {
+		log.Printf("Invalid typing_start payload: %v", err)
+		return
+	}
+
+	// Validation
+	if typingPayload.ConversationType != "DM" && typingPayload.ConversationType != "GROUP" {
+		log.Printf("Invalid conversation type: %s", typingPayload.ConversationType)
+		return
+	}
+	if typingPayload.TargetID == uuid.Nil {
+		log.Printf("Invalid target_id for typing event")
+		return
+	}
+
+	// Get user info for the typing user
+	user, err := msgService.GetUserInfo(client.UserID)
+	if err != nil {
+		log.Printf("Failed to get user info: %v", err)
+		return
+	}
+	if user == nil {
+		log.Printf("User info not found for ID: %s", client.UserID)
+		return
+	}
+
+	// Broadcast typing event
+	if err := msgService.BroadcastTypingIndicator(client.UserID, user.Username, typingPayload.ConversationType, typingPayload.TargetID, true); err != nil {
+		log.Printf("Failed to broadcast typing_start: %v", err)
+	}
+}
+
+// handleTypingStop broadcasts typing stop indicator to relevant users
+func handleTypingStop(client *Client, payload json.RawMessage, msgService service.MessageService) {
+	var typingPayload TypingPayload
+	if err := json.Unmarshal(payload, &typingPayload); err != nil {
+		log.Printf("Invalid typing_stop payload: %v", err)
+		return
+	}
+
+	// Validation
+	if typingPayload.ConversationType != "DM" && typingPayload.ConversationType != "GROUP" {
+		return // Silent ignore for stop events to handle spam/race conditions gracefully
+	}
+
+	// Broadcast typing stop event
+	if err := msgService.BroadcastTypingIndicator(client.UserID, "", typingPayload.ConversationType, typingPayload.TargetID, false); err != nil {
+		log.Printf("Failed to broadcast typing_stop: %v", err)
 	}
 }

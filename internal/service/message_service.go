@@ -22,6 +22,7 @@ type messageService struct {
 	convRepo    repository.ConversationRepository
 	groupRepo   repository.GroupRepository
 	receiptRepo repository.MessageReceiptRepository
+	userRepo    repository.UserRepository
 	hub         Hub
 }
 
@@ -30,6 +31,7 @@ func NewMessageService(
 	convRepo repository.ConversationRepository,
 	groupRepo repository.GroupRepository,
 	receiptRepo repository.MessageReceiptRepository,
+	userRepo repository.UserRepository,
 	hub Hub,
 ) MessageService {
 	return &messageService{
@@ -37,6 +39,7 @@ func NewMessageService(
 		convRepo:    convRepo,
 		groupRepo:   groupRepo,
 		receiptRepo: receiptRepo,
+		userRepo:    userRepo,
 		hub:         hub,
 	}
 }
@@ -250,4 +253,70 @@ func (s *messageService) GetMessageReceipts(userID, messageID uuid.UUID) ([]mode
 
 	// 3. Fetch Receipts
 	return s.receiptRepo.FindByMessageID(messageID)
+}
+
+func (s *messageService) GetUserInfo(userID uuid.UUID) (*models.User, error) {
+	return s.userRepo.FindByID(userID)
+}
+
+func (s *messageService) BroadcastTypingIndicator(userID uuid.UUID, username, convType string, targetID uuid.UUID, isTyping bool) error {
+	// Build event type
+	eventType := "user_typing"
+	if !isTyping {
+		eventType = "user_stopped_typing"
+	}
+
+	// Build base payload
+	payloadData := map[string]interface{}{
+		"user_id":           userID,
+		"conversation_type": convType,
+		"target_id":         targetID,
+	}
+
+	// Add username only for typing_start events
+	if isTyping {
+		payloadData["username"] = username
+	}
+
+	switch convType {
+	case "DM":
+		// Send to single user
+		// Prevent broadcast to self
+		if targetID != userID {
+			payload, _ := json.Marshal(map[string]interface{}{
+				"type":    eventType,
+				"payload": payloadData,
+			})
+			s.hub.SendToUser(targetID, payload)
+		}
+	case "GROUP":
+		// Verify sender is a member
+		isMember, err := s.groupRepo.IsMember(targetID, userID)
+		if err != nil {
+			return err
+		}
+		if !isMember {
+			return ErrNotGroupMember
+		}
+
+		// Get all group members
+		members, err := s.groupRepo.GetMembers(targetID)
+		if err != nil {
+			return err
+		}
+
+		// Broadcast to all members except sender
+		payload, _ := json.Marshal(map[string]interface{}{
+			"type":    eventType,
+			"payload": payloadData,
+		})
+
+		for _, member := range members {
+			if member.UserID != userID {
+				s.hub.SendToUser(member.UserID, payload)
+			}
+		}
+	}
+
+	return nil
 }
