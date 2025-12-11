@@ -1,8 +1,8 @@
 # BMAD Progress Tracker (Frontend)
 
 **Current Status**: 🟢 Phase 1 - Foundation & Scaffolding
-**Last Action**: Implemented Task 1.1 & 1.4 - Initialized Next.js 16 project and set up Shadcn/UI.
-**Next Action**: Install state management and utility libraries (Task 1.2).
+**Last Action**: Implemented Task 1.2 - Installed Redux, React Query, and Axios.
+**Next Action**: Configure Providers (Task 1.3).
 
 ---
 
@@ -10,7 +10,7 @@
 
 | Phase | Description | Status | Completion |
 |-------|-------------|--------|------------|
-| **Phase 1** | Foundation & Scaffolding | 🚧 **IN PROGRESS** | 50% |
+| **Phase 1** | Foundation & Scaffolding | 🚧 **IN PROGRESS** | 75% |
 | **Phase 2** | Authentication Module | ⬜ **TODO** | 0% |
 | **Phase 3** | Dashboard Skeleton | ⬜ **TODO** | 0% |
 | **Phase 4** | Core Messaging Features | ⬜ **TODO** | 0% |
@@ -26,7 +26,7 @@
 | Task | ID | Status | Notes |
 |------|----|--------|-------|
 | **Initialize Next.js Project** | `Task 1.1` | ✅ **DONE** | Next.js 16, React 19, TypeScript, Tailwind v4. |
-| **Install Dependencies** | `Task 1.2` | ⬜ **TODO** | Redux, React Query, Lucide, etc. |
+| **Install Dependencies** | `Task 1.2` | ✅ **DONE** | Redux, React Query, Axios added. |
 | **Configure Providers** | `Task 1.3` | ⬜ **TODO** | `app/providers.tsx` setup. |
 | **Setup Shadcn/UI** | `Task 1.4` | ✅ **DONE** | Initialized via CLI (Slate theme), added base components. |
 
