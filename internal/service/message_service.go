@@ -183,7 +183,7 @@ func (s *messageService) SendGroupMessage(senderID, groupID uuid.UUID, content s
 // Custom error for group messaging
 var ErrNotGroupMember = errors.New("sender is not a member of the group")
 
-func (s *messageService) GetHistory(userID, targetID uuid.UUID, convType string, limit, beforeID int) ([]models.Message, error) {
+func (s *messageService) GetHistory(userID, targetID uuid.UUID, convType string, limit int, beforeID *uuid.UUID) ([]models.Message, error) {
 	return s.msgRepo.FindByConversation(userID, targetID, convType, limit, beforeID)
 }
 

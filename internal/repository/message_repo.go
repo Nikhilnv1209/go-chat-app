@@ -2,6 +2,7 @@ package repository
 
 import (
 	"chat-app/internal/models"
+	"time"
 
 	"github.com/google/uuid"
 	"gorm.io/gorm"
@@ -28,8 +29,22 @@ func (r *messageRepository) FindByID(id uuid.UUID) (*models.Message, error) {
 	return &msg, nil
 }
 
-func (r *messageRepository) FindByConversation(userID, targetID uuid.UUID, msgType string, limit, beforeID int) ([]models.Message, error) {
+func (r *messageRepository) FindByConversation(userID, targetID uuid.UUID, msgType string, limit int, beforeID *uuid.UUID) ([]models.Message, error) {
 	query := r.db.Order("created_at DESC").Limit(limit)
+
+	// Cursor-based pagination: if beforeID is provided, fetch messages older than that message
+	if beforeID != nil {
+		// Get the timestamp of the cursor message
+		var cursorTime time.Time
+		err := r.db.Model(&models.Message{}).
+			Select("created_at").
+			Where("id = ?", beforeID).
+			Scan(&cursorTime).Error
+		if err != nil {
+			return nil, err
+		}
+		query = query.Where("created_at < ?", cursorTime)
+	}
 
 	// Filter by conversation type
 	switch msgType {
@@ -43,10 +58,6 @@ func (r *messageRepository) FindByConversation(userID, targetID uuid.UUID, msgTy
 		// For Groups: messages where group_id = targetID
 		query = query.Where("group_id = ?", targetID)
 	}
-
-	// Pagination support (beforeID not currently used as we're using int, will be ignored)
-	// Note: The beforeID parameter is int but IDs are UUIDs, so pagination via beforeID won't work
-	// This is a known limitation for now
 
 	var messages []models.Message
 	err := query.Find(&messages).Error

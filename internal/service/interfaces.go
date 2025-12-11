@@ -15,7 +15,7 @@ type AuthService interface {
 type MessageService interface {
 	SendDirectMessage(senderID, receiverID uuid.UUID, content string) (*models.Message, error)
 	SendGroupMessage(senderID, groupID uuid.UUID, content string) (*models.Message, error)
-	GetHistory(userID, targetID uuid.UUID, convType string, limit, beforeID int) ([]models.Message, error)
+	GetHistory(userID, targetID uuid.UUID, convType string, limit int, beforeID *uuid.UUID) ([]models.Message, error)
 	MarkAsRead(userID uuid.UUID, messageIDs []uuid.UUID) error
 	MarkAsDelivered(userID uuid.UUID, messageIDs []uuid.UUID) error
 	GetMessageReceipts(userID, messageID uuid.UUID) ([]models.MessageReceipt, error)

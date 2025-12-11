@@ -160,8 +160,16 @@ func (h *ChatHandler) GetMessages(c *gin.Context) {
 		}
 	}
 
-	// beforeID is not currently supported due to UUID IDs
-	// This would require a different pagination strategy (e.g., cursor-based with timestamp)
+	// Parse 'before_id' cursor for pagination (message UUID)
+	var beforeID *uuid.UUID
+	if beforeIDStr := c.Query("before_id"); beforeIDStr != "" {
+		parsed, err := uuid.Parse(beforeIDStr)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "invalid 'before_id' format, must be a valid UUID"})
+			return
+		}
+		beforeID = &parsed
+	}
 
 	// 3. Verify user has access to this conversation
 	if msgType == "GROUP" {
@@ -174,8 +182,7 @@ func (h *ChatHandler) GetMessages(c *gin.Context) {
 	}
 
 	// 4. Fetch messages
-	// We rely on repository here but ideally could go through service
-	messages, err := h.msgService.GetHistory(userID, targetID, msgType, limit, 0)
+	messages, err := h.msgService.GetHistory(userID, targetID, msgType, limit, beforeID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to fetch messages"})
 		return

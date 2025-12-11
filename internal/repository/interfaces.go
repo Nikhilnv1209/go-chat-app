@@ -18,7 +18,7 @@ type UserRepository interface {
 type MessageRepository interface {
 	Create(msg *models.Message) error
 	FindByID(id uuid.UUID) (*models.Message, error)
-	FindByConversation(userID, targetID uuid.UUID, msgType string, limit, beforeID int) ([]models.Message, error)
+	FindByConversation(userID, targetID uuid.UUID, msgType string, limit int, beforeID *uuid.UUID) ([]models.Message, error)
 }
 
 type MessageReceiptRepository interface {
