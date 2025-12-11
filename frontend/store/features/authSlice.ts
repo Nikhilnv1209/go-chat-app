@@ -20,19 +20,28 @@ const authSlice = createSlice({
       state.token = action.payload.token;
       state.isAuthenticated = true;
       state.isLoading = false;
-      localStorage.setItem('token', action.payload.token);
-      localStorage.setItem('user', JSON.stringify(action.payload.user));
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('token', action.payload.token);
+        localStorage.setItem('user', JSON.stringify(action.payload.user));
+      }
     },
     logout: (state) => {
       state.user = null;
       state.token = null;
       state.isAuthenticated = false;
       state.isLoading = false;
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+      }
     },
     initializeAuth: (state) => {
-      // Hydrate state from localStorage on mount
+      // Hydrate state from localStorage on mount (client-side only)
+      if (typeof window === 'undefined') {
+        state.isLoading = false;
+        return;
+      }
+
       const token = localStorage.getItem('token');
       const userStr = localStorage.getItem('user');
 

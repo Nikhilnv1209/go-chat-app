@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef } from 'react';
+import { useRef, useEffect } from 'react';
 import { Provider } from 'react-redux';
 import { makeStore, AppStore } from '../store/store';
 import { initializeAuth } from '../store/features/authSlice';
@@ -11,9 +11,14 @@ export default function Providers({ children }: { children: React.ReactNode }) {
   if (!storeRef.current) {
     // Create the store instance the first time this renders
     storeRef.current = makeStore();
-    // Initialize auth state from local storage
-    storeRef.current.dispatch(initializeAuth());
   }
+
+  // Initialize auth state from local storage on mount (client-side only)
+  useEffect(() => {
+    if (storeRef.current) {
+      storeRef.current.dispatch(initializeAuth());
+    }
+  }, []);
 
   const queryClientRef = useRef<QueryClient>(null);
   if (!queryClientRef.current) {
