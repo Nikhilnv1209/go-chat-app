@@ -3,6 +3,7 @@
 import { useRef } from 'react';
 import { Provider } from 'react-redux';
 import { makeStore, AppStore } from '../store/store';
+import { initializeAuth } from '../store/features/authSlice';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 export default function Providers({ children }: { children: React.ReactNode }) {
@@ -10,6 +11,8 @@ export default function Providers({ children }: { children: React.ReactNode }) {
   if (!storeRef.current) {
     // Create the store instance the first time this renders
     storeRef.current = makeStore();
+    // Initialize auth state from local storage
+    storeRef.current.dispatch(initializeAuth());
   }
 
   const queryClientRef = useRef<QueryClient>(null);

@@ -1,8 +1,8 @@
 # BMAD Progress Tracker (Frontend)
 
-**Current Status**: 🟢 Phase 1 - Foundation & Scaffolding
-**Last Action**: Implemented Task 1.3 - Configured global Providers (Redux + React Query).
-**Next Action**: Begin Phase 2 - Authentication Module (Task 2.1).
+**Current Status**: 🟢 Phase 2 - Authentication Module
+**Last Action**: Implemented Task 2.1 - Created authSlice and configured Axios interceptors.
+**Next Action**: Build Login Page (Task 2.2).
 
 ---
 
@@ -11,7 +11,7 @@
 | Phase | Description | Status | Completion |
 |-------|-------------|--------|------------|
 | **Phase 1** | Foundation & Scaffolding | ✅ **DONE** | 100% |
-| **Phase 2** | Authentication Module | ⬜ **TODO** | 0% |
+| **Phase 2** | Authentication Module | 🚧 **IN PROGRESS** | 25% |
 | **Phase 3** | Dashboard Skeleton | ⬜ **TODO** | 0% |
 | **Phase 4** | Core Messaging Features | ⬜ **TODO** | 0% |
 | **Phase 5** | Refinement & Polish | ⬜ **TODO** | 0% |
@@ -37,7 +37,7 @@
 
 | Task | ID | Status | Notes |
 |------|----|--------|-------|
-| **Implement authSlice & API** | `Task 2.1` | ⬜ **TODO** | Redux logic + Axios wrapper. |
+| **Implement authSlice & API** | `Task 2.1` | ✅ **DONE** | Redux logic + Axios wrapper. |
 | **Build Login Page** | `Task 2.2` | ⬜ **TODO** | `app/(auth)/login/page.tsx`. |
 | **Build Register Page** | `Task 2.3` | ⬜ **TODO** | `app/(auth)/register/page.tsx`. |
 | **Protected Route Layout** | `Task 2.4` | ⬜ **TODO** | Auth Guard implementation. |
