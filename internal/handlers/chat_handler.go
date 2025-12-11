@@ -81,13 +81,14 @@ func (h *ChatHandler) GetConversations(c *gin.Context) {
 	for _, conv := range conversations {
 		targetName := ""
 
-		if conv.Type == "DM" {
+		switch conv.Type {
+		case "DM":
 			// Fetch user name
 			user, err := h.userRepo.FindByID(conv.TargetID)
 			if err == nil {
 				targetName = user.Username
 			}
-		} else if conv.Type == "GROUP" {
+		case "GROUP":
 			// Fetch group name
 			group, err := h.groupRepo.FindByID(conv.TargetID)
 			if err == nil {

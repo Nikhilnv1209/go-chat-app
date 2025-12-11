@@ -32,13 +32,14 @@ func (r *messageRepository) FindByConversation(userID, targetID uuid.UUID, msgTy
 	query := r.db.Order("created_at DESC").Limit(limit)
 
 	// Filter by conversation type
-	if msgType == "DM" {
+	switch msgType {
+	case "DM":
 		// For DMs: messages between userID and targetID
 		query = query.Where(
 			"(sender_id = ? AND receiver_id = ?) OR (sender_id = ? AND receiver_id = ?)",
 			userID, targetID, targetID, userID,
 		)
-	} else if msgType == "GROUP" {
+	case "GROUP":
 		// For Groups: messages where group_id = targetID
 		query = query.Where("group_id = ?", targetID)
 	}
