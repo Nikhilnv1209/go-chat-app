@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"encoding/json"
-	"errors"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -125,31 +124,6 @@ func (m *MockGroupRepo) AddMember(groupID, userID uuid.UUID, role string) error 
 	return args.Error(0)
 }
 
-type MockAuthService struct {
-	mock.Mock
-}
-
-func (m *MockAuthService) Register(username, email, password string) (*models.User, error) {
-	args := m.Called(username, email, password)
-	if args.Get(0) == nil {
-		return nil, args.Error(1)
-	}
-	return args.Get(0).(*models.User), args.Error(1)
-}
-
-func (m *MockAuthService) Login(email, password string) (string, *models.User, error) {
-	args := m.Called(email, password)
-	if args.Get(1) == nil {
-		return args.String(0), nil, args.Error(2)
-	}
-	return args.String(0), args.Get(1).(*models.User), args.Error(2)
-}
-
-func (m *MockAuthService) ValidateToken(token string) (uuid.UUID, error) {
-	args := m.Called(token)
-	return args.Get(0).(uuid.UUID), args.Error(1)
-}
-
 // MockMessageService
 type MockMessageService struct {
 	mock.Mock
@@ -204,6 +178,14 @@ func (m *MockMessageService) BroadcastTypingIndicator(userID uuid.UUID, username
 	return args.Error(0)
 }
 
+// Helper middleware to set userID in context (simulates what AuthMiddleware does)
+func mockAuthMiddleware(userID uuid.UUID) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		c.Set("userID", userID)
+		c.Next()
+	}
+}
+
 // Tests
 
 func TestGetConversations_Success(t *testing.T) {
@@ -214,10 +196,9 @@ func TestGetConversations_Success(t *testing.T) {
 	mockMsgRepo := new(MockMessageRepo)
 	mockUserRepo := new(MockUserRepo)
 	mockGroupRepo := new(MockGroupRepo)
-	mockAuthService := new(MockAuthService)
 	mockMsgService := new(MockMessageService)
 
-	handler := NewChatHandler(mockConvRepo, mockMsgRepo, mockUserRepo, mockGroupRepo, mockAuthService, mockMsgService)
+	handler := NewChatHandler(mockConvRepo, mockMsgRepo, mockUserRepo, mockGroupRepo, mockMsgService)
 
 	// Test data
 	userID := uuid.New()
@@ -245,7 +226,6 @@ func TestGetConversations_Success(t *testing.T) {
 	}
 
 	// Mock expectations
-	mockAuthService.On("ValidateToken", "test-token").Return(userID, nil)
 	mockConvRepo.On("FindByUser", userID).Return(conversations, nil)
 	mockUserRepo.On("FindByID", targetUserID).Return(&models.User{
 		BaseModel: models.BaseModel{ID: targetUserID},
@@ -256,14 +236,14 @@ func TestGetConversations_Success(t *testing.T) {
 		Name:      "Family",
 	}, nil)
 
+	// Create router with mock auth middleware
+	r := gin.New()
+	r.GET("/conversations", mockAuthMiddleware(userID), handler.GetConversations)
+
 	// Create request
 	w := httptest.NewRecorder()
-	c, _ := gin.CreateTestContext(w)
-	c.Request, _ = http.NewRequest("GET", "/conversations", nil)
-	c.Request.Header.Set("Authorization", "Bearer test-token")
-
-	// Execute
-	handler.GetConversations(c)
+	req, _ := http.NewRequest("GET", "/conversations", nil)
+	r.ServeHTTP(w, req)
 
 	// Assert
 	assert.Equal(t, http.StatusOK, w.Code)
@@ -278,7 +258,6 @@ func TestGetConversations_Success(t *testing.T) {
 	assert.Equal(t, "GROUP", response[1].Type)
 	assert.Equal(t, "Family", response[1].TargetName)
 
-	mockAuthService.AssertExpectations(t)
 	mockConvRepo.AssertExpectations(t)
 	mockUserRepo.AssertExpectations(t)
 	mockGroupRepo.AssertExpectations(t)
@@ -292,51 +271,21 @@ func TestGetConversations_Unauthorized(t *testing.T) {
 	mockMsgRepo := new(MockMessageRepo)
 	mockUserRepo := new(MockUserRepo)
 	mockGroupRepo := new(MockGroupRepo)
-	mockAuthService := new(MockAuthService)
 	mockMsgService := new(MockMessageService)
 
-	handler := NewChatHandler(mockConvRepo, mockMsgRepo, mockUserRepo, mockGroupRepo, mockAuthService, mockMsgService)
+	handler := NewChatHandler(mockConvRepo, mockMsgRepo, mockUserRepo, mockGroupRepo, mockMsgService)
 
-	// Create request without auth header
-	w := httptest.NewRecorder()
-	c, _ := gin.CreateTestContext(w)
-	c.Request, _ = http.NewRequest("GET", "/conversations", nil)
-
-	// Execute
-	handler.GetConversations(c)
-
-	// Assert
-	assert.Equal(t, http.StatusUnauthorized, w.Code)
-}
-
-func TestGetConversations_InvalidToken(t *testing.T) {
-	gin.SetMode(gin.TestMode)
-
-	// Setup
-	mockConvRepo := new(MockConversationRepo)
-	mockMsgRepo := new(MockMessageRepo)
-	mockUserRepo := new(MockUserRepo)
-	mockGroupRepo := new(MockGroupRepo)
-	mockAuthService := new(MockAuthService)
-	mockMsgService := new(MockMessageService)
-
-	handler := NewChatHandler(mockConvRepo, mockMsgRepo, mockUserRepo, mockGroupRepo, mockAuthService, mockMsgService)
-
-	// Mock expectations
-	mockAuthService.On("ValidateToken", "invalid-token").Return(uuid.Nil, errors.New("invalid token"))
+	// Create router WITHOUT auth middleware - userID won't be in context
+	r := gin.New()
+	r.GET("/conversations", handler.GetConversations)
 
 	// Create request
 	w := httptest.NewRecorder()
-	c, _ := gin.CreateTestContext(w)
-	c.Request, _ = http.NewRequest("GET", "/conversations", nil)
-	c.Request.Header.Set("Authorization", "Bearer invalid-token")
-
-	// Execute
-	handler.GetConversations(c)
+	req, _ := http.NewRequest("GET", "/conversations", nil)
+	r.ServeHTTP(w, req)
 
 	// Assert
 	assert.Equal(t, http.StatusUnauthorized, w.Code)
-	mockAuthService.AssertExpectations(t)
 }
 
 func TestGetMessages_DM_Success(t *testing.T) {
@@ -347,10 +296,9 @@ func TestGetMessages_DM_Success(t *testing.T) {
 	mockMsgRepo := new(MockMessageRepo)
 	mockUserRepo := new(MockUserRepo)
 	mockGroupRepo := new(MockGroupRepo)
-	mockAuthService := new(MockAuthService)
 	mockMsgService := new(MockMessageService)
 
-	handler := NewChatHandler(mockConvRepo, mockMsgRepo, mockUserRepo, mockGroupRepo, mockAuthService, mockMsgService)
+	handler := NewChatHandler(mockConvRepo, mockMsgRepo, mockUserRepo, mockGroupRepo, mockMsgService)
 
 	// Test data
 	userID := uuid.New()
@@ -372,26 +320,17 @@ func TestGetMessages_DM_Success(t *testing.T) {
 	}
 
 	// Mock expectations
-	mockAuthService.On("ValidateToken", "test-token").Return(userID, nil)
-	// Change to use Service mock instead of Repo mock
 	mockMsgService.On("GetHistory", userID, targetID, mock.Anything, 50, (*uuid.UUID)(nil)).Return(messages, nil)
-	// mockConvRepo.On("ResetUnread"...) removed because it's assumed handled by Service or separate logic if not in Service
-	// But in ChatHandler.GetMessages, we still call convRepo.ResetUnread manually unless we moved that too.
-	// Oh right, I kept ResetUnread inside ChatHandler in my "replace_file_content" logic earlier?
-	// Let's re-read the code logic.
-	// I replaced h.msgRepo.FindByConversation with h.msgService.GetHistory.
-	// But I LEFT h.convRepo.ResetUnread(userID, msgType, targetID).
-	// So I still need to mock ResetUnread.
 	mockConvRepo.On("ResetUnread", userID, "DM", targetID).Return(nil)
+
+	// Create router with mock auth middleware
+	r := gin.New()
+	r.GET("/messages", mockAuthMiddleware(userID), handler.GetMessages)
 
 	// Create request
 	w := httptest.NewRecorder()
-	c, _ := gin.CreateTestContext(w)
-	c.Request, _ = http.NewRequest("GET", "/messages?target_id="+targetID.String()+"&type=DM", nil)
-	c.Request.Header.Set("Authorization", "Bearer test-token")
-
-	// Execute
-	handler.GetMessages(c)
+	req, _ := http.NewRequest("GET", "/messages?target_id="+targetID.String()+"&type=DM", nil)
+	r.ServeHTTP(w, req)
 
 	// Assert
 	assert.Equal(t, http.StatusOK, w.Code)
@@ -401,10 +340,7 @@ func TestGetMessages_DM_Success(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Len(t, response, 2)
 
-	mockAuthService.AssertExpectations(t)
-	mockAuthService.AssertExpectations(t)
 	mockMsgService.AssertExpectations(t)
-	mockConvRepo.AssertExpectations(t)
 	mockConvRepo.AssertExpectations(t)
 }
 
@@ -416,10 +352,9 @@ func TestGetMessages_Group_Success(t *testing.T) {
 	mockMsgRepo := new(MockMessageRepo)
 	mockUserRepo := new(MockUserRepo)
 	mockGroupRepo := new(MockGroupRepo)
-	mockAuthService := new(MockAuthService)
 	mockMsgService := new(MockMessageService)
 
-	handler := NewChatHandler(mockConvRepo, mockMsgRepo, mockUserRepo, mockGroupRepo, mockAuthService, mockMsgService)
+	handler := NewChatHandler(mockConvRepo, mockMsgRepo, mockUserRepo, mockGroupRepo, mockMsgService)
 
 	// Test data
 	userID := uuid.New()
@@ -435,20 +370,18 @@ func TestGetMessages_Group_Success(t *testing.T) {
 	}
 
 	// Mock expectations
-	// Mock expectations
-	mockAuthService.On("ValidateToken", "test-token").Return(userID, nil)
 	mockGroupRepo.On("IsMember", groupID, userID).Return(true, nil)
 	mockMsgService.On("GetHistory", userID, groupID, mock.Anything, 50, (*uuid.UUID)(nil)).Return(messages, nil)
 	mockConvRepo.On("ResetUnread", userID, "GROUP", groupID).Return(nil)
 
+	// Create router with mock auth middleware
+	r := gin.New()
+	r.GET("/messages", mockAuthMiddleware(userID), handler.GetMessages)
+
 	// Create request
 	w := httptest.NewRecorder()
-	c, _ := gin.CreateTestContext(w)
-	c.Request, _ = http.NewRequest("GET", "/messages?target_id="+groupID.String()+"&type=GROUP", nil)
-	c.Request.Header.Set("Authorization", "Bearer test-token")
-
-	// Execute
-	handler.GetMessages(c)
+	req, _ := http.NewRequest("GET", "/messages?target_id="+groupID.String()+"&type=GROUP", nil)
+	r.ServeHTTP(w, req)
 
 	// Assert
 	assert.Equal(t, http.StatusOK, w.Code)
@@ -458,11 +391,8 @@ func TestGetMessages_Group_Success(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Len(t, response, 1)
 
-	mockAuthService.AssertExpectations(t)
 	mockGroupRepo.AssertExpectations(t)
-	mockAuthService.AssertExpectations(t)
 	mockMsgService.AssertExpectations(t)
-	mockConvRepo.AssertExpectations(t)
 	mockConvRepo.AssertExpectations(t)
 }
 
@@ -474,32 +404,29 @@ func TestGetMessages_Group_NotMember(t *testing.T) {
 	mockMsgRepo := new(MockMessageRepo)
 	mockUserRepo := new(MockUserRepo)
 	mockGroupRepo := new(MockGroupRepo)
-	mockAuthService := new(MockAuthService)
 	mockMsgService := new(MockMessageService)
 
-	handler := NewChatHandler(mockConvRepo, mockMsgRepo, mockUserRepo, mockGroupRepo, mockAuthService, mockMsgService)
+	handler := NewChatHandler(mockConvRepo, mockMsgRepo, mockUserRepo, mockGroupRepo, mockMsgService)
 
 	// Test data
 	userID := uuid.New()
 	groupID := uuid.New()
 
 	// Mock expectations
-	mockAuthService.On("ValidateToken", "test-token").Return(userID, nil)
 	mockGroupRepo.On("IsMember", groupID, userID).Return(false, nil)
+
+	// Create router with mock auth middleware
+	r := gin.New()
+	r.GET("/messages", mockAuthMiddleware(userID), handler.GetMessages)
 
 	// Create request
 	w := httptest.NewRecorder()
-	c, _ := gin.CreateTestContext(w)
-	c.Request, _ = http.NewRequest("GET", "/messages?target_id="+groupID.String()+"&type=GROUP", nil)
-	c.Request.Header.Set("Authorization", "Bearer test-token")
-
-	// Execute
-	handler.GetMessages(c)
+	req, _ := http.NewRequest("GET", "/messages?target_id="+groupID.String()+"&type=GROUP", nil)
+	r.ServeHTTP(w, req)
 
 	// Assert
 	assert.Equal(t, http.StatusForbidden, w.Code)
 
-	mockAuthService.AssertExpectations(t)
 	mockGroupRepo.AssertExpectations(t)
 }
 
@@ -511,30 +438,24 @@ func TestGetMessages_MissingTargetID(t *testing.T) {
 	mockMsgRepo := new(MockMessageRepo)
 	mockUserRepo := new(MockUserRepo)
 	mockGroupRepo := new(MockGroupRepo)
-	mockAuthService := new(MockAuthService)
 	mockMsgService := new(MockMessageService)
 
-	handler := NewChatHandler(mockConvRepo, mockMsgRepo, mockUserRepo, mockGroupRepo, mockAuthService, mockMsgService)
+	handler := NewChatHandler(mockConvRepo, mockMsgRepo, mockUserRepo, mockGroupRepo, mockMsgService)
 
 	// Test data
 	userID := uuid.New()
 
-	// Mock expectations
-	mockAuthService.On("ValidateToken", "test-token").Return(userID, nil)
+	// Create router with mock auth middleware
+	r := gin.New()
+	r.GET("/messages", mockAuthMiddleware(userID), handler.GetMessages)
 
 	// Create request without target_id
 	w := httptest.NewRecorder()
-	c, _ := gin.CreateTestContext(w)
-	c.Request, _ = http.NewRequest("GET", "/messages?type=DM", nil)
-	c.Request.Header.Set("Authorization", "Bearer test-token")
-
-	// Execute
-	handler.GetMessages(c)
+	req, _ := http.NewRequest("GET", "/messages?type=DM", nil)
+	r.ServeHTTP(w, req)
 
 	// Assert
 	assert.Equal(t, http.StatusBadRequest, w.Code)
-
-	mockAuthService.AssertExpectations(t)
 }
 
 func TestGetMessages_InvalidType(t *testing.T) {
@@ -545,31 +466,25 @@ func TestGetMessages_InvalidType(t *testing.T) {
 	mockMsgRepo := new(MockMessageRepo)
 	mockUserRepo := new(MockUserRepo)
 	mockGroupRepo := new(MockGroupRepo)
-	mockAuthService := new(MockAuthService)
 	mockMsgService := new(MockMessageService)
 
-	handler := NewChatHandler(mockConvRepo, mockMsgRepo, mockUserRepo, mockGroupRepo, mockAuthService, mockMsgService)
+	handler := NewChatHandler(mockConvRepo, mockMsgRepo, mockUserRepo, mockGroupRepo, mockMsgService)
 
 	// Test data
 	userID := uuid.New()
 	targetID := uuid.New()
 
-	// Mock expectations
-	mockAuthService.On("ValidateToken", "test-token").Return(userID, nil)
+	// Create router with mock auth middleware
+	r := gin.New()
+	r.GET("/messages", mockAuthMiddleware(userID), handler.GetMessages)
 
 	// Create request with invalid type
 	w := httptest.NewRecorder()
-	c, _ := gin.CreateTestContext(w)
-	c.Request, _ = http.NewRequest("GET", "/messages?target_id="+targetID.String()+"&type=INVALID", nil)
-	c.Request.Header.Set("Authorization", "Bearer test-token")
-
-	// Execute
-	handler.GetMessages(c)
+	req, _ := http.NewRequest("GET", "/messages?target_id="+targetID.String()+"&type=INVALID", nil)
+	r.ServeHTTP(w, req)
 
 	// Assert
 	assert.Equal(t, http.StatusBadRequest, w.Code)
-
-	mockAuthService.AssertExpectations(t)
 }
 
 func TestGetMessages_CustomLimit(t *testing.T) {
@@ -580,10 +495,9 @@ func TestGetMessages_CustomLimit(t *testing.T) {
 	mockMsgRepo := new(MockMessageRepo)
 	mockUserRepo := new(MockUserRepo)
 	mockGroupRepo := new(MockGroupRepo)
-	mockAuthService := new(MockAuthService)
 	mockMsgService := new(MockMessageService)
 
-	handler := NewChatHandler(mockConvRepo, mockMsgRepo, mockUserRepo, mockGroupRepo, mockAuthService, mockMsgService)
+	handler := NewChatHandler(mockConvRepo, mockMsgRepo, mockUserRepo, mockGroupRepo, mockMsgService)
 
 	// Test data
 	userID := uuid.New()
@@ -592,26 +506,22 @@ func TestGetMessages_CustomLimit(t *testing.T) {
 	messages := []models.Message{}
 
 	// Mock expectations - should use limit=20
-	mockAuthService.On("ValidateToken", "test-token").Return(userID, nil)
 	mockMsgService.On("GetHistory", userID, targetID, mock.Anything, 20, (*uuid.UUID)(nil)).Return(messages, nil)
 	mockConvRepo.On("ResetUnread", userID, "DM", targetID).Return(nil)
 
+	// Create router with mock auth middleware
+	r := gin.New()
+	r.GET("/messages", mockAuthMiddleware(userID), handler.GetMessages)
+
 	// Create request with custom limit
 	w := httptest.NewRecorder()
-	c, _ := gin.CreateTestContext(w)
-	c.Request, _ = http.NewRequest("GET", "/messages?target_id="+targetID.String()+"&type=DM&limit=20", nil)
-	c.Request.Header.Set("Authorization", "Bearer test-token")
-
-	// Execute
-	handler.GetMessages(c)
+	req, _ := http.NewRequest("GET", "/messages?target_id="+targetID.String()+"&type=DM&limit=20", nil)
+	r.ServeHTTP(w, req)
 
 	// Assert
 	assert.Equal(t, http.StatusOK, w.Code)
 
-	mockAuthService.AssertExpectations(t)
-	mockAuthService.AssertExpectations(t)
 	mockMsgService.AssertExpectations(t)
-	mockConvRepo.AssertExpectations(t)
 	mockConvRepo.AssertExpectations(t)
 }
 
@@ -623,34 +533,29 @@ func TestMarkRead_Success(t *testing.T) {
 	mockMsgRepo := new(MockMessageRepo)
 	mockUserRepo := new(MockUserRepo)
 	mockGroupRepo := new(MockGroupRepo)
-	mockAuthService := new(MockAuthService)
 	mockMsgService := new(MockMessageService)
 
-	handler := NewChatHandler(mockConvRepo, mockMsgRepo, mockUserRepo, mockGroupRepo, mockAuthService, mockMsgService)
+	handler := NewChatHandler(mockConvRepo, mockMsgRepo, mockUserRepo, mockGroupRepo, mockMsgService)
 
 	// Test data
 	userID := uuid.New()
 	msgID := uuid.New()
 
 	// Mock expectations
-	mockAuthService.On("ValidateToken", "test-token").Return(userID, nil)
 	mockMsgService.On("MarkAsRead", userID, []uuid.UUID{msgID}).Return(nil)
+
+	// Create router with mock auth middleware
+	r := gin.New()
+	r.POST("/messages/:id/read", mockAuthMiddleware(userID), handler.MarkRead)
 
 	// Create request
 	w := httptest.NewRecorder()
-	c, _ := gin.CreateTestContext(w)
-	c.Request, _ = http.NewRequest("POST", "/messages/"+msgID.String()+"/read", nil)
-	c.Request.Header.Set("Authorization", "Bearer test-token")
-	// Set Gin param manually since router isn't matching path parameters in standalone context
-	c.Params = gin.Params{{Key: "id", Value: msgID.String()}}
-
-	// Execute
-	handler.MarkRead(c)
+	req, _ := http.NewRequest("POST", "/messages/"+msgID.String()+"/read", nil)
+	r.ServeHTTP(w, req)
 
 	// Assert
 	assert.Equal(t, http.StatusOK, w.Code)
 
-	mockAuthService.AssertExpectations(t)
 	mockMsgService.AssertExpectations(t)
 }
 
@@ -662,52 +567,39 @@ func TestMarkRead_InvalidID(t *testing.T) {
 	mockMsgRepo := new(MockMessageRepo)
 	mockUserRepo := new(MockUserRepo)
 	mockGroupRepo := new(MockGroupRepo)
-	mockAuthService := new(MockAuthService)
 	mockMsgService := new(MockMessageService)
 
-	handler := NewChatHandler(mockConvRepo, mockMsgRepo, mockUserRepo, mockGroupRepo, mockAuthService, mockMsgService)
+	handler := NewChatHandler(mockConvRepo, mockMsgRepo, mockUserRepo, mockGroupRepo, mockMsgService)
 
 	// Test data
 	userID := uuid.New()
 
-	// Mock expectations
-	mockAuthService.On("ValidateToken", "test-token").Return(userID, nil)
+	// Create router with mock auth middleware
+	r := gin.New()
+	r.POST("/messages/:id/read", mockAuthMiddleware(userID), handler.MarkRead)
 
 	// Create request
 	w := httptest.NewRecorder()
-	c, _ := gin.CreateTestContext(w)
-	c.Request, _ = http.NewRequest("POST", "/messages/invalid-uuid/read", nil)
-	c.Request.Header.Set("Authorization", "Bearer test-token")
-	c.Params = gin.Params{{Key: "id", Value: "invalid-uuid"}}
-
-	// Execute
-	handler.MarkRead(c)
+	req, _ := http.NewRequest("POST", "/messages/invalid-uuid/read", nil)
+	r.ServeHTTP(w, req)
 
 	// Assert
 	assert.Equal(t, http.StatusBadRequest, w.Code)
-
-	mockAuthService.AssertExpectations(t)
 }
 
 func TestGetReceipts_Success(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
 	mockConvRepo := new(MockConversationRepo)
 	mockMsgRepo := new(MockMessageRepo)
 	mockUserRepo := new(MockUserRepo)
 	mockGroupRepo := new(MockGroupRepo)
-	mockAuthService := new(MockAuthService)
 	mockMsgService := new(MockMessageService)
 
-	handler := NewChatHandler(mockConvRepo, mockMsgRepo, mockUserRepo, mockGroupRepo, mockAuthService, mockMsgService)
-	// Inject router
-	r := gin.Default()
-	r.GET("/messages/:id/receipts", handler.GetReceipts)
+	handler := NewChatHandler(mockConvRepo, mockMsgRepo, mockUserRepo, mockGroupRepo, mockMsgService)
 
 	userID := uuid.New()
 	messageID := uuid.New()
-	token := "valid_token"
-
-	// Expectations
-	mockAuthService.On("ValidateToken", token).Return(userID, nil)
 
 	mockReceipts := []models.MessageReceipt{
 		{
@@ -719,10 +611,13 @@ func TestGetReceipts_Success(t *testing.T) {
 	}
 	mockMsgService.On("GetMessageReceipts", userID, messageID).Return(mockReceipts, nil)
 
+	// Create router with mock auth middleware
+	r := gin.New()
+	r.GET("/messages/:id/receipts", mockAuthMiddleware(userID), handler.GetReceipts)
+
 	// Execute
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("GET", "/messages/"+messageID.String()+"/receipts", nil)
-	req.Header.Set("Authorization", "Bearer "+token)
 	r.ServeHTTP(w, req)
 
 	// Assert
@@ -735,22 +630,24 @@ func TestGetReceipts_Success(t *testing.T) {
 }
 
 func TestGetReceipts_InvalidID(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
 	mockConvRepo := new(MockConversationRepo)
 	mockMsgRepo := new(MockMessageRepo)
 	mockUserRepo := new(MockUserRepo)
 	mockGroupRepo := new(MockGroupRepo)
-	mockAuthService := new(MockAuthService)
 	mockMsgService := new(MockMessageService)
 
-	handler := NewChatHandler(mockConvRepo, mockMsgRepo, mockUserRepo, mockGroupRepo, mockAuthService, mockMsgService)
-	r := gin.Default()
-	r.GET("/messages/:id/receipts", handler.GetReceipts)
+	handler := NewChatHandler(mockConvRepo, mockMsgRepo, mockUserRepo, mockGroupRepo, mockMsgService)
 
-	mockAuthService.On("ValidateToken", "valid").Return(uuid.New(), nil)
+	userID := uuid.New()
+
+	// Create router with mock auth middleware
+	r := gin.New()
+	r.GET("/messages/:id/receipts", mockAuthMiddleware(userID), handler.GetReceipts)
 
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("GET", "/messages/invalid-uuid/receipts", nil)
-	req.Header.Set("Authorization", "Bearer valid")
 	r.ServeHTTP(w, req)
 
 	assert.Equal(t, http.StatusBadRequest, w.Code)

@@ -3,6 +3,7 @@ package handlers
 import (
 	"net/http"
 
+	"chat-app/internal/middleware"
 	"chat-app/internal/service"
 
 	"github.com/gin-gonic/gin"
@@ -11,13 +12,11 @@ import (
 
 type GroupHandler struct {
 	groupService service.GroupService
-	authService  service.AuthService
 }
 
-func NewGroupHandler(groupService service.GroupService, authService service.AuthService) *GroupHandler {
+func NewGroupHandler(groupService service.GroupService) *GroupHandler {
 	return &GroupHandler{
 		groupService: groupService,
-		authService:  authService,
 	}
 }
 
@@ -32,21 +31,10 @@ type AddMemberRequest struct {
 
 // CreateGroup handles POST /groups
 func (h *GroupHandler) CreateGroup(c *gin.Context) {
-	// 1. Get user ID from JWT token
-	tokenString := c.GetHeader("Authorization")
-	if tokenString == "" {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "authorization token required"})
-		return
-	}
-
-	// Remove "Bearer " prefix if present
-	if len(tokenString) > 7 && tokenString[:7] == "Bearer " {
-		tokenString = tokenString[7:]
-	}
-
-	userID, err := h.authService.ValidateToken(tokenString)
-	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid token"})
+	// 1. Get user ID from AuthMiddleware context
+	userID := middleware.GetUserIDFromContext(c)
+	if userID == uuid.Nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
 		return
 	}
 
@@ -73,21 +61,10 @@ func (h *GroupHandler) CreateGroup(c *gin.Context) {
 
 // AddMember handles POST /groups/:id/members
 func (h *GroupHandler) AddMember(c *gin.Context) {
-	// 1. Get user ID from JWT token
-	tokenString := c.GetHeader("Authorization")
-	if tokenString == "" {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "authorization token required"})
-		return
-	}
-
-	// Remove "Bearer " prefix if present
-	if len(tokenString) > 7 && tokenString[:7] == "Bearer " {
-		tokenString = tokenString[7:]
-	}
-
-	adminID, err := h.authService.ValidateToken(tokenString)
-	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid token"})
+	// 1. Get user ID from AuthMiddleware context
+	adminID := middleware.GetUserIDFromContext(c)
+	if adminID == uuid.Nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
 		return
 	}
 

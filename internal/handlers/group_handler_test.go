@@ -39,26 +39,32 @@ func (m *MockGroupService) RemoveMember(adminID, groupID, memberID uuid.UUID) er
 	return args.Error(0)
 }
 
-func setupGroupTest() (*handlers.GroupHandler, *MockGroupService, *MockAuthService, *gin.Engine) {
+func setupGroupTest() (*handlers.GroupHandler, *MockGroupService, *gin.Engine) {
 	gin.SetMode(gin.TestMode)
 	mockGroupService := new(MockGroupService)
-	mockAuthService := new(MockAuthService)
-	handler := handlers.NewGroupHandler(mockGroupService, mockAuthService)
+	handler := handlers.NewGroupHandler(mockGroupService)
 	r := gin.New()
-	return handler, mockGroupService, mockAuthService, r
+	return handler, mockGroupService, r
+}
+
+// Helper middleware to set userID in context (simulates what AuthMiddleware does)
+func mockAuthMiddleware(userID uuid.UUID) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		c.Set("userID", userID)
+		c.Next()
+	}
 }
 
 func TestCreateGroup_Success(t *testing.T) {
-	handler, mockGroupService, mockAuthService, r := setupGroupTest()
-	r.POST("/groups", handler.CreateGroup)
+	handler, mockGroupService, r := setupGroupTest()
 
 	creatorID := uuid.New()
 	member1 := uuid.New()
 	member2 := uuid.New()
 	groupID := uuid.New()
 
-	// Mock token validation
-	mockAuthService.On("ValidateToken", "valid_token").Return(creatorID, nil)
+	// Apply mock auth middleware that sets userID
+	r.POST("/groups", mockAuthMiddleware(creatorID), handler.CreateGroup)
 
 	// Mock group creation
 	group := &models.Group{
@@ -74,7 +80,6 @@ func TestCreateGroup_Success(t *testing.T) {
 	}
 	bodyBytes, _ := json.Marshal(body)
 	req, _ := http.NewRequest("POST", "/groups", bytes.NewBuffer(bodyBytes))
-	req.Header.Set("Authorization", "Bearer valid_token")
 	req.Header.Set("Content-Type", "application/json")
 
 	w := httptest.NewRecorder()
@@ -88,34 +93,16 @@ func TestCreateGroup_Success(t *testing.T) {
 	assert.Equal(t, groupID.String(), response["id"])
 	assert.Equal(t, "Test Group", response["name"])
 
-	mockAuthService.AssertExpectations(t)
 	mockGroupService.AssertExpectations(t)
 }
 
-func TestCreateGroup_Unauthorized_NoToken(t *testing.T) {
-	handler, _, _, r := setupGroupTest()
+func TestCreateGroup_Unauthorized_NoUserInContext(t *testing.T) {
+	handler, _, r := setupGroupTest()
+	// No auth middleware - userID won't be in context
 	r.POST("/groups", handler.CreateGroup)
 
 	body := `{"name": "Test Group", "member_ids": []}`
 	req, _ := http.NewRequest("POST", "/groups", bytes.NewBufferString(body))
-	req.Header.Set("Content-Type", "application/json")
-
-	w := httptest.NewRecorder()
-	r.ServeHTTP(w, req)
-
-	assert.Equal(t, http.StatusUnauthorized, w.Code)
-}
-
-func TestCreateGroup_Unauthorized_InvalidToken(t *testing.T) {
-	handler, _, mockAuthService, r := setupGroupTest()
-	r.POST("/groups", handler.CreateGroup)
-
-	// Mock invalid token
-	mockAuthService.On("ValidateToken", "invalid_token").Return(uuid.Nil, assert.AnError)
-
-	body := `{"name": "Test Group", "member_ids": []}`
-	req, _ := http.NewRequest("POST", "/groups", bytes.NewBufferString(body))
-	req.Header.Set("Authorization", "Bearer invalid_token")
 	req.Header.Set("Content-Type", "application/json")
 
 	w := httptest.NewRecorder()
@@ -125,16 +112,14 @@ func TestCreateGroup_Unauthorized_InvalidToken(t *testing.T) {
 }
 
 func TestCreateGroup_BadRequest_MissingName(t *testing.T) {
-	handler, _, mockAuthService, r := setupGroupTest()
-	r.POST("/groups", handler.CreateGroup)
+	handler, _, r := setupGroupTest()
 
 	creatorID := uuid.New()
-	mockAuthService.On("ValidateToken", "valid_token").Return(creatorID, nil)
+	r.POST("/groups", mockAuthMiddleware(creatorID), handler.CreateGroup)
 
 	// Missing name field
 	body := `{"member_ids": []}`
 	req, _ := http.NewRequest("POST", "/groups", bytes.NewBufferString(body))
-	req.Header.Set("Authorization", "Bearer valid_token")
 	req.Header.Set("Content-Type", "application/json")
 
 	w := httptest.NewRecorder()
@@ -144,15 +129,13 @@ func TestCreateGroup_BadRequest_MissingName(t *testing.T) {
 }
 
 func TestAddMember_Success(t *testing.T) {
-	handler, mockGroupService, mockAuthService, r := setupGroupTest()
-	r.POST("/groups/:id/members", handler.AddMember)
+	handler, mockGroupService, r := setupGroupTest()
 
 	adminID := uuid.New()
 	groupID := uuid.New()
 	newMemberID := uuid.New()
 
-	// Mock token validation
-	mockAuthService.On("ValidateToken", "admin_token").Return(adminID, nil)
+	r.POST("/groups/:id/members", mockAuthMiddleware(adminID), handler.AddMember)
 
 	// Mock adding member
 	mockGroupService.On("AddMember", adminID, groupID, newMemberID).Return(nil)
@@ -161,7 +144,6 @@ func TestAddMember_Success(t *testing.T) {
 	body := map[string]string{"user_id": newMemberID.String()}
 	bodyBytes, _ := json.Marshal(body)
 	req, _ := http.NewRequest("POST", "/groups/"+groupID.String()+"/members", bytes.NewBuffer(bodyBytes))
-	req.Header.Set("Authorization", "Bearer admin_token")
 	req.Header.Set("Content-Type", "application/json")
 
 	w := httptest.NewRecorder()
@@ -174,20 +156,17 @@ func TestAddMember_Success(t *testing.T) {
 	json.Unmarshal(w.Body.Bytes(), &response)
 	assert.Equal(t, "member added successfully", response["message"])
 
-	mockAuthService.AssertExpectations(t)
 	mockGroupService.AssertExpectations(t)
 }
 
 func TestAddMember_Forbidden_NotAdmin(t *testing.T) {
-	handler, mockGroupService, mockAuthService, r := setupGroupTest()
-	r.POST("/groups/:id/members", handler.AddMember)
+	handler, mockGroupService, r := setupGroupTest()
 
 	regularUserID := uuid.New()
 	groupID := uuid.New()
 	newMemberID := uuid.New()
 
-	// Mock token validation
-	mockAuthService.On("ValidateToken", "user_token").Return(regularUserID, nil)
+	r.POST("/groups/:id/members", mockAuthMiddleware(regularUserID), handler.AddMember)
 
 	// Mock service returning forbidden error
 	forbiddenErr := errors.New("only admins can add members")
@@ -197,7 +176,6 @@ func TestAddMember_Forbidden_NotAdmin(t *testing.T) {
 	body := map[string]string{"user_id": newMemberID.String()}
 	bodyBytes, _ := json.Marshal(body)
 	req, _ := http.NewRequest("POST", "/groups/"+groupID.String()+"/members", bytes.NewBuffer(bodyBytes))
-	req.Header.Set("Authorization", "Bearer user_token")
 	req.Header.Set("Content-Type", "application/json")
 
 	w := httptest.NewRecorder()
@@ -206,20 +184,17 @@ func TestAddMember_Forbidden_NotAdmin(t *testing.T) {
 	// Assert - Should be 403 Forbidden
 	assert.Equal(t, http.StatusForbidden, w.Code)
 
-	mockAuthService.AssertExpectations(t)
 	mockGroupService.AssertExpectations(t)
 }
 
 func TestAddMember_BadRequest_InvalidGroupID(t *testing.T) {
-	handler, _, mockAuthService, r := setupGroupTest()
-	r.POST("/groups/:id/members", handler.AddMember)
+	handler, _, r := setupGroupTest()
 
 	adminID := uuid.New()
-	mockAuthService.On("ValidateToken", "admin_token").Return(adminID, nil)
+	r.POST("/groups/:id/members", mockAuthMiddleware(adminID), handler.AddMember)
 
 	body := `{"user_id": "` + uuid.New().String() + `"}`
 	req, _ := http.NewRequest("POST", "/groups/invalid-uuid/members", bytes.NewBufferString(body))
-	req.Header.Set("Authorization", "Bearer admin_token")
 	req.Header.Set("Content-Type", "application/json")
 
 	w := httptest.NewRecorder()
@@ -229,18 +204,16 @@ func TestAddMember_BadRequest_InvalidGroupID(t *testing.T) {
 }
 
 func TestAddMember_BadRequest_MissingUserID(t *testing.T) {
-	handler, _, mockAuthService, r := setupGroupTest()
-	r.POST("/groups/:id/members", handler.AddMember)
+	handler, _, r := setupGroupTest()
 
 	adminID := uuid.New()
 	groupID := uuid.New()
 
-	mockAuthService.On("ValidateToken", "admin_token").Return(adminID, nil)
+	r.POST("/groups/:id/members", mockAuthMiddleware(adminID), handler.AddMember)
 
 	// Missing user_id
 	body := `{}`
 	req, _ := http.NewRequest("POST", "/groups/"+groupID.String()+"/members", bytes.NewBufferString(body))
-	req.Header.Set("Authorization", "Bearer admin_token")
 	req.Header.Set("Content-Type", "application/json")
 
 	w := httptest.NewRecorder()

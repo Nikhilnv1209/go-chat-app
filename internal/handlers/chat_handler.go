@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"strconv"
 
+	"chat-app/internal/middleware"
 	"chat-app/internal/repository"
 	"chat-app/internal/service"
 
@@ -12,12 +13,11 @@ import (
 )
 
 type ChatHandler struct {
-	convRepo    repository.ConversationRepository
-	msgRepo     repository.MessageRepository
-	userRepo    repository.UserRepository
-	groupRepo   repository.GroupRepository
-	authService service.AuthService
-	msgService  service.MessageService
+	convRepo   repository.ConversationRepository
+	msgRepo    repository.MessageRepository
+	userRepo   repository.UserRepository
+	groupRepo  repository.GroupRepository
+	msgService service.MessageService
 }
 
 func NewChatHandler(
@@ -25,16 +25,14 @@ func NewChatHandler(
 	msgRepo repository.MessageRepository,
 	userRepo repository.UserRepository,
 	groupRepo repository.GroupRepository,
-	authService service.AuthService,
 	msgService service.MessageService,
 ) *ChatHandler {
 	return &ChatHandler{
-		convRepo:    convRepo,
-		msgRepo:     msgRepo,
-		userRepo:    userRepo,
-		groupRepo:   groupRepo,
-		authService: authService,
-		msgService:  msgService,
+		convRepo:   convRepo,
+		msgRepo:    msgRepo,
+		userRepo:   userRepo,
+		groupRepo:  groupRepo,
+		msgService: msgService,
 	}
 }
 
@@ -51,21 +49,10 @@ type ConversationResponse struct {
 // GetConversations handles GET /conversations
 // Returns the inbox (list of conversations) sorted by last_message_at
 func (h *ChatHandler) GetConversations(c *gin.Context) {
-	// 1. Get user ID from JWT token
-	tokenString := c.GetHeader("Authorization")
-	if tokenString == "" {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "authorization token required"})
-		return
-	}
-
-	// Remove "Bearer " prefix if present
-	if len(tokenString) > 7 && tokenString[:7] == "Bearer " {
-		tokenString = tokenString[7:]
-	}
-
-	userID, err := h.authService.ValidateToken(tokenString)
-	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid token"})
+	// 1. Get user ID from AuthMiddleware context
+	userID := middleware.GetUserIDFromContext(c)
+	if userID == uuid.Nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
 		return
 	}
 
@@ -113,21 +100,10 @@ func (h *ChatHandler) GetConversations(c *gin.Context) {
 // GetMessages handles GET /messages?target_id=<uuid>&type=<DM|GROUP>&limit=<n>
 // Returns message history for a specific conversation
 func (h *ChatHandler) GetMessages(c *gin.Context) {
-	// 1. Get user ID from JWT token
-	tokenString := c.GetHeader("Authorization")
-	if tokenString == "" {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "authorization token required"})
-		return
-	}
-
-	// Remove "Bearer " prefix if present
-	if len(tokenString) > 7 && tokenString[:7] == "Bearer " {
-		tokenString = tokenString[7:]
-	}
-
-	userID, err := h.authService.ValidateToken(tokenString)
-	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid token"})
+	// 1. Get user ID from AuthMiddleware context
+	userID := middleware.GetUserIDFromContext(c)
+	if userID == uuid.Nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
 		return
 	}
 
@@ -197,18 +173,10 @@ func (h *ChatHandler) GetMessages(c *gin.Context) {
 
 // MarkRead handles POST /messages/:id/read
 func (h *ChatHandler) MarkRead(c *gin.Context) {
-	// 1. Auth check
-	tokenString := c.GetHeader("Authorization")
-	if tokenString == "" {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "authorization token required"})
-		return
-	}
-	if len(tokenString) > 7 && tokenString[:7] == "Bearer " {
-		tokenString = tokenString[7:]
-	}
-	userID, err := h.authService.ValidateToken(tokenString)
-	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid token"})
+	// 1. Get user ID from AuthMiddleware context
+	userID := middleware.GetUserIDFromContext(c)
+	if userID == uuid.Nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
 		return
 	}
 
@@ -230,18 +198,10 @@ func (h *ChatHandler) MarkRead(c *gin.Context) {
 }
 
 func (h *ChatHandler) GetReceipts(c *gin.Context) {
-	// 1. Auth check
-	tokenString := c.GetHeader("Authorization")
-	if tokenString == "" {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "authorization token required"})
-		return
-	}
-	if len(tokenString) > 7 && tokenString[:7] == "Bearer " {
-		tokenString = tokenString[7:]
-	}
-	userID, err := h.authService.ValidateToken(tokenString)
-	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid token"})
+	// 1. Get user ID from AuthMiddleware context
+	userID := middleware.GetUserIDFromContext(c)
+	if userID == uuid.Nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
 		return
 	}
 

@@ -2,10 +2,12 @@ package main
 
 import (
 	"log"
+	"net/http"
 
 	"chat-app/internal/config"
 	"chat-app/internal/database"
 	"chat-app/internal/handlers"
+	"chat-app/internal/middleware"
 	"chat-app/internal/models"
 	"chat-app/internal/repository"
 	"chat-app/internal/service"
@@ -24,7 +26,7 @@ func main() {
 	cfg := config.Load()
 
 	// 2. Initialize Database
-	database.InitDB()
+	database.InitDB(cfg)
 	db := database.GetDB()
 
 	// 3. Auto Migrate Models
@@ -68,8 +70,8 @@ func main() {
 	// Handlers
 	authHandler := handlers.NewAuthHandler(authService)
 	wsHandler := handlers.NewWSHandler(hub, authService)
-	groupHandler := handlers.NewGroupHandler(groupService, authService)
-	chatHandler := handlers.NewChatHandler(convRepo, msgRepo, userRepo, groupRepo, authService, msgService)
+	groupHandler := handlers.NewGroupHandler(groupService)
+	chatHandler := handlers.NewChatHandler(convRepo, msgRepo, userRepo, groupRepo, msgService)
 
 	// INJECT MessageService into Hub/Client factory if needed?
 	// Actually, the new handlers.WSHandler logic just passes the hub.
@@ -78,18 +80,24 @@ func main() {
 	wsHandler.MsgService = msgService
 
 	// 5. Server Setup
-	r := gin.Default()
+	// Using gin.New() for explicit middleware control as per specs/03_Technical_Specification.md
+	r := gin.New()
+	r.Use(gin.Recovery())                // Panic recovery
+	r.Use(middleware.LoggerMiddleware()) // Custom request logging [F00]
+	r.Use(middleware.CORSMiddleware())   // CORS headers [F00]
 
 	// Routes
+	// Public routes (no auth required)
 	authRoutes := r.Group("/auth")
 	{
 		authRoutes.POST("/register", authHandler.Register)
 		authRoutes.POST("/login", authHandler.Login)
 	}
 
+	// Protected routes (require JWT auth)
 	// Chat Routes (Inbox & History)
-	// Grouping chat-related routes for better organization
-	chatRoutes := r.Group("/") // Use root path for chat routes to maintain existing URLs
+	chatRoutes := r.Group("/")
+	chatRoutes.Use(middleware.AuthMiddleware(jwtService)) // [F00] Auth Middleware
 	{
 		chatRoutes.GET("/conversations", chatHandler.GetConversations)
 		chatRoutes.GET("/messages", chatHandler.GetMessages)
@@ -97,8 +105,9 @@ func main() {
 		chatRoutes.GET("/messages/:id/receipts", chatHandler.GetReceipts)
 	}
 
-	// Group Routes
+	// Group Routes (protected)
 	groupRoutes := r.Group("/groups")
+	groupRoutes.Use(middleware.AuthMiddleware(jwtService)) // [F00] Auth Middleware
 	{
 		groupRoutes.POST("", groupHandler.CreateGroup)
 		groupRoutes.POST("/:id/members", groupHandler.AddMember)
@@ -112,8 +121,16 @@ func main() {
 		c.JSON(200, gin.H{"status": "ok"})
 	})
 
+	// 6. Start Server with Timeouts
+	srv := &http.Server{
+		Addr:         ":" + cfg.Server.Port,
+		Handler:      r,
+		ReadTimeout:  cfg.Server.ReadTimeout,
+		WriteTimeout: cfg.Server.WriteTimeout,
+	}
+
 	log.Printf("Server started on :%s", cfg.Server.Port)
-	if err := r.Run(":" + cfg.Server.Port); err != nil {
+	if err := srv.ListenAndServe(); err != nil {
 		log.Fatal("Server failed: ", err)
 	}
 }
