@@ -28,6 +28,11 @@
 | Setup Project & Go Mod | ✅ DONE | `chat-app` module initialized. |
 | Setup Docker/Podman | ✅ DONE | Postgres container running. |
 | Define GORM Models | ✅ DONE | Models for User, Message, Group, etc. |
+| Create `.env.example` Template | ✅ DONE | Environment variables template for new developers. |
+| Implement Complete Config Struct | ✅ DONE | Server timeouts, DB pool settings, JWT config. |
+| Implement CORS Middleware | ✅ DONE | `internal/middleware/cors.go` applied in `main.go`. |
+| Implement Logger Middleware | ✅ DONE | `internal/middleware/logger.go` - Custom request logging. |
+| Implement Auth Middleware | ✅ DONE | `internal/middleware/auth.go` - Applied to protected route groups (chat, groups). |
 | Database Migration | ✅ DONE | AutoMigrate successful. |
 
 ---
