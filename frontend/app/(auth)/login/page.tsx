@@ -27,7 +27,7 @@ export default function LoginPage() {
     },
     onSuccess: (data) => {
       dispatch(setCredentials({ user: data.user, token: data.token }));
-      router.push('/');
+      router.push('/dashboard');
     },
   });
 
@@ -138,7 +138,10 @@ export default function LoginPage() {
 
             {loginMutation.isError && (
               <div className="p-4 text-sm text-red-300 bg-red-500/10 border border-red-500/20 rounded-xl animate-enter">
-                {(loginMutation.error as AxiosError<{ error: string }>).response?.data?.error || 'Authentication failed'}
+                {(() => {
+                  const axiosError = loginMutation.error as AxiosError<{ error: { code: string; message: string } }>;
+                  return axiosError.response?.data?.error?.message || 'Authentication failed';
+                })()}
               </div>
             )}
 

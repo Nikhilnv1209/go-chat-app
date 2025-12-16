@@ -28,7 +28,7 @@ export default function RegisterPage() {
     },
     onSuccess: (data) => {
       dispatch(setCredentials({ user: data.user, token: data.token }));
-      router.push('/');
+      router.push('/dashboard');
     },
   });
 
@@ -160,7 +160,10 @@ export default function RegisterPage() {
 
             {registerMutation.isError && (
               <div className="p-4 text-sm text-red-300 bg-red-500/10 border border-red-500/20 rounded-xl animate-enter">
-                {(registerMutation.error as AxiosError<{ error: string }>).response?.data?.error || 'Failed to create account'}
+                {(() => {
+                  const axiosError = registerMutation.error as AxiosError<{ error: { code: string; message: string } }>;
+                  return axiosError.response?.data?.error?.message || 'Failed to create account';
+                })()}
               </div>
             )}
 
