@@ -65,7 +65,28 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4 py-8">
+    <div className="min-h-[100dvh] relative flex flex-col overflow-x-hidden">
+      {/* Fixed Background Layer */}
+      <div className="fixed inset-0 h-[100lvh] w-full overflow-hidden pointer-events-none bg-slate-950">
+        {/* Animated Background */}
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_80%_at_50%_-20%,rgba(120,119,198,0.3),rgba(255,255,255,0))]" />
+
+        {/* Floating Orbs - Purple/Pink Theme */}
+        <div
+          className="absolute top-[-20%] left-[-10%] w-[500px] h-[500px] rounded-full pointer-events-none animate-float"
+          style={{
+            background: 'radial-gradient(circle, rgba(168,85,247,0.3) 0%, rgba(168,85,247,0) 70%)',
+          }}
+        />
+        <div
+          className="absolute bottom-[-20%] right-[-10%] w-[600px] h-[600px] rounded-full pointer-events-none animate-float-reverse"
+          style={{
+            background: 'radial-gradient(circle, rgba(236,72,153,0.25) 0%, rgba(236,72,153,0) 70%)',
+          }}
+        />
+      </div>
+
+      <div className="relative z-10 flex items-center justify-center flex-grow min-h-[100dvh] px-4 py-8">
       <div className="w-full max-w-md md:max-w-xl">
         {/* Glass Card */}
         <div className="relative backdrop-blur-xl bg-white/[0.05] border border-white/[0.1] rounded-2xl p-8 md:p-10 shadow-2xl">
@@ -172,6 +193,7 @@ export default function RegisterPage() {
             </p>
           </div>
         </div>
+      </div>
       </div>
     </div>
   );

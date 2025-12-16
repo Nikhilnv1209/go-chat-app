@@ -4,9 +4,9 @@ import { MessageSquare, Zap, Shield, ArrowRight } from "lucide-react";
 
 export default function Home() {
   return (
-    <div className="min-h-screen bg-slate-950 relative flex flex-col">
+    <div className="min-h-[100dvh] relative flex flex-col overflow-x-hidden">
       {/* Fixed Background Layer */}
-      <div className="fixed inset-0 overflow-hidden pointer-events-none">
+      <div className="fixed inset-0 h-[100lvh] w-full overflow-hidden pointer-events-none bg-slate-950">
         {/* Animated Background */}
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_80%_at_50%_-20%,rgba(120,119,198,0.3),rgba(255,255,255,0))]" />
 
@@ -26,7 +26,7 @@ export default function Home() {
       </div>
 
       {/* Content */}
-      <div className="relative z-10 flex flex-col items-center justify-center flex-grow min-h-screen px-4">
+      <div className="relative z-10 flex flex-col items-center justify-center flex-grow min-h-[100dvh] px-4 py-12">
         {/* Hero Section */}
         <div className="text-center max-w-3xl mx-auto animate-enter">
           {/* Badge */}
@@ -73,7 +73,7 @@ export default function Home() {
         </div>
 
         {/* Features */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-24 max-w-4xl mx-auto">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-12 md:mt-24 max-w-4xl mx-auto">
           <div className="p-6 rounded-2xl bg-white/[0.03] border border-white/[0.05] hover:bg-white/[0.05] transition-colors">
             <div className="w-12 h-12 rounded-xl bg-indigo-500/10 flex items-center justify-center mb-4">
               <MessageSquare className="w-6 h-6 text-indigo-400" />

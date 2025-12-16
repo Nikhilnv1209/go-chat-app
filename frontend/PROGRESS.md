@@ -41,8 +41,6 @@
 | **Build Login Page** | `Task 2.2` | ✅ **DONE** | `app/(auth)/login/page.tsx` with forms & validation. |
 | **Build Register Page** | `Task 2.3` | ✅ **DONE** | `app/(auth)/register/page.tsx`. |
 | **Protected Route Layout** | `Task 2.4` | ✅ **DONE** | Auth Guard redirects to /login. |
-| **Build Register Page** | `Task 2.3` | ⬜ **TODO** | `app/(auth)/register/page.tsx`. |
-| **Protected Route Layout** | `Task 2.4` | ⬜ **TODO** | Auth Guard implementation. |
 
 ---
 
