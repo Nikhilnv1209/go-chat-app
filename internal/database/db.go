@@ -3,8 +3,8 @@ package database
 import (
 	"fmt"
 	"log"
-	"os"
-	"time"
+
+	"chat-app/internal/config"
 
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
@@ -13,13 +13,13 @@ import (
 
 var DB *gorm.DB
 
-func InitDB() {
+func InitDB(cfg *config.Config) {
 	dsn := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s sslmode=disable TimeZone=UTC",
-		os.Getenv("DB_HOST"),
-		os.Getenv("DB_USER"),
-		os.Getenv("DB_PASSWORD"),
-		os.Getenv("DB_NAME"),
-		os.Getenv("DB_PORT"),
+		cfg.Database.Host,
+		cfg.Database.User,
+		cfg.Database.Password,
+		cfg.Database.DBName,
+		cfg.Database.Port,
 	)
 
 	var err error
@@ -36,10 +36,10 @@ func InitDB() {
 		log.Fatal("Failed to get database instance: ", err)
 	}
 
-	// Connection Pool Config
-	sqlDB.SetMaxIdleConns(10)
-	sqlDB.SetMaxOpenConns(100)
-	sqlDB.SetConnMaxLifetime(time.Hour)
+	// Connection Pool Config from config
+	sqlDB.SetMaxIdleConns(cfg.Database.MaxIdleConns)
+	sqlDB.SetMaxOpenConns(cfg.Database.MaxOpenConns)
+	sqlDB.SetConnMaxLifetime(cfg.Database.ConnMaxLifetime)
 
 	log.Println("Database connection established")
 }
