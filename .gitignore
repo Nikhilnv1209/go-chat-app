@@ -12,7 +12,8 @@ bin/
 *.log
 
 # Environment variables
-.env*
+.env
+!.env.example
 
 # IDEs
 .vscode/
