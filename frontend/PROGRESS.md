@@ -1,8 +1,8 @@
 # BMAD Progress Tracker (Frontend)
 
-**Current Status**: 🟢 Phase 2 - Authentication Module
-**Last Action**: Implemented Tasks 2.2, 2.3, 2.4 - Created Login/Register pages and AuthGuard layout.
-**Next Action**: Begin Phase 3 - Dashboard Skeleton (Task 3.1).
+**Current Status**: 🚧 Phase 3 - Dashboard Skeleton
+**Last Action**: Completed Task 3.1 - Built ChatSidebar with full API integration.
+**Next Action**: Begin Task 3.2 - Build UserProfile component.
 
 ---
 
@@ -12,7 +12,7 @@
 |-------|-------------|--------|------------|
 | **Phase 1** | Foundation & Scaffolding | ✅ **DONE** | 100% |
 | **Phase 2** | Authentication Module | ✅ **DONE** | 100% |
-| **Phase 3** | Dashboard Skeleton | ⬜ **TODO** | 0% |
+| **Phase 3** | Dashboard Skeleton | 🚧 **IN PROGRESS** | 33% |
 | **Phase 4** | Core Messaging Features | ⬜ **TODO** | 0% |
 | **Phase 5** | Refinement & Polish | ⬜ **TODO** | 0% |
 
@@ -49,9 +49,9 @@
 
 | Task | ID | Status | Notes |
 |------|----|--------|-------|
-| **Build ChatSidebar** | `Task 3.1` | ⬜ **TODO** | Fetch conversations, render list. |
+| **Build ChatSidebar** | `Task 3.1` | ✅ **DONE** | Sidebar with search, conversation list, unread badges, online status. Integrated conversationApi + Redux. |
 | **Build UserProfile** | `Task 3.2` | ⬜ **TODO** | User info & Logout button. |
-| **Create Empty Dashboard** | `Task 3.3` | ⬜ **TODO** | "Select a chat" placeholder. |
+| **Create Empty Dashboard** | `Task 3.3` | ✅ **DONE** | "Select a chat" placeholder with feature tips. |
 
 ---
 
