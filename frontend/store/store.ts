@@ -1,10 +1,12 @@
 import { configureStore } from '@reduxjs/toolkit';
 import authReducer from './features/authSlice';
+import conversationReducer from './features/conversationSlice';
 
 export const makeStore = () => {
   return configureStore({
     reducer: {
       auth: authReducer,
+      conversation: conversationReducer,
     },
   });
 };
