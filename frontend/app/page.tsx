@@ -1,8 +1,35 @@
-import Link from "next/link";
-import { Button } from "@/components/ui/button";
-import { MessageSquare, Zap, Shield, ArrowRight } from "lucide-react";
+'use client';
+
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { useAppSelector } from '@/store/hooks';
+import Link from 'next/link';
+import { Button } from '@/components/ui/button';
+import { ArrowRight, MessageSquare, ShieldCheck, Zap, Shield } from 'lucide-react';
 
 export default function Home() {
+  const { isAuthenticated, isLoading } = useAppSelector((state) => state.auth);
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!isLoading && isAuthenticated) {
+      router.push('/dashboard');
+    }
+  }, [isLoading, isAuthenticated, router]);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-[100dvh] relative flex flex-col overflow-x-hidden">
+        <div className="fixed inset-0 h-[100lvh] w-full overflow-hidden pointer-events-none bg-slate-950">
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_80%_at_50%_-20%,rgba(120,119,198,0.3),rgba(255,255,255,0))]" />
+        </div>
+        <div className="relative z-10 flex items-center justify-center flex-grow min-h-[100dvh]">
+          <div className="animate-spin rounded-full h-12 w-12 border-2 border-indigo-500 border-t-transparent"></div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-[100dvh] relative flex flex-col overflow-x-hidden">
       {/* Fixed Background Layer */}
