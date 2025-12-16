@@ -69,13 +69,13 @@ func (h *ChatHandler) GetConversations(c *gin.Context) {
 		targetName := ""
 
 		switch conv.Type {
-		case "DM":
+		case "private":
 			// Fetch user name
 			user, err := h.userRepo.FindByID(conv.TargetID)
 			if err == nil {
 				targetName = user.Username
 			}
-		case "GROUP":
+		case "group":
 			// Fetch group name
 			group, err := h.groupRepo.FindByID(conv.TargetID)
 			if err == nil {
