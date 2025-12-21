@@ -1,9 +1,11 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAppSelector } from '@/store/hooks';
+import { MessageSquare, Menu, Settings, X } from 'lucide-react';
 import ChatSidebar from '@/components/chat/ChatSidebar';
+import { Button } from '@/components/ui/button';
 
 export default function DashboardLayout({
   children,
@@ -12,6 +14,11 @@ export default function DashboardLayout({
 }) {
   const { isAuthenticated, isLoading } = useAppSelector((state) => state.auth);
   const router = useRouter();
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+
+  const toggleSidebar = () => {
+    setIsSidebarOpen(!isSidebarOpen);
+  };
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
@@ -37,12 +44,48 @@ export default function DashboardLayout({
   }
 
   return (
-    <div className="flex h-screen overflow-hidden bg-slate-950">
+    <div className="flex h-screen overflow-hidden bg-slate-950 ios-safe-area no-bounce">
+      {/* Mobile Sidebar Overlay */}
+      {isSidebarOpen && (
+        <div
+          className="md:hidden fixed inset-0 bg-black/50 z-20"
+          onClick={() => setIsSidebarOpen(false)}
+        />
+      )}
+
       {/* Sidebar */}
-      <ChatSidebar />
+      <ChatSidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
+
+      {/* Mobile Header */}
+      <div className="md:hidden fixed top-0 left-0 right-0 z-30 bg-slate-950/80 backdrop-blur-sm border-b border-white/10">
+        <div className="flex items-center justify-between h-14 px-4">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={toggleSidebar}
+            className="text-slate-400 hover:text-white hover:bg-white/5"
+          >
+            <Menu className="w-5 h-5" />
+          </Button>
+          <h1 className="text-lg font-semibold text-white flex items-center gap-2">
+            <MessageSquare className="w-5 h-5 text-indigo-400" />
+            Chat
+          </h1>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => router.push('/dashboard/profile')}
+            className="text-slate-400 hover:text-white hover:bg-white/5"
+          >
+            <Settings className="w-5 h-5" />
+          </Button>
+        </div>
+      </div>
 
       {/* Main Content Area */}
-      <main className="flex-1 flex flex-col overflow-hidden">
+      <main className="flex-1 flex flex-col overflow-hidden md:ml-0">
+        {/* Mobile spacer */}
+        <div className="md:hidden h-14"></div>
         {children}
       </main>
     </div>

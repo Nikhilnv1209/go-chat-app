@@ -215,3 +215,154 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* Modern Scrollbar Styles */
+@layer utilities {
+  /* Webkit Browsers (Chrome, Safari, Edge) */
+  .scrollbar-modern {
+    scrollbar-width: thin;
+    scrollbar-color: rgb(148 163 184 / 0.3) transparent;
+  }
+
+  .scrollbar-modern::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  .scrollbar-modern::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .scrollbar-modern::-webkit-scrollbar-thumb {
+    background-color: rgb(148 163 184 / 0.3);
+    border-radius: 4px;
+    border: 2px solid transparent;
+    background-clip: content-box;
+  }
+
+  .scrollbar-modern::-webkit-scrollbar-thumb:hover {
+    background-color: rgb(148 163 184 / 0.5);
+  }
+
+  .scrollbar-modern::-webkit-scrollbar-thumb:active {
+    background-color: rgb(99 102 241 / 0.6);
+  }
+
+  /* Dark Theme Scrollbar */
+  .scrollbar-dark {
+    scrollbar-width: thin;
+    scrollbar-color: rgb(71 85 105 / 0.5) transparent;
+  }
+
+  .scrollbar-dark::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  .scrollbar-dark::-webkit-scrollbar-track {
+    background: rgb(15 23 42 / 0.5);
+  }
+
+  .scrollbar-dark::-webkit-scrollbar-thumb {
+    background-color: rgb(71 85 105 / 0.5);
+    border-radius: 3px;
+  }
+
+  .scrollbar-dark::-webkit-scrollbar-thumb:hover {
+    background-color: rgb(100 116 139 / 0.7);
+  }
+
+  .scrollbar-dark::-webkit-scrollbar-thumb:active {
+    background-color: rgb(99 102 241 / 0.6);
+  }
+
+  /* Apply to all scrollbars globally */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: rgb(15 23 42 / 0.1);
+    border-radius: 4px;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: rgb(71 85 105 / 0.4);
+    border-radius: 4px;
+    border: 1px solid rgb(30 41 59 / 0.3);
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: rgb(100 116 139 / 0.6);
+  }
+
+  ::-webkit-scrollbar-thumb:active {
+    background: rgb(99 102 241 / 0.7);
+  }
+
+  ::-webkit-scrollbar-corner {
+    background: transparent;
+  }
+
+  /* Firefox scrollbar */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: rgb(71 85 105 / 0.4) transparent;
+  }
+
+  /* iOS Safari bottom navigation bar glow fix */
+  @supports (-webkit-touch-callout: none) {
+    body {
+      /* Prevent white glow from iOS Safari bottom navigation bar */
+      background-color: rgb(2 6 23);
+      -webkit-appearance: none;
+      /* Prevent overscroll glow */
+      overscroll-behavior: none;
+    }
+
+    /* Add padding for iOS Safari safe area */
+    .ios-safe-area {
+      padding-bottom: env(safe-area-inset-bottom);
+    }
+
+    /* Prevent white glow at bottom of viewport */
+    html, body {
+      background: rgb(2 6 23);
+      min-height: 100vh;
+      min-height: 100dvh;
+    }
+
+    /* Prevent webkit's tap highlight and glow effects */
+    * {
+      -webkit-tap-highlight-color: transparent;
+      -webkit-touch-callout: none;
+      -webkit-user-select: none;
+      user-select: none;
+    }
+
+    /* Allow text selection for inputs and text areas */
+    input, textarea, [contenteditable] {
+      -webkit-user-select: text;
+      user-select: text;
+    }
+
+    /* Prevent scroll bounce and glow */
+    .no-bounce {
+      -webkit-overflow-scrolling: touch;
+      overscroll-behavior: contain;
+    }
+  }
+
+  /* Additional mobile browser fixes */
+  @media screen and (max-width: 768px) {
+    body {
+      /* Prevent mobile browser UI glow effects */
+      background: rgb(2 6 23);
+      background-attachment: fixed;
+    }
+
+    /* Prevent pull-to-refresh glow */
+    html {
+      overscroll-behavior-y: contain;
+    }
+  }
+}
