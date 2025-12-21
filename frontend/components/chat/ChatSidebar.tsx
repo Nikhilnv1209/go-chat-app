@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
-import { Search, MessageSquare, Users, LogOut, Settings } from 'lucide-react';
+import { Search, MessageSquare, Users, LogOut, Settings, X } from 'lucide-react';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { setConversations, setActiveConversation, resetUnread } from '@/store/features/conversationSlice';
 import { conversationApi } from '@/lib/conversationApi';
@@ -12,7 +12,12 @@ import { Button } from '@/components/ui/button';
 import { Conversation } from '@/types';
 import { logout } from '@/store/features/authSlice';
 
-export default function ChatSidebar() {
+interface ChatSidebarProps {
+  isOpen?: boolean;
+  onClose?: () => void;
+}
+
+export default function ChatSidebar({ isOpen, onClose }: ChatSidebarProps = {}) {
   const router = useRouter();
   const dispatch = useAppDispatch();
   const { token, user } = useAppSelector((state) => state.auth);
@@ -41,6 +46,10 @@ export default function ChatSidebar() {
     dispatch(setActiveConversation(conv.id));
     dispatch(resetUnread(conv.id));
     router.push(`/c/${conv.target_id}`);
+    // Close sidebar on mobile after clicking a conversation
+    if (onClose) {
+      onClose();
+    }
   };
 
   const handleLogout = () => {
@@ -69,18 +78,30 @@ export default function ChatSidebar() {
   };
 
   return (
-    <aside className="flex flex-col w-full md:w-80 lg:w-96 border-r border-white/[0.1] bg-slate-950/50 backdrop-blur-xl">
+    <aside className={`flex flex-col w-full md:w-80 lg:w-96 border-r border-white/[0.1] bg-slate-950/50 backdrop-blur-xl fixed md:relative h-full z-30 md:z-0 transform transition-transform duration-300 ease-in-out ${
+      isOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'
+    }`}>
       {/* Header */}
       <div className="flex-shrink-0 p-4 border-b border-white/[0.1]">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-bold text-white flex items-center gap-2">
-            <MessageSquare className="w-5 h-5 text-indigo-400" />
-            Chats
-          </h2>
+          <div className="hidden md:flex items-center gap-2 min-w-0">
+            <MessageSquare className="w-5 h-5 text-indigo-400 flex-shrink-0" />
+            <h2 className="text-xl font-bold text-white whitespace-nowrap">Chats</h2>
+          </div>
           <div className="flex items-center gap-2">
+            {/* Mobile Close Button */}
             <Button
               variant="ghost"
               size="icon"
+              onClick={onClose}
+              className="md:hidden h-9 w-9 text-slate-400 hover:text-white hover:bg-white/[0.05]"
+            >
+              <X className="w-4 h-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => router.push('/dashboard/profile')}
               className="h-9 w-9 text-slate-400 hover:text-white hover:bg-white/[0.05]"
             >
               <Settings className="w-4 h-4" />
