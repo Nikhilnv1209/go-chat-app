@@ -24,9 +24,17 @@ build:
 logs:
 	podman-compose logs -f
 
-# Local development (requires PostgreSQL running separately)
+# Local development: Start database container then run backend locally
 dev:
-	@echo "🔧 Running backend locally (ensure PostgreSQL is running)..."
+	@echo "🗄️ Starting PostgreSQL container..."
+	podman-compose up -d postgres
+	@echo "⏳ Waiting for PostgreSQL to be ready..."
+	@until podman exec chat_postgres pg_isready -U user -d chat_db > /dev/null 2>&1; do \
+		printf "."; \
+		sleep 1; \
+	done
+	@echo "\n✅ PostgreSQL is ready!"
+	@echo "🔧 Running backend locally..."
 	go run cmd/server/main.go
 
 # Run tests
