@@ -6,33 +6,37 @@
 This document outlines the step-by-step execution plan for the coding agents.
 
 ## Phase 1: Foundation & Scaffolding
-*   [ ] **Task 1.1**: Initialize Next.js 15 project in `frontend/` directory. **[Trace: S-SYS-01]**
+*   [x] **Task 1.1**: Initialize Next.js 16 project in `frontend/` directory. **[Trace: S-SYS-01]**
     *   `npx create-next-app@latest frontend --typescript --tailwind --eslint`
-*   [ ] **Task 1.2**: Install Dependencies. **[Trace: S-SYS-02]**
-    *   `@tanstack/react-query`, `@reduxjs/toolkit`, `react-redux`, `lucide-react`, `clsx`.
-*   [ ] **Task 1.3**: Configure Providers (`app/providers.tsx`). **[Trace: S-SYS-03]**
-    *   Wrap app in `ReduxProvider` and `QueryClientProvider`.
-*   [ ] **Task 1.4**: Setup Shadcn/UI. **[Trace: S-SYS-04]**
-    *   Initialize: `npx shadcn@latest init --yes --defaults --base-color slate --template next-16`
-    *   Add components: `npx shadcn@latest add button input card avatar badge scroll-area textarea`
-    *   Creates `cn()` utility automatically in `lib/utils.ts`.
+    *   **UPDATE**: Actually using Next.js 16.0.8 with React 19.2.1 and Tailwind v4
+*   [x] **Task 1.2**: Install Dependencies. **[Trace: S-SYS-02]**
+    *   **COMPLETED**: `@tanstack/react-query`, `@reduxjs/toolkit`, `react-redux`, `lucide-react`, `clsx`, `axios`, `tailwind-merge`
+*   [x] **Task 1.3**: Configure Providers (`app/providers.tsx`). **[Trace: S-SYS-03]**
+    *   **COMPLETED**: App wrapped in `ReduxProvider` and `QueryClientProvider`
+*   [x] **Task 1.4**: Setup Shadcn/UI. **[Trace: S-SYS-04]**
+    *   **COMPLETED**: Shadcn initialized with Slate theme
+    *   Components added: Button, Input, Card, Avatar, Badge, ScrollArea, Textarea
+    *   `cn()` utility created in `lib/utils.ts`
 
 ## Phase 2: Authentication Module
-*   [ ] **Task 2.1**: Implement `authSlice` (Redux) and `api` utility. **[Trace: F-FAU-02]**
-    *   Setup Axios/Fetch with JWT handling.
-*   [ ] **Task 2.2**: Build Login Page (`app/(auth)/login/page.tsx`). **[Trace: F-FAU-02, F-FAU-03]**
-    *   Form UI -> Call API -> Dispatch Login -> Redirect.
-*   [ ] **Task 2.3**: Build Register Page (`app/(auth)/register/page.tsx`). **[Trace: F-FAU-01, F-FAU-03]**
-*   [ ] **Task 2.4**: Implement Protected Route Layout (`app/(dashboard)/layout.tsx`). **[Trace: F-FAU-02]**
-    *   Check for auth token; redirect if missing.
+*   [x] **Task 2.1**: Implement `authSlice` (Redux) and `api` utility. **[Trace: F-FAU-02]**
+    *   **COMPLETED**: Axios wrapper with JWT handling implemented in `lib/api.ts`
+*   [x] **Task 2.2**: Build Login Page (`app/(auth)/login/page.tsx`). **[Trace: F-FAU-02, F-FAU-03]**
+    *   **COMPLETED**: Form UI with validation, API integration, and Redux dispatch
+*   [x] **Task 2.3**: Build Register Page (`app/(auth)/register/page.tsx`). **[Trace: F-FAU-01, F-FAU-03]**
+    *   **COMPLETED**: Registration form with validation and error handling
+*   [x] **Task 2.4**: Implement Protected Route Layout (`app/(dashboard)/layout.tsx`). **[Trace: F-FAU-02]**
+    *   **COMPLETED**: AuthGuard that redirects to `/login` when not authenticated
 
 ## Phase 3: The Dashboard Skeleton
-*   [ ] **Task 3.1**: Build `ChatSidebar` component. **[Trace: F-FDB-01]**
-    *   Fetch conversations using `useQuery`.
-    *   Render list with active states.
-*   [ ] **Task 3.2**: Build `UserProfile` component (Bottom of sidebar). **[Trace: F-FAU-02]**
-    *   Logout functionality.
-*   [ ] **Task 3.3**: Create Empty State for Dashboard (`app/(dashboard)/page.tsx`). **[Trace: F-FDB-01]**
+*   [x] **Task 3.1**: Build `ChatSidebar` component. **[Trace: F-FDB-01]**
+    *   **COMPLETED**: Fetches conversations using React Query, includes search functionality, unread badges, and online status indicators
+    *   **BONUS**: Integrated with `conversationApi` and Redux for state management
+*   [x] **Task 3.2**: Build `UserProfile` component (Bottom of sidebar). **[Trace: F-FAU-02]**
+    *   **COMPLETED**: UserProfile component created with avatar, user details, online status, and logout functionality
+    *   **NOTE**: Actually integrated into ChatSidebar as a mini profile section
+*   [x] **Task 3.3**: Create Empty State for Dashboard (`app/(dashboard)/page.tsx`). **[Trace: F-FDB-01]**
+    *   **COMPLETED**: "Select a chat" placeholder page with feature tips and navigation
 
 ## Phase 4: Core Messaging Features
 *   [ ] **Task 4.1**: Build `MessageList` component. **[Trace: F-FCH-01]**
@@ -65,22 +69,22 @@ Complete mapping from Feature → Story → Task(s).
 
 | Feature ID | Story Summary | Implementing Task(s) | Status |
 |------------|---------------|----------------------|--------|
-| **F-FAU-01** | Sign Up | Task 2.3 | ⬜ Pending |
-| **F-FAU-02** | Login + Session | Task 2.1, 2.2, 2.4, 3.2 | ⬜ Pending |
-| **F-FAU-03** | Loading States | Task 2.2, 2.3 | ⬜ Pending |
-| **F-FDB-01** | Conversation List | Task 3.1, 3.3 | ⬜ Pending |
-| **F-FDB-02** | Unread Badges | Task 5.3 | ⬜ Pending |
-| **F-FDB-03** | Theme Toggle | Task 1.3 (Provider) | ⬜ Pending |
-| **F-FCH-01** | Instant Messages | Task 4.1, 4.2, 4.3 | ⬜ Pending |
-| **F-FCH-02** | Online Status | Task 4.3 | ⬜ Pending |
-| **F-FHS-01** | Infinite Scroll | Task 5.1 | ⬜ Pending |
-| **F-FGR-01** | Create Group | Task 5.2 | ⬜ Pending |
-| **F-FRR-01** | Read Receipts | Task 5.4 | ⬜ Pending |
-| **F-FTI-01** | Typing Indicators | Task 5.5 | ⬜ Pending |
-| **S-SYS-01** | Init Project | Task 1.1 | ⬜ Pending |
-| **S-SYS-02** | Install Deps | Task 1.2 | ⬜ Pending |
-| **S-SYS-03** | Configure Providers | Task 1.3 | ⬜ Pending |
-| **S-SYS-04** | Setup Shadcn/UI | Task 1.4 | ⬜ Pending |
+| **F-FAU-01** | Sign Up | Task 2.3 | ✅ **DONE** |
+| **F-FAU-02** | Login + Session | Task 2.1, 2.2, 2.4, 3.2 | ✅ **DONE** |
+| **F-FAU-03** | Loading States | Task 2.2, 2.3 | ✅ **DONE** |
+| **F-FDB-01** | Conversation List | Task 3.1, 3.3 | ✅ **DONE** |
+| **F-FDB-02** | Unread Badges | Task 5.3 | 🚧 **IN PROGRESS** (Partially done in sidebar) |
+| **F-FDB-03** | Theme Toggle | Task 1.3 (Provider) | ⬜ **TODO** |
+| **F-FCH-01** | Instant Messages | Task 4.1, 4.2, 4.3 | ⬜ **TODO** |
+| **F-FCH-02** | Online Status | Task 4.3 | ✅ **DONE** (In sidebar) |
+| **F-FHS-01** | Infinite Scroll | Task 5.1 | ⬜ **TODO** |
+| **F-FGR-01** | Create Group | Task 5.2 | ⬜ **TODO** |
+| **F-FRR-01** | Read Receipts | Task 5.4 | ⬜ **TODO** |
+| **F-FTI-01** | Typing Indicators | Task 5.5 | ⬜ **TODO** |
+| **S-SYS-01** | Init Project | Task 1.1 | ✅ **DONE** |
+| **S-SYS-02** | Install Deps | Task 1.2 | ✅ **DONE** |
+| **S-SYS-03** | Configure Providers | Task 1.3 | ✅ **DONE** |
+| **S-SYS-04** | Setup Shadcn/UI | Task 1.4 | ✅ **DONE** |
 
 
 ---

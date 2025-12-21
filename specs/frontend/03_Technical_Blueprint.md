@@ -9,40 +9,56 @@ A **Client-Server** architecture where Next.js serves as both the secure fronten
 
 `Browser` <-> `Next.js (App Router)` <-> `Go API (REST + WS)`
 
-## 2. Directory Structure (Next.js 15)
+## 2. Directory Structure (Next.js 16 - IMPLEMENTED)
 
 ```bash
 frontend/
 ├── app/
 │   ├── (auth)/             # Route Group: Public
-│   │   ├── login/page.tsx
-│   │   └── register/page.tsx
-│   ├── (dashboard)/        # Route Group: Protected
-│   │   ├── layout.tsx      # Sidebar + AuthGuard
-│   │   ├── page.tsx        # "Select a chat" placeholder
-│   │   └── c/[id]/page.tsx # Active Conversation
-│   ├── layout.tsx          # Root: ThemeProvider, ReduxProvider, QueryProvider
-│   └── globals.css
+│   │   ├── layout.tsx      # Auth layout with background
+│   │   ├── login/page.tsx  # ✅ COMPLETED
+│   │   └── register/page.tsx # ✅ COMPLETED
+│   ├── dashboard/          # Route Group: Protected (changed from (dashboard))
+│   │   ├── layout.tsx      # ✅ COMPLETED: Sidebar + AuthGuard
+│   │   ├── page.tsx        # ✅ COMPLETED: "Select a chat" placeholder
+│   │   └── profile/        # ✅ BONUS: Profile page
+│   │       └── page.tsx
+│   ├── layout.tsx          # ✅ COMPLETED: Root with providers
+│   ├── page.tsx            # Landing page
+│   ├── providers.tsx       # ✅ COMPLETED: Redux/Query providers
+│   └── globals.css         # ✅ COMPLETED: Tailwind styles
 ├── components/
-│   ├── ui/                 # Shadcn Atoms (Button, Input, Avatar)
-│   ├── auth/               # Auth Forms
+│   ├── ui/                 # ✅ COMPLETED: Shadcn components
+│   │   ├── button.tsx
+│   │   ├── input.tsx
+│   │   ├── card.tsx
+│   │   ├── avatar.tsx
+│   │   ├── badge.tsx
+│   │   ├── scroll-area.tsx
+│   │   └── textarea.tsx
 │   └── chat/               # Chat Organisms
-│       ├── ChatSidebar.tsx
-│       ├── MessageList.tsx
-│       ├── ChatInput.tsx
-│       └── UserProfile.tsx
+│       ├── ChatSidebar.tsx # ✅ COMPLETED: Conversation list
+│       └── UserProfile.tsx # ✅ COMPLETED: User info component
 ├── lib/
-│   ├── api.ts              # Typed Fetch Wrapper
-│   └── socket.ts           # Singleton WebSocket Service
-├── store/                  # Redux Toolkit
-│   ├── store.ts
+│   ├── api.ts              # ✅ COMPLETED: API wrapper with Axios
+│   ├── conversationApi.ts  # ✅ BONUS: Conversation-specific API
+│   └── utils.ts            # ✅ COMPLETED: cn() utility
+├── store/                  # ✅ COMPLETED: Redux Toolkit
+│   ├── store.ts            # Root store configuration
+│   ├── hooks.ts            # Redux hooks
 │   └── features/
-│       ├── authSlice.ts
-│       └── uiSlice.ts
-└── hooks/                  # Custom Hooks
-    ├── useSocket.ts
-    └── useChatScroll.ts
+│       ├── authSlice.ts    # ✅ COMPLETED: Auth state management
+│       └── conversationSlice.ts # ✅ BONUS: Conversation state
+├── types/                  # ✅ BONUS: Type definitions
+│   └── index.ts            # All TypeScript interfaces
+└── package.json            # ✅ COMPLETED: Dependencies and scripts
 ```
+
+**NOTES ON IMPLEMENTATION**:
+- Changed route group from `(dashboard)` to `dashboard` (removed parentheses)
+- Added bonus features: Profile page, conversationSlice, and separate conversationApi
+- WebSocket service (`socket.ts`) not yet implemented
+- Message components not yet created
 
 ## 3. Data Strategy
 
@@ -69,19 +85,23 @@ The `SocketService` is a singleton class exposed via `useSocket`.
 3.  `queryClient.setQueryData(['messages', id], (old) => [...old, newMessage])`
     *   *Note*: This bypasses Redux to keep message streams performant.
 
-## 4. Dependencies
-*   `next`: ^16.0.0 (Latest)
-*   `react`: ^19.0.0 (Stable)
-*   `@tanstack/react-query`: ^5.0.0
-*   `@reduxjs/toolkit`: ^2.0.0
-*   `react-redux`: ^9.0.0
-*   `lucide-react`: Latest (Icon library)
-*   `shadcn/ui`: Latest (CLI-based component library)
+## 4. Dependencies (INSTALLED)
+*   `next`: 16.0.8 (Latest stable)
+*   `react`: 19.2.1 (Stable)
+*   `@tanstack/react-query`: 5.90.12
+*   `@reduxjs/toolkit`: 2.11.1
+*   `react-redux`: 9.2.0
+*   `lucide-react`: 0.560.0 (Icon library)
+*   `axios`: 1.13.2 (HTTP client)
+*   `shadcn/ui` components (CLI-based component library)
     *   Uses Radix UI primitives for accessibility
-    *   Components copied into `@/components/ui`
+    *   Components in `@/components/ui`
     *   Full customization, zero runtime overhead
-*   `clsx`, `tailwind-merge`: For dynamic classes.
-*   `class-variance-authority`: For component variants.
+    *   Installed: `@radix-ui/react-avatar`, `@radix-ui/react-scroll-area`, `@radix-ui/react-slot`
+*   `clsx`: 2.1.1 (For dynamic classes)
+*   `tailwind-merge`: 3.4.0 (Tailwind class merging)
+*   `class-variance-authority`: 0.7.1 (For component variants)
+*   `tailwindcss`: v4 (Latest version)
 
 ## 5. Error Handling Strategy
 
