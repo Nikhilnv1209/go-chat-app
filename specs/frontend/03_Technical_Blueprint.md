@@ -17,12 +17,12 @@ frontend/
 │   ├── (auth)/             # Route Group: Public
 │   │   ├── layout.tsx      # Auth layout with background
 │   │   ├── login/page.tsx  # ✅ COMPLETED
-│   │   └── register/page.tsx # ✅ COMPLETED
+│   │   ├── register/page.tsx # ✅ COMPLETED
 │   ├── dashboard/          # Route Group: Protected (changed from (dashboard))
-│   │   ├── layout.tsx      # ✅ COMPLETED: Sidebar + AuthGuard
+│   │   ├── layout.tsx      # ✅ COMPLETED: NavigationRail + ChatSidebar + AuthGuard + Responsive
 │   │   ├── page.tsx        # ✅ COMPLETED: "Select a chat" placeholder
-│   │   └── profile/        # ✅ BONUS: Profile page
-│   │       └── page.tsx
+│   │   ├── profile/        # ✅ BONUS: Profile page
+│   │   │   └── page.tsx
 │   ├── layout.tsx          # ✅ COMPLETED: Root with providers
 │   ├── page.tsx            # Landing page
 │   ├── providers.tsx       # ✅ COMPLETED: Redux/Query providers
@@ -35,10 +35,13 @@ frontend/
 │   │   ├── avatar.tsx
 │   │   ├── badge.tsx
 │   │   ├── scroll-area.tsx
-│   │   └── textarea.tsx
-│   └── chat/               # Chat Organisms
-│       ├── ChatSidebar.tsx # ✅ COMPLETED: Conversation list
-│       └── UserProfile.tsx # ✅ COMPLETED: User info component
+│   │   ├── textarea.tsx
+│   │   └── tooltip.tsx     # ✅ ADDED
+│   ├── chat/               # Chat Organisms
+│   │   ├── ChatSidebar.tsx # ✅ COMPLETED: Conversation list
+│   │   └── UserProfile.tsx # ✅ COMPLETED: User info component
+│   └── dashboard/          # Dashboard Components
+│       └── NavigationRail.tsx # ✅ ADDED: Modern sidebar navigation
 ├── lib/
 │   ├── api.ts              # ✅ COMPLETED: API wrapper with Axios
 │   ├── conversationApi.ts  # ✅ BONUS: Conversation-specific API

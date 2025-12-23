@@ -134,4 +134,4 @@ The goal of this Epic is to deliver a functional "WhatsApp-lite" backend. It bri
 5.  [x] **Messaging Logic**: Implement Story 1.3 and 1.4.
 6.  [x] **REST API**: Implement Story 1.5.
 7.  [x] **Read Receipts**: Implement Story 1.6.
-8.  [ ] **Typing Indicators**: Implement Story 1.7.
+8.  [x] **Typing Indicators**: Implement Story 1.7.

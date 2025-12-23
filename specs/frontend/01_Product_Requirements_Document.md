@@ -33,6 +33,7 @@ The Frontend for the Go Chat App is a premium, high-performance web interface de
 | **F-FDB-01** | As a user, I want a sidebar list of all my Conversations (DMs & Groups) sorted by recent activity. | **Must** |
 | **F-FDB-02** | As a user, I want to see "Unread" badges so I know where to focus. | **Should** |
 | **F-FDB-03** | As a user, I can toggle between Light and Dark mode. | **Could** |
+| **F-FDB-04** | As a user, I want a modern, floating sidebar layout that optimizes space on larger screens. | **Should** |
 
 ### Epic: Real-Time Messaging (Chat)
 | ID | Story | Priority |

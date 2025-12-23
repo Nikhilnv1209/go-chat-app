@@ -37,6 +37,9 @@ This document outlines the step-by-step execution plan for the coding agents.
     *   **NOTE**: Actually integrated into ChatSidebar as a mini profile section
 *   [x] **Task 3.3**: Create Empty State for Dashboard (`app/(dashboard)/page.tsx`). **[Trace: F-FDB-01]**
     *   **COMPLETED**: "Select a chat" placeholder page with feature tips and navigation
+*   [x] **Task 3.4**: Modernize Dashboard Layout. **[Trace: F-FDB-01, F-FDB-04]**
+    *   **COMPLETED**: Implement `NavigationRail` component with floating sidebar design.
+    *   **COMPLETED**: Refactor `DashboardLayout` for responsive sizing and mobile/desktop switching.
 
 ## Phase 4: Core Messaging Features
 *   [ ] **Task 4.1**: Build `MessageList` component. **[Trace: F-FCH-01]**
@@ -75,6 +78,7 @@ Complete mapping from Feature → Story → Task(s).
 | **F-FDB-01** | Conversation List | Task 3.1, 3.3 | ✅ **DONE** |
 | **F-FDB-02** | Unread Badges | Task 5.3 | 🚧 **IN PROGRESS** (Partially done in sidebar) |
 | **F-FDB-03** | Theme Toggle | Task 1.3 (Provider) | ⬜ **TODO** |
+| **F-FDB-04** | Modern Layout | Task 3.4 | ✅ **DONE** |
 | **F-FCH-01** | Instant Messages | Task 4.1, 4.2, 4.3 | ⬜ **TODO** |
 | **F-FCH-02** | Online Status | Task 4.3 | ✅ **DONE** (In sidebar) |
 | **F-FHS-01** | Infinite Scroll | Task 5.1 | ⬜ **TODO** |

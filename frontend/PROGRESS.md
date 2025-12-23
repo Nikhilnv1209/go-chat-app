@@ -52,6 +52,7 @@
 | **Build ChatSidebar** | `Task 3.1` | ✅ **DONE** | Sidebar with search, conversation list, unread badges, online status. Integrated conversationApi + Redux. |
 | **Build UserProfile** | `Task 3.2` | ✅ **DONE** | UserProfile component with avatar, user details, online status, and logout functionality. |
 | **Create Empty Dashboard** | `Task 3.3` | ✅ **DONE** | "Select a chat" placeholder with feature tips. |
+| **Modernize Dashboard Layout** | `Task 3.4` | ✅ **DONE** | Implemented Navigation Rail with floating sidebar design and responsive optimizations. |
 
 ---
 
@@ -79,5 +80,21 @@
 
 ---
 
+---
+
+## 🚀 Future Roadmap & Enhancements
+
+### Phase 6: Enterprise-Grade Auth & Security
+- [ ] **Multi-Provider OAuth**: Integration with Google, GitHub, and Apple.
+- [ ] **Secure Storage**: Move from `localStorage` to **HTTP-only Cookies** for JWT storage.
+- [ ] **Session Refreshing**: Implement refresh token logic to keep users logged in securely for longer periods.
+- [ ] **Auth.js Migration**: Consider migrating to Auth.js for standardized provider management.
+
+### Phase 7: Media & Advanced UX
+- [ ] **File/Image Uploads**: Support for media attachments in chat.
+- [ ] **Emoji Picker**: Integration of a sleek emoji selector.
+- [ ] **Voice Messages**: Record and send audio clips.
+
+---
 **Legend**:
 ✅ DONE | 🚧 IN PROGRESS | ⬜ TODO | 🔴 BLOCKED
