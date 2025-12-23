@@ -88,13 +88,13 @@ export default function ChatSidebar({ isOpen, onClose }: ChatSidebarProps = {}) 
             <MessageSquare className="w-5 h-5 text-indigo-400 flex-shrink-0" />
             <h2 className="text-xl font-bold text-white whitespace-nowrap">Chats</h2>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 md:hidden">
             {/* Mobile Close Button */}
             <Button
               variant="ghost"
               size="icon"
               onClick={onClose}
-              className="md:hidden h-9 w-9 text-slate-400 hover:text-white hover:bg-white/[0.05]"
+              className="h-9 w-9 text-slate-400 hover:text-white hover:bg-white/[0.05]"
             >
               <X className="w-4 h-4" />
             </Button>
@@ -125,14 +125,14 @@ export default function ChatSidebar({ isOpen, onClose }: ChatSidebarProps = {}) 
             placeholder="Search conversations..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10 h-10 bg-white/[0.05] border-white/[0.1] text-white placeholder:text-slate-500 focus:border-indigo-500/50 focus:ring-indigo-500/20"
+            className="pl-10 h-10 bg-white/[0.05] border-white/[0.1] text-white placeholder:text-slate-500 focus:border-indigo-500/50 focus:ring-indigo-500/20 rounded-xl"
           />
         </div>
       </div>
 
-      {/* User Profile Mini */}
+      {/* User Profile Mini - Mobile Only */}
       {user && (
-        <div className="flex-shrink-0 p-4 border-b border-white/[0.1] bg-gradient-to-r from-indigo-500/10 via-purple-500/10 to-pink-500/10">
+        <div className="flex-shrink-0 p-4 border-b border-white/[0.1] bg-gradient-to-r from-indigo-500/10 via-purple-500/10 to-pink-500/10 md:hidden">
           <div className="flex items-center gap-3">
             <div className="relative">
               <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-semibold">
