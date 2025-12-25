@@ -1,12 +1,16 @@
 import { configureStore } from '@reduxjs/toolkit';
 import authReducer from './features/authSlice';
 import conversationReducer from './features/conversationSlice';
+import folderReducer from './features/folderSlice';
+import uiReducer from './features/uiSlice';
 
 export const makeStore = () => {
   return configureStore({
     reducer: {
       auth: authReducer,
       conversation: conversationReducer,
+      folders: folderReducer,
+      ui: uiReducer,
     },
   });
 };
