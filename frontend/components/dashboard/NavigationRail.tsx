@@ -4,6 +4,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { MessageSquare, LogOut, Briefcase, Users2, Archive, User } from 'lucide-react';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { logout } from '@/store/features/authSlice';
+import { toggleSidebar, setSidebarCollapsed } from '@/store/features/uiSlice';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -13,6 +14,7 @@ export default function NavigationRail() {
   const pathname = usePathname();
   const dispatch = useAppDispatch();
   const { user } = useAppSelector((state) => state.auth);
+  const { isSidebarCollapsed } = useAppSelector((state) => state.ui);
 
   const navItems = [
     { icon: MessageSquare, label: 'All chats', path: '/dashboard', activePath: '/dashboard', count: null },
@@ -47,7 +49,14 @@ export default function NavigationRail() {
                <Tooltip key={item.path}>
                  <TooltipTrigger asChild>
                    <button
-                     onClick={() => router.push(item.path)}
+                     onClick={() => {
+                        if (isActive) {
+                            dispatch(toggleSidebar());
+                        } else {
+                            if (isSidebarCollapsed) dispatch(setSidebarCollapsed(false));
+                            router.push(item.path);
+                        }
+                     }}
                      className={cn(
                        "relative group flex flex-col items-center justify-center w-full aspect-square rounded-xl transition-all duration-200",
                        isActive

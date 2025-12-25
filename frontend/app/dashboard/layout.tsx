@@ -8,12 +8,15 @@ import ChatSidebar from '@/components/chat/ChatSidebar';
 import NavigationRail from '@/components/dashboard/NavigationRail';
 import { Button } from '@/components/ui/button';
 
+import { cn } from '@/lib/utils';
+
 export default function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
   const { isAuthenticated, isLoading } = useAppSelector((state) => state.auth);
+  const { isSidebarCollapsed } = useAppSelector((state) => state.ui);
   const router = useRouter();
   const pathname = usePathname();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -64,8 +67,22 @@ export default function DashboardLayout({
         )}
 
         {/* Sidebar (Chat List) */}
-        <div className={showChatSidebar ? "" : "md:hidden"}>
-           <ChatSidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
+        {/* Sidebar (Chat List) */}
+        <div
+          className={cn(
+            "transition-all duration-300 ease-in-out h-full border-r border-white/[0.05] overflow-hidden bg-slate-950/50 backdrop-blur-xl relative z-10",
+            // Mobile: Full width if active, hidden otherwise (no transition needed for mobile switch usually, but flex handles it)
+            showChatSidebar ? "flex w-full md:w-auto" : "hidden md:flex",
+
+            // Desktop Width Logic
+            // We use specific widths for expanded state, and w-0 for collapsed
+            // opacity-0 is added when collapsed to fade out content while shrinking
+            !isSidebarCollapsed ? "md:w-80 lg:w-96" : "md:w-0 md:border-r-0"
+          )}
+        >
+            <div className="w-full h-full md:w-80 lg:w-96 min-w-[20rem]">
+                <ChatSidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
+            </div>
         </div>
 
         {/* Mobile Header */}
