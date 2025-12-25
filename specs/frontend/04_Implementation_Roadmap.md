@@ -60,9 +60,12 @@ This document outlines the step-by-step execution plan for the coding agents.
     *   Show icons (sent/delivered/read) in `MessageBubble`.
     *   Emit `message_delivered` on receive.
     *   Call `POST /read` on view.
-*   [ ] **Task 5.5**: Implement Typing Indicators. **[Trace: F-FTI-01]**
     *   Debounce `typing_start` in input.
     *   Show animation in `MessageList`.
+*   [x] **Task 5.6**: Implement Chat Folders. **[Trace: F-FDB-05]**
+    *   **COMPLETED**: Create `folderSlice` in Redux.
+    *   **COMPLETED**: Add logical filtering to `ChatSidebar`.
+    *   **COMPLETED**: Add UI for "Add to Folder" (Context Menu or Settings).
 
 ---
 
@@ -79,6 +82,7 @@ Complete mapping from Feature → Story → Task(s).
 | **F-FDB-02** | Unread Badges | Task 5.3 | 🚧 **IN PROGRESS** (Partially done in sidebar) |
 | **F-FDB-03** | Theme Toggle | Task 1.3 (Provider) | ⬜ **TODO** |
 | **F-FDB-04** | Modern Layout | Task 3.4 | ✅ **DONE** |
+| **F-FDB-05** | Chat Folders | Task 5.6 | ✅ **DONE** |
 | **F-FCH-01** | Instant Messages | Task 4.1, 4.2, 4.3 | ⬜ **TODO** |
 | **F-FCH-02** | Online Status | Task 4.3 | ✅ **DONE** (In sidebar) |
 | **F-FHS-01** | Infinite Scroll | Task 5.1 | ⬜ **TODO** |

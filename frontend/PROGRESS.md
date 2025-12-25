@@ -77,6 +77,7 @@
 | **Unread Counts** | `Task 5.3` | ⬜ **TODO** | Sidebar badges. |
 | **Read Receipt UI** | `Task 5.4` | ⬜ **TODO** | Checkmark icons logic. |
 | **Typing Indicators** | `Task 5.5` | ⬜ **TODO** | "Alice is typing..." animation. |
+| **Chat Folders** | `Task 5.6` | ✅ **DONE** | Implemented Work/Friends/Archive folders with filtering and context menu. |
 
 ---
 

@@ -78,6 +78,7 @@ frontend/
 | **Inbox List** | React Query | Cache (5min) | REST `GET /conversations` |
 | **Messages (History)** | React Query | Cache (Infinite) | REST `GET /messages` |
 | **New Messages** | React Query | Manual Cache Update | WebSocket Event |
+| **Chat Folders** | Redux (`folderSlice`) | LocalStorage (MVP) | MVP: Client-only / Future: REST API |
 
 ### 3.3 WebSocket Integration
 The `SocketService` is a singleton class exposed via `useSocket`.
