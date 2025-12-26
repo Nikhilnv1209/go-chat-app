@@ -29,10 +29,10 @@ export default function NavigationRail() {
   };
 
   return (
-    <div className="hidden md:flex flex-col items-center w-[72px] py-6 bg-slate-950/80 backdrop-blur-xl border-r border-white/[0.05] h-full flex-shrink-0 z-50">
+    <div className="hidden md:flex flex-col items-center w-[72px] py-6 bg-[#202022] h-full flex-shrink-0 z-50">
        {/* Logo */}
        <div className="mb-8">
-         <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg shadow-indigo-500/20">
+         <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#7678ed] to-[#5a5cd9] flex items-center justify-center shadow-lg shadow-[#7678ed]/30">
            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="text-white transform scale-75">
              <path d="M12 2L2 22H22L12 2Z" fill="currentColor" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
            </svg>
@@ -60,19 +60,19 @@ export default function NavigationRail() {
                      className={cn(
                        "relative group flex flex-col items-center justify-center w-full aspect-square rounded-xl transition-all duration-200",
                        isActive
-                         ? "bg-indigo-500 text-white shadow-lg shadow-indigo-500/25"
-                         : "text-slate-400 hover:text-white hover:bg-white/[0.08]"
+                         ? "bg-[#7678ed] text-white shadow-lg shadow-[#7678ed]/30"
+                         : "text-white/60 hover:text-white hover:bg-white/10"
                      )}
                    >
                      <item.icon className={cn("w-5 h-5", isActive ? "text-white" : "text-current")} />
 
                      {/* Unread Badge - Mockup for now */}
                      {item.count && (
-                       <span className="absolute top-2 right-2 w-2 h-2 rounded-full bg-red-500 ring-2 ring-slate-950" />
+                       <span className="absolute top-2 right-2 w-2 h-2 rounded-full bg-[#ff7a55] ring-2 ring-[#202022]" />
                      )}
                    </button>
                  </TooltipTrigger>
-                 <TooltipContent side="right" className="bg-slate-900 border-white/10 text-white">
+                 <TooltipContent side="right" className="bg-[#202022] border-white/10 text-white">
                    <p>{item.label}</p>
                  </TooltipContent>
                </Tooltip>
@@ -92,16 +92,16 @@ export default function NavigationRail() {
                     className={cn(
                         "relative group flex flex-col items-center justify-center w-full aspect-square rounded-xl transition-all duration-200",
                         pathname.includes('profile')
-                            ? "bg-white/[0.1] text-white"
-                            : "text-slate-400 hover:text-white hover:bg-white/[0.08]"
+                            ? "bg-white/10 text-white"
+                            : "text-white/60 hover:text-white hover:bg-white/10"
                     )}
                     >
-                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-pink-500 to-rose-500 flex items-center justify-center text-xs text-white font-bold ring-2 ring-slate-950 group-hover:ring-white/20 transition-all">
+                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#ff7a55] to-[#e66a47] flex items-center justify-center text-xs text-white font-bold ring-2 ring-[#202022] group-hover:ring-white/20 transition-all">
                         {user?.username?.[0]?.toUpperCase() || <User className="w-4 h-4" />}
                     </div>
                     </button>
                 </TooltipTrigger>
-                <TooltipContent side="right" className="bg-slate-900 border-white/10 text-white">
+                <TooltipContent side="right" className="bg-[#202022] border-white/10 text-white">
                   <p>Profile</p>
                 </TooltipContent>
             </Tooltip>
@@ -111,12 +111,12 @@ export default function NavigationRail() {
                 <TooltipTrigger asChild>
                     <button
                     onClick={handleLogout}
-                    className="group flex flex-col items-center justify-center w-full aspect-square rounded-xl text-slate-400 hover:text-red-400 hover:bg-red-500/10 transition-all duration-200"
+                    className="group flex flex-col items-center justify-center w-full aspect-square rounded-xl text-white/60 hover:text-[#ff7a55] hover:bg-[#ff7a55]/10 transition-all duration-200"
                     >
                     <LogOut className="w-4 h-4" />
                     </button>
                 </TooltipTrigger>
-                <TooltipContent side="right" className="bg-slate-900 border-white/10 text-white">
+                <TooltipContent side="right" className="bg-[#202022] border-white/10 text-white">
                   <p>Logout</p>
                 </TooltipContent>
             </Tooltip>
