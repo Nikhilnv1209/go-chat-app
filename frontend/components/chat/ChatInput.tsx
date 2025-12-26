@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Send } from 'lucide-react';
+import { Send, Paperclip, Mic } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 
@@ -65,28 +65,45 @@ export default function ChatInput({ onSendMessage, onTyping, isLoading = false }
   };
 
   return (
-    <div className="p-4 border-t border-white/[0.1] bg-slate-950/50 backdrop-blur-md">
-      <div className="flex items-end gap-2 bg-white/[0.05] p-1.5 rounded-xl border border-white/[0.1] focus-within:border-indigo-500/50 transition-colors">
+    <div className="p-4 border-t border-[#7678ed]/10 bg-white">
+      <div className="flex items-end gap-2 bg-[#f9fafc] p-2 rounded-2xl border border-[#7678ed]/10 focus-within:border-[#7678ed]/30 transition-colors">
+        {/* Attachment Button */}
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-9 w-9 shrink-0 text-[#202022]/40 hover:text-[#7678ed] hover:bg-[#7678ed]/10 rounded-xl"
+        >
+          <Paperclip className="w-5 h-5" />
+        </Button>
+
         <Textarea
           ref={textareaRef}
           value={message}
           onChange={handleInput}
           onKeyDown={handleKeyDown}
           placeholder="Type a message..."
-          className="min-h-[20px] max-h-[120px] bg-transparent border-0 focus-visible:ring-0 focus-visible:ring-offset-0 text-white placeholder:text-slate-500 resize-none py-2.5 px-3"
+          className="min-h-[20px] max-h-[120px] bg-transparent border-0 focus-visible:ring-0 focus-visible:ring-offset-0 focus:outline-none text-[#202022] placeholder:text-[#202022]/40 resize-none py-2.5 px-1 shadow-none"
           rows={1}
         />
+
+        {/* Mic Button */}
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-9 w-9 shrink-0 text-[#202022]/40 hover:text-[#7678ed] hover:bg-[#7678ed]/10 rounded-xl"
+        >
+          <Mic className="w-5 h-5" />
+        </Button>
+
+        {/* Send Button */}
         <Button
           size="icon"
           onClick={handleSend}
           disabled={!message.trim() || isLoading}
-          className="h-10 w-10 shrink-0 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+          className="h-10 w-10 shrink-0 bg-[#7678ed] hover:bg-[#5a5cd9] text-white rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-md shadow-[#7678ed]/20"
         >
           <Send className="w-5 h-5" />
         </Button>
-      </div>
-      <div className="text-xs text-slate-500 mt-2 text-center opacity-0 group-focus-within:opacity-100 transition-opacity">
-        Press Enter to send, Shift + Enter for new line
       </div>
     </div>
   );

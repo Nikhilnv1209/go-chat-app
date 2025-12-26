@@ -34,8 +34,6 @@ export default function ChatPage() {
     if (conversation) {
       dispatch(setActiveConversation(conversation.id));
     } else {
-        // If conversation not found in list (e.g. direct link), we might need to fetch it or generic placeholder
-        // For MVP, if not found, we just don't set active ID yet or handle nicely
         dispatch(setActiveConversation(null));
     }
 
@@ -46,7 +44,7 @@ export default function ChatPage() {
 
   // Fetch Messages
   const { data: messages, isLoading } = useQuery({
-    queryKey: ['messages', targetId, type], // Include type in key
+    queryKey: ['messages', targetId, type],
     queryFn: () => conversationApi.getMessages(token!, targetId!, type),
     enabled: !!token && !!targetId && !!type,
   });
@@ -72,48 +70,47 @@ export default function ChatPage() {
   };
 
   return (
-    <div className="flex flex-col h-full w-full bg-slate-950 relative overflow-hidden">
-      {/* ... Header ... */}
-      <div className="h-16 border-b border-white/[0.1] bg-slate-900/50 backdrop-blur-md flex items-center justify-between px-4 sticky top-0 z-10">
-         {/* ... Reusing existing header code ... */}
+    <div className="flex flex-col h-full w-full bg-[#f9fafc] relative overflow-hidden">
+      {/* Header */}
+      <div className="h-16 border-b border-[#7678ed]/10 bg-white flex items-center justify-between px-4 sticky top-0 z-10 shadow-sm">
         <div className="flex items-center gap-3">
-            <Button variant="ghost" size="icon" className="md:hidden -ml-2 text-slate-400" onClick={handleBack}>
+            <Button variant="ghost" size="icon" className="md:hidden -ml-2 text-[#202022]/50 hover:text-[#202022] hover:bg-[#7678ed]/10" onClick={handleBack}>
                 <ArrowLeft className="w-5 h-5" />
             </Button>
 
           <Avatar className="h-10 w-10">
             <AvatarFallback className={cn(
-                "text-white",
-                type === 'GROUP' ? "bg-gradient-to-br from-purple-500 to-pink-600" : "bg-gradient-to-br from-indigo-500 to-purple-600"
+                "text-white font-semibold",
+                type === 'GROUP' ? "bg-gradient-to-br from-[#ff7a55] to-[#e66a47]" : "bg-gradient-to-br from-[#7678ed] to-[#5a5cd9]"
             )}>
               {conversation ? conversation.target_name.charAt(0).toUpperCase() : '?'}
             </AvatarFallback>
           </Avatar>
           <div>
-            <h2 className="text-sm font-semibold text-white">
+            <h2 className="text-sm font-semibold text-[#202022]">
               {conversation
                 ? conversation.target_name
                 : (conversations.length === 0 ? 'Loading...' : 'Chat not found')}
             </h2>
             {conversation && type === 'DM' && (
                <div className="flex items-center gap-1.5">
-                   <div className={cn("w-2 h-2 rounded-full", conversation.is_online ? "bg-green-500" : "bg-slate-500")}></div>
-                   <span className="text-xs text-slate-400">{conversation.is_online ? 'Online' : 'Offline'}</span>
+                   <div className={cn("w-2 h-2 rounded-full", conversation.is_online ? "bg-green-500" : "bg-[#202022]/30")}></div>
+                   <span className="text-xs text-[#202022]/50">{conversation.is_online ? 'Online' : 'Offline'}</span>
                </div>
             )}
             {conversation && type === 'GROUP' && (
-                 <p className="text-xs text-slate-400">
-                     Group Info
+                 <p className="text-xs text-[#202022]/50">
+                     {conversation.member_count ? `${conversation.member_count} members` : 'Group Chat'}
                  </p>
             )}
           </div>
         </div>
 
         <div className="flex items-center gap-1">
-          <Button variant="ghost" size="icon" className="text-slate-400 hover:text-white hover:bg-white/[0.05]">
+          <Button variant="ghost" size="icon" className="text-[#202022]/50 hover:text-[#7678ed] hover:bg-[#7678ed]/10">
             <Search className="w-5 h-5" />
           </Button>
-          <Button variant="ghost" size="icon" className="text-slate-400 hover:text-white hover:bg-white/[0.05]">
+          <Button variant="ghost" size="icon" className="text-[#202022]/50 hover:text-[#7678ed] hover:bg-[#7678ed]/10">
              <MoreVertical className="w-5 h-5" />
           </Button>
         </div>
