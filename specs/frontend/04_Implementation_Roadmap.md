@@ -42,15 +42,13 @@ This document outlines the step-by-step execution plan for the coding agents.
     *   **COMPLETED**: Refactor `DashboardLayout` for responsive sizing and mobile/desktop switching.
 
 ## Phase 4: Core Messaging Features
-*   [ ] **Task 4.1**: Build `MessageList` component. **[Trace: F-FCH-01]**
-    *   Fetch messages for active chat ID.
-    *   Render bubbles (Me vs Them).
-*   [ ] **Task 4.2**: Build `ChatInput` component. **[Trace: F-FCH-01]**
-    *   Textarea with auto-resize.
-    *   Send mutation.
-*   [ ] **Task 4.3**: Integrate `SocketService`. **[Trace: F-FCH-01, F-FCH-02]**
-    *   Connect on mount.
-    *   Listen for `new_message` -> Update Query Cache.
+*   [x] **Task 4.1**: Build `MessageList` component. **[Trace: F-FCH-01]**
+    *   **COMPLETED**: Implemented message rendering, auto-scroll, and sender avatar logic.
+*   [x] **Task 4.2**: Build `ChatInput` component. **[Trace: F-FCH-01]**
+    *   **COMPLETED**: Textarea with auto-resize, Enter-to-send, and premium UI.
+    *   *Note*: Currently uses polling for message sending simulation.
+*   [x] **Task 4.3**: Integrate `SocketService`. **[Trace: F-FCH-01, F-FCH-02]**
+    *   **COMPLETED**: `SocketService` singleton created, auto-reconnect logic, `useSocketConnection` hook for global state updates.
 
 ## Phase 5: Refinement & Polish
 *   [ ] **Task 5.1**: Implement Infinite Scroll for history. **[Trace: F-FHS-01]**
@@ -83,7 +81,7 @@ Complete mapping from Feature → Story → Task(s).
 | **F-FDB-03** | Theme Toggle | Task 1.3 (Provider) | ⬜ **TODO** |
 | **F-FDB-04** | Modern Layout | Task 3.4 | ✅ **DONE** |
 | **F-FDB-05** | Chat Folders | Task 5.6 | ✅ **DONE** |
-| **F-FCH-01** | Instant Messages | Task 4.1, 4.2, 4.3 | ⬜ **TODO** |
+| **F-FCH-01** | Instant Messages | Task 4.1, 4.2, 4.3 | ✅ **DONE** |
 | **F-FCH-02** | Online Status | Task 4.3 | ✅ **DONE** (In sidebar) |
 | **F-FHS-01** | Infinite Scroll | Task 5.1 | ⬜ **TODO** |
 | **F-FGR-01** | Create Group | Task 5.2 | ⬜ **TODO** |

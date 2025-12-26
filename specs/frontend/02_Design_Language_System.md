@@ -42,8 +42,8 @@ We utilize the **Slate** scale for neutrals to provide a "warmer" tech feel than
 *   **Base**: `h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2`
 
 ### Message Bubbles
-*   **Me**: `bg-indigo-600 text-white rounded-2xl rounded-tr-none`.
-*   **Them**: `bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-slate-100 rounded-2xl rounded-tl-none`.
+*   **Me**: `bg-indigo-600 text-white rounded-2xl rounded-br-none`.
+*   **Them**: `bg-slate-100 dark:bg-white/10 text-slate-900 dark:text-slate-100 rounded-2xl rounded-bl-none` (Glassmorphic in dark mode).
 *   **Status Icons (Me)**:
     *   **Sent**: Single gray check (icon-sm, text-slate-300).
     *   **Delivered**: Double gray check.

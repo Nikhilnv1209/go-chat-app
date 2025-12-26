@@ -81,13 +81,23 @@ frontend/
 | **Chat Folders** | Redux (`folderSlice`) | LocalStorage (MVP) | MVP: Client-only / Future: REST API |
 
 ### 3.3 WebSocket Integration
-The `SocketService` is a singleton class exposed via `useSocket`.
+The `SocketService` is a singleton class `frontend/lib/socketService.ts` exposed via a React hook `useSocketConnection`.
 
-**Event Flow**:
-1.  Connection established on `(dashboard)` mount.
-2.  `onMessage` event received.
-3.  `queryClient.setQueryData(['messages', id], (old) => [...old, newMessage])`
-    *   *Note*: This bypasses Redux to keep message streams performant.
+**Class Design (`SocketService`)**:
+*   `connect(token: string)`: Establishes `ws://host/ws?token=...`.
+*   `disconnect()`: Gracefully closes connection.
+*   `on(event: string, callback)`: Event subscription.
+*   `emit(event: string, payload)`: Sends JSON payload.
+*   **Methods**: `sendMessage`, `sendTyping`, `markDelivered`.
+
+**Integration Strategy**:
+1.  **Global Hook (`useSocketConnection`)**:
+    *   Runs in `DashboardLayout`.
+    *   Connects on mount (if authenticated).
+    *   Listens for `receipt_update` -> Dispatches to Redux.
+    *   Listens for `new_message` -> Updates React Query Cache directly (for performance).
+2.  **Logic**:
+    *   Incoming `new_message` bypasses Redux store for the message list to avoid re-renders of the entire app, but updates the *Conversation List* (Redux) to show the new last message and increment unread counts.
 
 ## 4. Dependencies (INSTALLED)
 *   `next`: 16.0.8 (Latest stable)
