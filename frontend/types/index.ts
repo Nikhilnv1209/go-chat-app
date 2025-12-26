@@ -24,6 +24,7 @@ export interface Message {
   content: string;
   msg_type: 'private' | 'group';
   created_at: string;
+  sender?: User;
 }
 
 // Conversation Types

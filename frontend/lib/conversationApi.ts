@@ -14,7 +14,11 @@ export const conversationApi = {
         Authorization: `Bearer ${token}`,
       },
     });
-    return response.data;
+    // Normalize type to ensure it matches 'DM' | 'GROUP'
+    return response.data.map((conv: any) => ({
+      ...conv,
+      type: conv.type.toUpperCase(),
+    }));
   },
 
   /**
