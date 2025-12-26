@@ -59,7 +59,7 @@ export interface MessageReceipt {
 
 // WebSocket Event Types
 export type WSOutgoingEvent =
-  | { type: 'send_message'; payload: { conversation_type: 'DM' | 'GROUP'; target_id: string; content: string } }
+  | { type: 'send_message'; payload: { to_user_id?: string; group_id?: string; content: string } }
   | { type: 'typing_start'; payload: { conversation_type: 'DM' | 'GROUP'; target_id: string } }
   | { type: 'typing_stop'; payload: { conversation_type: 'DM' | 'GROUP'; target_id: string } }
   | { type: 'message_delivered'; payload: { message_id: string } };
