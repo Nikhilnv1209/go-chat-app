@@ -5,17 +5,27 @@ import { Textarea } from '@/components/ui/textarea';
 
 interface ChatInputProps {
   onSendMessage: (content: string) => void;
+  onTyping?: (isTyping: boolean) => void;
   isLoading?: boolean;
 }
 
-export default function ChatInput({ onSendMessage, isLoading = false }: ChatInputProps) {
+export default function ChatInput({ onSendMessage, onTyping, isLoading = false }: ChatInputProps) {
   const [message, setMessage] = useState('');
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const handleSend = () => {
     if (message.trim() && !isLoading) {
       onSendMessage(message);
       setMessage('');
+
+      // Stop typing immediately when sent
+      if (onTyping && typingTimeoutRef.current) {
+          clearTimeout(typingTimeoutRef.current);
+          onTyping(false);
+          typingTimeoutRef.current = null;
+      }
+
       // Reset height
       if (textareaRef.current) {
         textareaRef.current.style.height = 'auto';
@@ -32,6 +42,21 @@ export default function ChatInput({ onSendMessage, isLoading = false }: ChatInpu
 
   const handleInput = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setMessage(e.target.value);
+
+    // Typing Indicator Logic
+    if (onTyping) {
+        if (!typingTimeoutRef.current) {
+            onTyping(true);
+        } else {
+            clearTimeout(typingTimeoutRef.current);
+        }
+
+        typingTimeoutRef.current = setTimeout(() => {
+            onTyping(false);
+            typingTimeoutRef.current = null;
+        }, 1500); // Stop typing after 1.5s of inactivity
+    }
+
     // Auto-resize
     if (textareaRef.current) {
         textareaRef.current.style.height = 'auto';

@@ -48,7 +48,7 @@ export const conversationApi = {
       },
       params,
     });
-    return response.data;
+    return response.data.reverse(); // Backend returns newest first, but UI expects oldest first (bottom up)
   },
 
   /**

@@ -12,6 +12,7 @@ import ChatInput from '@/components/chat/ChatInput';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
+import { socketService } from '@/lib/socketService';
 
 export default function ChatPage() {
   const { type: typeParam, targetId: targetIdParam } = useParams();
@@ -48,12 +49,12 @@ export default function ChatPage() {
     queryKey: ['messages', targetId, type], // Include type in key
     queryFn: () => conversationApi.getMessages(token!, targetId!, type),
     enabled: !!token && !!targetId && !!type,
-    refetchInterval: 5000, // Poll every 5s for now until WS is ready
   });
 
   const handleSendMessage = (content: string) => {
-    console.log('Sending message:', content, 'to', targetId, type);
-    // Placeholder: This will be connected to WebSocket later
+    if (targetId && type) {
+        socketService.sendMessage(content, targetId, type);
+    }
   };
 
   const handleBack = () => {
@@ -64,12 +65,18 @@ export default function ChatPage() {
       return null;
   }
 
+  const handleTyping = (isTyping: boolean) => {
+    if (targetId && type) {
+        socketService.sendTyping(targetId, type, isTyping);
+    }
+  };
+
   return (
-    <div className="flex flex-col h-full w-full bg-slate-950 relative">
-      {/* Chat Header */}
+    <div className="flex flex-col h-full w-full bg-slate-950 relative overflow-hidden">
+      {/* ... Header ... */}
       <div className="h-16 border-b border-white/[0.1] bg-slate-900/50 backdrop-blur-md flex items-center justify-between px-4 sticky top-0 z-10">
+         {/* ... Reusing existing header code ... */}
         <div className="flex items-center gap-3">
-            {/* Mobile Back Button */}
             <Button variant="ghost" size="icon" className="md:hidden -ml-2 text-slate-400" onClick={handleBack}>
                 <ArrowLeft className="w-5 h-5" />
             </Button>
@@ -121,7 +128,11 @@ export default function ChatPage() {
       />
 
       {/* Input Area */}
-      <ChatInput onSendMessage={handleSendMessage} isLoading={false} />
+      <ChatInput
+        onSendMessage={handleSendMessage}
+        onTyping={handleTyping}
+        isLoading={false}
+      />
     </div>
   );
 }
