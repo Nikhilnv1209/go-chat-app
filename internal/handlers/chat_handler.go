@@ -44,6 +44,7 @@ type ConversationResponse struct {
 	TargetName    string    `json:"target_name"`
 	LastMessageAt string    `json:"last_message_at"`
 	UnreadCount   int       `json:"unread_count"`
+	MemberCount   int       `json:"member_count,omitempty"` // Only for groups
 }
 
 // GetConversations handles GET /conversations
@@ -67,6 +68,7 @@ func (h *ChatHandler) GetConversations(c *gin.Context) {
 	response := make([]ConversationResponse, 0, len(conversations))
 	for _, conv := range conversations {
 		targetName := ""
+		memberCount := 0
 
 		switch conv.Type {
 		case "private":
@@ -76,10 +78,15 @@ func (h *ChatHandler) GetConversations(c *gin.Context) {
 				targetName = user.Username
 			}
 		case "group":
-			// Fetch group name
+			// Fetch group name and member count
 			group, err := h.groupRepo.FindByID(conv.TargetID)
 			if err == nil {
 				targetName = group.Name
+			}
+			// Get member count
+			members, err := h.groupRepo.GetMembers(conv.TargetID)
+			if err == nil {
+				memberCount = len(members)
 			}
 		}
 
@@ -90,6 +97,7 @@ func (h *ChatHandler) GetConversations(c *gin.Context) {
 			TargetName:    targetName,
 			LastMessageAt: conv.LastMessageAt.Format("2006-01-02T15:04:05Z07:00"),
 			UnreadCount:   conv.UnreadCount,
+			MemberCount:   memberCount,
 		})
 	}
 

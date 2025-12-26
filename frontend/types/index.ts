@@ -38,6 +38,7 @@ export interface Conversation {
   last_message_at: string;
   unread_count: number;
   is_online?: boolean;
+  member_count?: number; // Only for GROUP conversations
 }
 
 // Group Types
