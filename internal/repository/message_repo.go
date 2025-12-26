@@ -30,7 +30,7 @@ func (r *messageRepository) FindByID(id uuid.UUID) (*models.Message, error) {
 }
 
 func (r *messageRepository) FindByConversation(userID, targetID uuid.UUID, msgType string, limit int, beforeID *uuid.UUID) ([]models.Message, error) {
-	query := r.db.Order("created_at DESC").Limit(limit)
+	query := r.db.Preload("Sender").Order("created_at DESC").Limit(limit)
 
 	// Cursor-based pagination: if beforeID is provided, fetch messages older than that message
 	if beforeID != nil {

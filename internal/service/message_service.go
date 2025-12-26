@@ -60,6 +60,12 @@ func (s *messageService) SendDirectMessage(senderID, receiverID uuid.UUID, conte
 		return nil, err
 	}
 
+	// 1.5 Populate Sender info for response/broadcast
+	sender, err := s.userRepo.FindByID(senderID)
+	if err == nil {
+		msg.Sender = *sender
+	}
+
 	// 2. Create Receipt with SENT status [F06]
 	receipt := &models.MessageReceipt{
 		MessageID: msg.ID,
@@ -118,6 +124,12 @@ func (s *messageService) SendGroupMessage(senderID, groupID uuid.UUID, content s
 
 	if err := s.msgRepo.Create(msg); err != nil {
 		return nil, err
+	}
+
+	// 2.5 Populate Sender info for response/broadcast
+	sender, err := s.userRepo.FindByID(senderID)
+	if err == nil {
+		msg.Sender = *sender
 	}
 
 	// 3. Create Receipts for all members except sender [F06] - Batch Optimized
