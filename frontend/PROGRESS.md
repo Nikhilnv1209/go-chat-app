@@ -1,8 +1,8 @@
 # BMAD Progress Tracker (Frontend)
 
-**Current Status**: ✅ Phase 3 - Dashboard Skeleton Complete
-**Last Action**: Completed Task 3.2 - Built UserProfile component with user info display and logout functionality.
-**Next Action**: Begin Phase 4 - Core Messaging Features.
+**Current Status**: 🚧 Phase 4 - Core Messaging Features In Progress
+**Last Action**: Implemented `MessageList` and `ChatInput` components with message history polling and dynamic chat routing.
+**Next Action**: Implement `SocketService` to replace polling with real-time WebSocket communication.
 
 ---
 
@@ -13,7 +13,7 @@
 | **Phase 1** | Foundation & Scaffolding | ✅ **DONE** | 100% |
 | **Phase 2** | Authentication Module | ✅ **DONE** | 100% |
 | **Phase 3** | Dashboard Skeleton | ✅ **DONE** | 100% |
-| **Phase 4** | Core Messaging Features | ⬜ **TODO** | 0% |
+| **Phase 4** | Core Messaging Features | 🚧 **IN PROGRESS** | 66% |
 | **Phase 5** | Refinement & Polish | ⬜ **TODO** | 0% |
 
 ---
@@ -61,9 +61,9 @@
 
 | Task | ID | Status | Notes |
 |------|----|--------|-------|
-| **Build MessageList** | `Task 4.1` | ⬜ **TODO** | Render bubbles, handle scroll. |
-| **Build ChatInput** | `Task 4.2` | ⬜ **TODO** | Textarea, auto-resize, send action. |
-| **Integrate SocketService** | `Task 4.3` | ⬜ **TODO** | Connection management, event listeners. |
+| **Build MessageList** | `Task 4.1` | ✅ **DONE** | Render bubbles, handle scroll, and sender context avatars. |
+| **Build ChatInput** | `Task 4.2` | ✅ **DONE** | Textarea with auto-resize and Enter-to-send support. |
+| **Integrate SocketService** | `Task 4.3` | ⬜ **TODO** | Connection management, event listeners for real-time updates. |
 
 ---
 
