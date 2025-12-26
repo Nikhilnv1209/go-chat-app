@@ -59,85 +59,92 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-[100dvh] relative flex flex-col overflow-x-hidden">
-      {/* Fixed Background Layer */}
-      <div className="fixed inset-0 h-[100lvh] w-full overflow-hidden pointer-events-none bg-slate-950">
-        {/* Animated Background */}
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_80%_at_50%_-20%,rgba(120,119,198,0.3),rgba(255,255,255,0))]" />
+      {/* Fixed Background Layer - Lavender with wavy pattern effect */}
+      <div className="fixed inset-0 h-[100lvh] w-full overflow-hidden pointer-events-none bg-[#d8d8ec]">
+        {/* Wavy Pattern Background Layers */}
+        <div
+          className="absolute inset-0 opacity-30"
+          style={{
+            backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 1200 800' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath fill='%237678ed' fill-opacity='0.15' d='M0,192L48,176C96,160,192,128,288,144C384,160,480,224,576,245.3C672,267,768,245,864,213.3C960,181,1056,139,1152,144C1248,149,1344,203,1392,229.3L1440,256L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z'%3E%3C/path%3E%3C/svg%3E")`,
+            backgroundSize: 'cover',
+            backgroundPosition: 'bottom',
+          }}
+        />
 
-        {/* Floating Orbs - Indigo/Purple Theme */}
+        {/* Floating Orbs - Using design colors */}
         <div
           className="absolute top-[-20%] left-[-10%] w-[500px] h-[500px] rounded-full pointer-events-none animate-float"
           style={{
-            background: 'radial-gradient(circle, rgba(99,102,241,0.3) 0%, rgba(99,102,241,0) 70%)',
+            background: 'radial-gradient(circle, rgba(118,120,237,0.25) 0%, rgba(118,120,237,0) 70%)',
           }}
         />
         <div
           className="absolute bottom-[-20%] right-[-10%] w-[600px] h-[600px] rounded-full pointer-events-none animate-float-reverse"
           style={{
-            background: 'radial-gradient(circle, rgba(168,85,247,0.25) 0%, rgba(168,85,247,0) 70%)',
+            background: 'radial-gradient(circle, rgba(255,122,85,0.2) 0%, rgba(255,122,85,0) 70%)',
           }}
         />
       </div>
 
       <div className="relative z-10 flex items-center justify-center flex-grow min-h-[100dvh] px-4 py-8">
       <div className="w-full max-w-md md:max-w-xl">
-        {/* Glass Card */}
-        <div className="relative backdrop-blur-xl bg-white/[0.05] border border-white/[0.1] rounded-2xl p-8 md:p-10 shadow-2xl">
-          {/* Glow effect */}
-          <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-indigo-500/10 via-purple-500/10 to-pink-500/10 blur-xl -z-10" />
+        {/* White Card */}
+        <div className="relative bg-white rounded-2xl p-8 md:p-10 shadow-xl shadow-[#7678ed]/10 border border-[#7678ed]/10">
+          {/* Subtle glow effect */}
+          <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-[#7678ed]/5 via-transparent to-[#ff7a55]/5 blur-xl -z-10" />
 
           {/* Header */}
           <div className="text-center mb-6 sm:mb-8">
-            <div className="inline-flex items-center justify-center w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 mb-4 sm:mb-6 shadow-lg shadow-indigo-500/25">
+            <div className="inline-flex items-center justify-center w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-gradient-to-br from-[#7678ed] to-[#5a5cd9] mb-4 sm:mb-6 shadow-lg shadow-[#7678ed]/30">
               <Sparkles className="w-7 h-7 sm:w-8 sm:h-8 text-white" />
             </div>
-            <h1 className="text-2xl sm:text-3xl font-bold text-white mb-2">Welcome back</h1>
-            <p className="text-sm sm:text-base text-slate-400">Sign in to continue to GoChat</p>
+            <h1 className="text-2xl sm:text-3xl font-bold text-[#202022] mb-2">Welcome back</h1>
+            <p className="text-sm sm:text-base text-[#202022]/60">Sign in to continue to GoChat</p>
           </div>
 
           {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-5">
             <div className="space-y-3">
-              <label htmlFor="email" className="block text-sm font-medium text-slate-300">Email</label>
+              <label htmlFor="email" className="block text-sm font-medium text-[#202022]">Email</label>
               <div className="relative group">
-                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-500 group-focus-within:text-indigo-400 transition-colors" />
+                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-[#202022]/40 group-focus-within:text-[#7678ed] transition-colors" />
                 <Input
                   id="email"
                   type="email"
                   placeholder="you@example.com"
-                  className={`h-12 pl-12 bg-white/[0.05] border-white/[0.1] text-white placeholder:text-slate-500 focus:border-indigo-500/50 focus:ring-indigo-500/20 transition-all ${errors.email ? 'border-red-500/50' : ''}`}
+                  className={`h-12 pl-12 bg-[#f9fafc] border-[#7678ed]/20 text-[#202022] placeholder:text-[#202022]/40 focus:border-[#7678ed] focus:ring-[#7678ed]/20 transition-all rounded-xl ${errors.email ? 'border-[#ff7a55]' : ''}`}
                   value={email}
                   onChange={(e) => { setEmail(e.target.value); setErrors(prev => ({ ...prev, email: undefined })); }}
                 />
               </div>
               {errors.email && (
-                <p className="text-xs text-red-400 mt-1 animate-enter">{errors.email}</p>
+                <p className="text-xs text-[#ff7a55] mt-1 animate-enter">{errors.email}</p>
               )}
             </div>
 
             <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <label htmlFor="password" className="block text-sm font-medium text-slate-300">Password</label>
-                <span className="text-xs text-slate-500 cursor-not-allowed">Forgot password?</span>
+                <label htmlFor="password" className="block text-sm font-medium text-[#202022]">Password</label>
+                <span className="text-xs text-[#7678ed] cursor-pointer hover:text-[#5a5cd9] transition-colors">Forgot password?</span>
               </div>
               <div className="relative group">
-                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-500 group-focus-within:text-indigo-400 transition-colors" />
+                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-[#202022]/40 group-focus-within:text-[#7678ed] transition-colors" />
                 <Input
                   id="password"
                   type="password"
                   placeholder="••••••••"
-                  className={`h-12 pl-12 bg-white/[0.05] border-white/[0.1] text-white placeholder:text-slate-500 focus:border-indigo-500/50 focus:ring-indigo-500/20 transition-all ${errors.password ? 'border-red-500/50' : ''}`}
+                  className={`h-12 pl-12 bg-[#f9fafc] border-[#7678ed]/20 text-[#202022] placeholder:text-[#202022]/40 focus:border-[#7678ed] focus:ring-[#7678ed]/20 transition-all rounded-xl ${errors.password ? 'border-[#ff7a55]' : ''}`}
                   value={password}
                   onChange={(e) => { setPassword(e.target.value); setErrors(prev => ({ ...prev, password: undefined })); }}
                 />
               </div>
               {errors.password && (
-                <p className="text-xs text-red-400 mt-1 animate-enter">{errors.password}</p>
+                <p className="text-xs text-[#ff7a55] mt-1 animate-enter">{errors.password}</p>
               )}
             </div>
 
             {loginMutation.isError && (
-              <div className="p-4 text-sm text-red-300 bg-red-500/10 border border-red-500/20 rounded-xl animate-enter">
+              <div className="p-4 text-sm text-[#ff7a55] bg-[#ff7a55]/10 border border-[#ff7a55]/20 rounded-xl animate-enter">
                 {(() => {
                   const axiosError = loginMutation.error as AxiosError<{ error: { code: string; message: string } }>;
                   return axiosError.response?.data?.error?.message || 'Authentication failed';
@@ -146,7 +153,7 @@ export default function LoginPage() {
             )}
 
             <Button
-              className="w-full h-12 text-base font-medium bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white border-0 shadow-lg shadow-indigo-500/25 transition-all hover:shadow-indigo-500/40 relative overflow-hidden group"
+              className="w-full h-12 text-base font-medium bg-[#7678ed] hover:bg-[#5a5cd9] text-white border-0 shadow-lg shadow-[#7678ed]/25 transition-all hover:shadow-[#7678ed]/40 rounded-xl relative overflow-hidden group"
               type="submit"
               disabled={loginMutation.isPending}
             >
@@ -166,9 +173,9 @@ export default function LoginPage() {
 
           {/* Footer */}
           <div className="mt-8 text-center">
-            <p className="text-sm text-slate-400">
+            <p className="text-sm text-[#202022]/60">
               Don&apos;t have an account?{' '}
-              <Link href="/register" className="text-indigo-400 font-semibold hover:text-indigo-300 transition-colors">
+              <Link href="/register" className="text-[#7678ed] font-semibold hover:text-[#5a5cd9] transition-colors">
                 Create one
               </Link>
             </p>
