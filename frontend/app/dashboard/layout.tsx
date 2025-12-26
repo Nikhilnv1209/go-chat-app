@@ -8,6 +8,7 @@ import ChatSidebar from '@/components/chat/ChatSidebar';
 import NavigationRail from '@/components/dashboard/NavigationRail';
 import { Button } from '@/components/ui/button';
 
+import { useSocketConnection } from '@/hooks/useSocketConnection';
 import { cn } from '@/lib/utils';
 
 export default function DashboardLayout({
@@ -15,14 +16,26 @@ export default function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
+  useSocketConnection(); // Init WebSocket
+
   const { isAuthenticated, isLoading } = useAppSelector((state) => state.auth);
   const { isSidebarCollapsed } = useAppSelector((state) => state.ui);
   const router = useRouter();
   const pathname = usePathname();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
-  // Hide ChatSidebar on Profile page to give it full width
-  const showChatSidebar = !pathname.includes('/profile');
+  // Determine if we are in a chat session
+  const isChatOpen = pathname.includes('/dashboard/chat/');
+
+  // Logic to show sidebar on mobile:
+  // - If manually opened via hamburger (isSidebarOpen)
+  // - OR if we are NOT in a chat sesssion (default view on mobile is list)
+  // BUT: The current layout code uses `showChatSidebar` class logic which is messy.
+  // Let's rely on standard logic:
+  // Desktop: Always show sidebar (collapsed or expanded)
+  // Mobile:
+  //   - If isChatOpen -> Hide sidebar (unless manually toggled?) No, manually toggling in chat usually opens drawer.
+  //   - If !isChatOpen -> Show sidebar (full width)
 
   const toggleSidebar = () => {
     setIsSidebarOpen(!isSidebarOpen);
@@ -32,24 +45,16 @@ export default function DashboardLayout({
     if (!isLoading && !isAuthenticated) {
       router.push('/login');
     }
-  }, [isLoading, isAuthenticated, router]);
+    // Close sidebar when navigating (especially on mobile)
+    setIsSidebarOpen(false);
+  }, [isLoading, isAuthenticated, router, pathname]);
 
   if (isLoading) {
-    return (
-      <div className="min-h-[100dvh] relative flex flex-col overflow-x-hidden bg-slate-950">
-        <div className="fixed inset-0 h-[100lvh] w-full overflow-hidden pointer-events-none bg-slate-950">
-          <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_80%_at_50%_-20%,rgba(120,119,198,0.3),rgba(255,255,255,0))]" />
-        </div>
-        <div className="relative z-10 flex items-center justify-center flex-grow min-h-[100dvh]">
-          <div className="animate-spin rounded-full h-12 w-12 border-2 border-indigo-500 border-t-transparent"></div>
-        </div>
-      </div>
-    );
+    // ... loading ...
+    return <div className="min-h-screen bg-slate-950 flex items-center justify-center"><div className="animate-spin rounded-full h-8 w-8 border-2 border-indigo-500 border-t-transparent"></div></div>;
   }
 
-  if (!isAuthenticated) {
-    return null; // Will redirect via useEffect
-  }
+  if (!isAuthenticated) return null;
 
   return (
     <div className="flex h-screen overflow-hidden bg-slate-950 ios-safe-area no-bounce">
@@ -58,63 +63,75 @@ export default function DashboardLayout({
 
       {/* Main Layout Area */}
       <div className="flex-1 flex overflow-hidden relative">
-        {/* Mobile Sidebar Overlay */}
+        {/* Mobile Sidebar Overlay (Only when manually opened) */}
         {isSidebarOpen && (
           <div
-            className="md:hidden fixed inset-0 bg-black/50 z-20"
+            className="md:hidden fixed inset-0 bg-black/60 z-40 backdrop-blur-sm"
             onClick={() => setIsSidebarOpen(false)}
           />
         )}
 
-        {/* Sidebar (Chat List) */}
-        {/* Sidebar (Chat List) */}
+        {/* Sidebar Structure */}
         <div
           className={cn(
-            "transition-all duration-300 ease-in-out h-full border-r border-white/[0.05] overflow-hidden bg-slate-950/50 backdrop-blur-xl relative z-10",
-            // Mobile: Full width if active, hidden otherwise (no transition needed for mobile switch usually, but flex handles it)
-            showChatSidebar ? "flex w-full md:w-auto" : "hidden md:flex",
+            // Base layout
+            "h-full border-r border-white/[0.05] bg-slate-950 relative z-30 transition-all duration-300 ease-in-out flex-shrink-0",
 
-            // Desktop Width Logic
-            // We use specific widths for expanded state, and w-0 for collapsed
-            // opacity-0 is added when collapsed to fade out content while shrinking
-            !isSidebarCollapsed ? "md:w-80 lg:w-96" : "md:w-0 md:border-r-0"
+            // Mobile Behavior:
+            // 1. If sidebar is manually OPEN, it slides in as a drawer (absolute/fixed behavior handled by inner or class)
+            // 2. If we are on LIST view (!isChatOpen), it acts as the main page content (w-full).
+            // 3. If we are on CHAT view (isChatOpen), it is hidden unless manually opened.
+
+            // Actually, blending "Drawer" and "Page" logic is tricky.
+            // Let's use absolute positioning for the Drawer mode on mobile.
+
+            "md:static md:flex", // Desktop: static flex item
+
+            isSidebarOpen
+                ? "fixed inset-y-0 left-0 w-80 shadow-2xl translate-x-0"  // Open Drawer (Mobile)
+                : (isChatOpen ? "hidden" : "flex w-full"), // Closed Drawer: Hidden if chatting, Full if list view
+
+             // Desktop Widths
+             "md:translate-x-0", // Always visible on desktop (reset transform)
+             !isSidebarCollapsed ? "md:w-80 lg:w-96" : "md:w-[0px] md:border-r-0 md:overflow-hidden" // Collapse logic
           )}
         >
-            <div className="w-full h-full md:w-80 lg:w-96 min-w-[20rem]">
-                <ChatSidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
-            </div>
+             <ChatSidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
         </div>
 
-        {/* Mobile Header */}
-        <div className="md:hidden fixed top-0 left-0 right-0 z-20 bg-slate-950/80 backdrop-blur-sm border-b border-white/10">
-          <div className="flex items-center justify-between h-14 px-4">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={toggleSidebar}
-              className="text-slate-400 hover:text-white hover:bg-white/5"
-            >
-              <Menu className="w-5 h-5" />
-            </Button>
-            <h1 className="text-lg font-semibold text-white flex items-center gap-2">
-              <MessageSquare className="w-5 h-5 text-indigo-400" />
-              Chat
-            </h1>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => router.push('/dashboard/profile')}
-              className="text-slate-400 hover:text-white hover:bg-white/5"
-            >
-              <Settings className="w-5 h-5" />
-            </Button>
-          </div>
-        </div>
+        {/* Mobile Header (Visible only when in Chat List mode on Mobile) */}
+        {!isChatOpen && (
+            <div className="md:hidden fixed top-0 left-0 right-0 z-20 bg-slate-950/80 backdrop-blur-md border-b border-white/10">
+            <div className="flex items-center justify-between h-14 px-4">
+                <Button variant="ghost" size="icon" className="text-slate-400 opacity-0 cursor-default">
+                    <Menu className="w-5 h-5" />
+                </Button>
+                <h1 className="text-lg font-semibold text-white flex items-center gap-2">
+                <MessageSquare className="w-5 h-5 text-indigo-400" />
+                Chat
+                </h1>
+                <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => router.push('/dashboard/profile')}
+                className="text-slate-400 hover:text-white hover:bg-white/5"
+                >
+                <Settings className="w-5 h-5" />
+                </Button>
+            </div>
+            </div>
+        )}
 
         {/* Main Content Area */}
-        <main className="flex-1 flex flex-col overflow-hidden w-full relative z-0">
-          {/* Mobile spacer */}
-          <div className="md:hidden h-14 flex-shrink-0"></div>
+        <main className={cn(
+            "flex-1 flex flex-col overflow-hidden w-full relative z-0 bg-slate-950",
+            // On Mobile:
+            // If Chat is Open -> Show
+            // If List is Open -> Hide (because List takes full width)
+            isChatOpen ? "flex" : "hidden md:flex"
+        )}>
+          {/* spacer for header if needed, but usually handled by pages */}
+          {/* In list view, header is in sidebar (above). In chat view, chat page has header. */}
           {children}
         </main>
       </div>

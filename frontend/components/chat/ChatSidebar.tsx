@@ -13,6 +13,7 @@ import { Button } from '@/components/ui/button';
 import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuTrigger, ContextMenuSeparator, ContextMenuSub, ContextMenuSubTrigger, ContextMenuSubContent } from '@/components/ui/context-menu';
 import { Conversation } from '@/types';
 import { logout } from '@/store/features/authSlice';
+import { cn } from '@/lib/utils';
 
 interface ChatSidebarProps {
   isOpen?: boolean;
@@ -33,7 +34,6 @@ export default function ChatSidebar({ isOpen, onClose }: ChatSidebarProps = {}) 
     queryKey: ['conversations'],
     queryFn: () => conversationApi.getConversations(token!),
     enabled: !!token,
-    refetchInterval: 30000, // Refresh every 30 seconds
   });
 
   useEffect(() => {
@@ -120,9 +120,13 @@ export default function ChatSidebar({ isOpen, onClose }: ChatSidebarProps = {}) 
   };
 
   return (
-    <aside className={`flex flex-col w-full h-full bg-slate-950/50 backdrop-blur-xl md:bg-transparent md:backdrop-blur-none fixed md:relative z-30 md:z-0 transform transition-transform duration-300 ease-in-out ${
-      isOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'
-    }`}>
+    <aside className={cn(
+        "flex flex-col w-full h-full md:bg-transparent transition-transform duration-300 ease-in-out",
+        // Mobile: Solid background to avoid dull transparency when overlaying
+        "bg-slate-950",
+        // Desktop: Transparent because parent handles bg
+        "md:bg-transparent"
+    )}>
       {/* Header */}
       <div className="flex-shrink-0 p-4 border-b border-white/[0.1]">
         {/* Mobile Header Controls */}
