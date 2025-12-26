@@ -75,7 +75,7 @@ export default function ChatSidebar({ isOpen, onClose }: ChatSidebarProps = {}) 
   const handleConversationClick = (conv: Conversation) => {
     dispatch(setActiveConversation(conv.id));
     dispatch(resetUnread(conv.id));
-    router.push(`/c/${conv.target_id}`);
+    router.push(`/dashboard/chat/${conv.type.toLowerCase()}/${conv.target_id}`);
     if (onClose) {
       onClose();
     }
