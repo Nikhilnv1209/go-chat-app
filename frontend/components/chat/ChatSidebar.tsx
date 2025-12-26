@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
-import { Search, MessageSquare, Users, LogOut, Settings, X, Briefcase, Archive, UserCheck } from 'lucide-react';
+import { Search, MessageSquare, Users, LogOut, Settings, X, Briefcase, Archive, UserCheck, Star } from 'lucide-react';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { setConversations, setActiveConversation, resetUnread } from '@/store/features/conversationSlice';
 import { toggleFolderAssignment } from '@/store/features/folderSlice';
@@ -121,14 +121,11 @@ export default function ChatSidebar({ isOpen, onClose }: ChatSidebarProps = {}) 
 
   return (
     <aside className={cn(
-        "flex flex-col w-full h-full md:bg-transparent transition-transform duration-300 ease-in-out",
-        // Mobile: Solid background to avoid dull transparency when overlaying
-        "bg-slate-950",
-        // Desktop: Transparent because parent handles bg
-        "md:bg-transparent"
+        "flex flex-col w-full h-full transition-transform duration-300 ease-in-out",
+        "bg-white"
     )}>
       {/* Header */}
-      <div className="flex-shrink-0 p-4 border-b border-white/[0.1]">
+      <div className="flex-shrink-0 p-4 border-b border-[#7678ed]/10">
         {/* Mobile Header Controls */}
         <div className="md:hidden flex items-center justify-end mb-4">
           <div className="flex items-center gap-2">
@@ -137,7 +134,7 @@ export default function ChatSidebar({ isOpen, onClose }: ChatSidebarProps = {}) 
               variant="ghost"
               size="icon"
               onClick={onClose}
-              className="h-9 w-9 text-slate-400 hover:text-white hover:bg-white/[0.05]"
+              className="h-9 w-9 text-[#202022]/50 hover:text-[#202022] hover:bg-[#7678ed]/10"
             >
               <X className="w-4 h-4" />
             </Button>
@@ -145,7 +142,7 @@ export default function ChatSidebar({ isOpen, onClose }: ChatSidebarProps = {}) 
               variant="ghost"
               size="icon"
               onClick={() => router.push('/dashboard/profile')}
-              className="h-9 w-9 text-slate-400 hover:text-white hover:bg-white/[0.05]"
+              className="h-9 w-9 text-[#202022]/50 hover:text-[#202022] hover:bg-[#7678ed]/10"
             >
               <Settings className="w-4 h-4" />
             </Button>
@@ -153,7 +150,7 @@ export default function ChatSidebar({ isOpen, onClose }: ChatSidebarProps = {}) 
               variant="ghost"
               size="icon"
               onClick={handleLogout}
-              className="h-9 w-9 text-slate-400 hover:text-red-400 hover:bg-red-500/10"
+              className="h-9 w-9 text-[#202022]/50 hover:text-[#ff7a55] hover:bg-[#ff7a55]/10"
             >
               <LogOut className="w-4 h-4" />
             </Button>
@@ -162,30 +159,30 @@ export default function ChatSidebar({ isOpen, onClose }: ChatSidebarProps = {}) 
 
         {/* Search */}
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500" />
+          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-[18px] w-[18px] text-[#7678ed]/50" />
           <Input
             type="text"
-            placeholder="Search conversations..."
+            placeholder="Search"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10 h-10 bg-white/[0.05] border-white/[0.1] text-white placeholder:text-slate-500 focus:border-indigo-500/50 focus:ring-indigo-500/20 rounded-xl"
+            className="pl-10 pr-4 h-11 bg-[#e8e8f5] border-0 text-[#202022] text-[15px] placeholder:text-[#202022]/40 focus:bg-[#dcdcf0] focus:ring-0 focus:ring-offset-0 focus-visible:ring-0 rounded-[12px] transition-colors"
           />
         </div>
       </div>
 
       {/* User Profile Mini - Mobile Only */}
       {user && (
-        <div className="flex-shrink-0 p-4 border-b border-white/[0.1] bg-gradient-to-r from-indigo-500/10 via-purple-500/10 to-pink-500/10 md:hidden">
+        <div className="flex-shrink-0 p-4 border-b border-[#7678ed]/10 bg-gradient-to-r from-[#7678ed]/10 via-[#7678ed]/5 to-[#ff7a55]/5 md:hidden">
           <div className="flex items-center gap-3">
             <div className="relative">
-              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-semibold">
+              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#7678ed] to-[#5a5cd9] flex items-center justify-center text-white font-semibold">
                 {user.username.charAt(0).toUpperCase()}
               </div>
-              <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-slate-950 rounded-full"></div>
+              <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-white rounded-full"></div>
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold text-white truncate">{user.username}</p>
-              <p className="text-xs text-slate-400 truncate">{user.email}</p>
+              <p className="text-sm font-semibold text-[#202022] truncate">{user.username}</p>
+              <p className="text-xs text-[#202022]/50 truncate">{user.email}</p>
             </div>
           </div>
         </div>
@@ -195,33 +192,33 @@ export default function ChatSidebar({ isOpen, onClose }: ChatSidebarProps = {}) 
       <div className="flex-1 overflow-y-auto">
         {isLoading && (
           <div className="flex items-center justify-center py-12">
-            <div className="animate-spin rounded-full h-8 w-8 border-2 border-indigo-500 border-t-transparent"></div>
+            <div className="animate-spin rounded-full h-8 w-8 border-2 border-[#7678ed] border-t-transparent"></div>
           </div>
         )}
 
         {isError && (
           <div className="p-4 text-center">
-            <p className="text-sm text-red-400">Failed to load conversations</p>
+            <p className="text-sm text-[#ff7a55]">Failed to load conversations</p>
           </div>
         )}
 
         {!isLoading && !isError && filteredConversations.length === 0 && (
           <div className="flex flex-col items-center justify-center py-12 px-4">
-            <div className="w-16 h-16 rounded-full bg-white/[0.05] flex items-center justify-center mb-4">
-              {activeFolderId ? <Briefcase className="w-8 h-8 text-slate-500" /> : <MessageSquare className="w-8 h-8 text-slate-500" />}
+            <div className="w-16 h-16 rounded-full bg-[#7678ed]/10 flex items-center justify-center mb-4">
+              {activeFolderId ? <Briefcase className="w-8 h-8 text-[#7678ed]" /> : <MessageSquare className="w-8 h-8 text-[#7678ed]" />}
             </div>
-            <p className="text-sm text-slate-400 text-center">
+            <p className="text-sm text-[#202022]/60 text-center">
               {searchQuery
                 ? 'No conversations found'
                 : (activeFolderId ? 'This folder is empty' : 'No conversations yet')}
             </p>
             {!activeFolderId && (
-                <p className="text-xs text-slate-500 text-center mt-1">
+                <p className="text-xs text-[#202022]/40 text-center mt-1">
                 Start a new chat to get started
                 </p>
             )}
             {activeFolderId && (
-                <p className="text-xs text-slate-500 text-center mt-1">
+                <p className="text-xs text-[#202022]/40 text-center mt-1">
                 Right click on a chat in "All Chats" to add it here
                 </p>
             )}
@@ -233,26 +230,26 @@ export default function ChatSidebar({ isOpen, onClose }: ChatSidebarProps = {}) 
             <ContextMenuTrigger>
                 <button
                     onClick={() => handleConversationClick(conv)}
-                    className={`w-full p-4 flex items-start gap-3 hover:bg-white/[0.05] transition-colors border-b border-white/[0.05] ${
-                    activeConversationId === conv.id ? 'bg-white/[0.08]' : ''
+                    className={`w-full p-4 flex items-start gap-3 hover:bg-[#7678ed]/5 transition-colors border-b border-[#7678ed]/5 ${
+                    activeConversationId === conv.id ? 'bg-[#7678ed]/10' : ''
                     }`}
                 >
                     {/* Avatar */}
                     <div className="relative flex-shrink-0">
                     {conv.type === 'GROUP' ? (
-                        <div className="w-12 h-12 rounded-full bg-gradient-to-br from-purple-500 to-pink-600 flex items-center justify-center text-white">
+                        <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#ff7a55] to-[#e66a47] flex items-center justify-center text-white">
                         <Users className="w-6 h-6" />
                         </div>
                     ) : (
-                        <div className="w-12 h-12 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-semibold text-sm">
+                        <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#7678ed] to-[#5a5cd9] flex items-center justify-center text-white font-semibold text-sm">
                         {conv.target_name.charAt(0).toUpperCase()}
                         </div>
                     )}
                     {conv.is_online && conv.type === 'DM' && (
-                        <div className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-green-500 border-2 border-slate-950 rounded-full"></div>
+                        <div className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-green-500 border-2 border-white rounded-full"></div>
                     )}
                     {conv.unread_count > 0 && (
-                        <div className="absolute -top-1 -right-1 min-w-[20px] h-5 bg-indigo-500 rounded-full flex items-center justify-center px-1.5">
+                        <div className="absolute -top-1 -right-1 min-w-[20px] h-5 bg-[#ff7a55] rounded-full flex items-center justify-center px-1.5">
                         <span className="text-xs font-bold text-white">{conv.unread_count > 99 ? '99+' : conv.unread_count}</span>
                         </div>
                     )}
@@ -261,56 +258,62 @@ export default function ChatSidebar({ isOpen, onClose }: ChatSidebarProps = {}) 
                     {/* Content */}
                     <div className="flex-1 min-w-0 text-left">
                     <div className="flex items-center justify-between mb-1">
-                        <h3 className="text-sm font-semibold text-white truncate">{conv.target_name}</h3>
-                        <span className="text-xs text-slate-500 flex-shrink-0 ml-2">
-                        {formatTimestamp(conv.last_message_at)}
-                        </span>
+                        <h3 className="text-sm font-semibold text-[#202022] truncate">{conv.target_name}</h3>
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-xs text-[#202022]/40 flex-shrink-0">
+                          {formatTimestamp(conv.last_message_at)}
+                          </span>
+                          {/* Pin indicator - using Star for now */}
+                          {assignments['work']?.includes(conv.id) && (
+                            <Star className="w-3 h-3 text-[#7678ed] fill-[#7678ed]" />
+                          )}
+                        </div>
                     </div>
-                    <p className={`text-xs truncate ${conv.unread_count > 0 ? 'text-slate-300 font-medium' : 'text-slate-500'}`}>
+                    <p className={`text-xs truncate ${conv.unread_count > 0 ? 'text-[#202022] font-medium' : 'text-[#202022]/50'}`}>
                         {truncateMessage(conv.last_message)}
                     </p>
                     {/* Folder Badges (only in All Chats view) */}
                     {!activeFolderId && (
-                        <div className="flex gap-1 mt-1">
+                        <div className="flex gap-1 mt-1.5">
                             {assignments['work']?.includes(conv.id) && (
-                                <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-blue-500/20 text-blue-300">Work</span>
+                                <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-[#7678ed]/20 text-[#7678ed]">Work</span>
                             )}
                             {assignments['friends']?.includes(conv.id) && (
-                                <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-green-500/20 text-green-300">Friends</span>
+                                <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-green-500/20 text-green-600">Friends</span>
                             )}
                         </div>
                     )}
                     </div>
                 </button>
             </ContextMenuTrigger>
-            <ContextMenuContent className="w-48 bg-slate-900 border-white/10 text-white">
+            <ContextMenuContent className="w-48 bg-white border-[#7678ed]/20 text-[#202022] shadow-lg">
                 <ContextMenuItem
-                    className="focus:bg-white/10 focus:text-white"
+                    className="focus:bg-[#7678ed]/10 focus:text-[#202022]"
                     onClick={() => handleToggleFolder('work', conv.id)}
                 >
                     {assignments['work']?.includes(conv.id) ? (
-                        <span className="text-blue-400">Remove from Work</span>
+                        <span className="text-[#7678ed]">Remove from Work</span>
                     ) : (
                         <span className="flex items-center gap-2"><Briefcase className="w-4 h-4" /> Add to Work</span>
                     )}
                 </ContextMenuItem>
                 <ContextMenuItem
-                    className="focus:bg-white/10 focus:text-white"
+                    className="focus:bg-[#7678ed]/10 focus:text-[#202022]"
                     onClick={() => handleToggleFolder('friends', conv.id)}
                 >
                      {assignments['friends']?.includes(conv.id) ? (
-                        <span className="text-green-400">Remove from Friends</span>
+                        <span className="text-green-600">Remove from Friends</span>
                     ) : (
                         <span className="flex items-center gap-2"><UserCheck className="w-4 h-4" /> Add to Friends</span>
                     )}
                 </ContextMenuItem>
-                <ContextMenuSeparator className="bg-white/10" />
+                <ContextMenuSeparator className="bg-[#7678ed]/10" />
                 <ContextMenuItem
-                    className="focus:bg-white/10 focus:text-white"
+                    className="focus:bg-[#7678ed]/10 focus:text-[#202022]"
                     onClick={() => handleToggleFolder('archive', conv.id)}
                 >
                     {assignments['archive']?.includes(conv.id) ? (
-                        <span className="text-amber-400">Unarchive</span>
+                        <span className="text-[#ff7a55]">Unarchive</span>
                     ) : (
                         <span className="flex items-center gap-2"><Archive className="w-4 h-4" /> Archive</span>
                     )}
