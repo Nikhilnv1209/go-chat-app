@@ -5,6 +5,7 @@ import (
 	"chat-app/internal/models"
 	"chat-app/internal/repository"
 	"chat-app/pkg/jwt"
+	"time"
 
 	"github.com/google/uuid"
 
@@ -23,20 +24,20 @@ func NewAuthService(userRepo repository.UserRepository, jwtService jwt.Service) 
 	}
 }
 
-func (s *authService) Register(username, email, password string) (*models.User, error) {
+func (s *authService) Register(username, email, password string) (string, *models.User, error) {
 	// 1. Check if user already exists
 	existing, err := s.userRepo.FindByEmail(email)
 	if err != nil {
-		return nil, err
+		return "", nil, err
 	}
 	if existing != nil {
-		return nil, errors.ErrEmailExists
+		return "", nil, errors.ErrEmailExists
 	}
 
 	// 2. Hash password
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {
-		return nil, err
+		return "", nil, err
 	}
 
 	// 3. Create user
@@ -44,13 +45,21 @@ func (s *authService) Register(username, email, password string) (*models.User, 
 		Username: username,
 		Email:    email,
 		Password: string(hashedPassword),
+		LastSeen: time.Now(),
+		IsOnline: true,
 	}
 
 	if err := s.userRepo.Create(user); err != nil {
-		return nil, err
+		return "", nil, err
 	}
 
-	return user, nil
+	// 4. Generate Token
+	token, err := s.jwtService.GenerateToken(user.ID)
+	if err != nil {
+		return "", nil, err
+	}
+
+	return token, user, nil
 }
 
 func (s *authService) Login(email, password string) (string, *models.User, error) {

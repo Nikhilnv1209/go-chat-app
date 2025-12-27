@@ -32,13 +32,16 @@ func (h *AuthHandler) Register(c *gin.Context) {
 		return
 	}
 
-	user, err := h.service.Register(req.Username, req.Email, req.Password)
+	token, user, err := h.service.Register(req.Username, req.Email, req.Password)
 	if err != nil {
 		h.handleError(c, err)
 		return
 	}
 
-	c.JSON(http.StatusCreated, user)
+	c.JSON(http.StatusCreated, gin.H{
+		"token": token,
+		"user":  user,
+	})
 }
 
 type LoginRequest struct {

@@ -21,12 +21,12 @@ type MockAuthService struct {
 	mock.Mock
 }
 
-func (m *MockAuthService) Register(username, email, password string) (*models.User, error) {
+func (m *MockAuthService) Register(username, email, password string) (string, *models.User, error) {
 	args := m.Called(username, email, password)
-	if args.Get(0) == nil {
-		return nil, args.Error(1)
+	if args.Get(1) == nil {
+		return args.String(0), nil, args.Error(2)
 	}
-	return args.Get(0).(*models.User), args.Error(1)
+	return args.String(0), args.Get(1).(*models.User), args.Error(2)
 }
 
 func (m *MockAuthService) Login(email, password string) (string, *models.User, error) {
@@ -71,7 +71,7 @@ func TestRegister_Success(t *testing.T) {
 	r.POST("/register", handler.Register)
 
 	user := &models.User{Username: "test", Email: "test@example.com"}
-	mockService.On("Register", "test", "test@example.com", "password123").Return(user, nil)
+	mockService.On("Register", "test", "test@example.com", "password123").Return("test_token", user, nil)
 
 	body := `{"username":"test", "email":"test@example.com", "password":"password123"}`
 	req, _ := http.NewRequest("POST", "/register", bytes.NewBufferString(body))
@@ -86,7 +86,7 @@ func TestRegister_DuplicateEmail(t *testing.T) {
 	handler, mockService, r := setupAuthTest()
 	r.POST("/register", handler.Register)
 
-	mockService.On("Register", "test", "existing@example.com", "password123").Return(nil, errors.ErrEmailExists)
+	mockService.On("Register", "test", "existing@example.com", "password123").Return("", nil, errors.ErrEmailExists)
 
 	body := `{"username":"test", "email":"existing@example.com", "password":"password123"}`
 	req, _ := http.NewRequest("POST", "/register", bytes.NewBufferString(body))
