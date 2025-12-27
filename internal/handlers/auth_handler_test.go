@@ -42,6 +42,22 @@ func (m *MockAuthService) ValidateToken(tokenString string) (uuid.UUID, error) {
 	return args.Get(0).(uuid.UUID), args.Error(1)
 }
 
+func (m *MockAuthService) SearchUsers(query string, excludeUserID uuid.UUID) ([]models.User, error) {
+	args := m.Called(query, excludeUserID)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).([]models.User), args.Error(1)
+}
+
+func (m *MockAuthService) GetUser(id uuid.UUID) (*models.User, error) {
+	args := m.Called(id)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*models.User), args.Error(1)
+}
+
 func setupAuthTest() (*handlers.AuthHandler, *MockAuthService, *gin.Engine) {
 	gin.SetMode(gin.TestMode)
 	mockService := new(MockAuthService)

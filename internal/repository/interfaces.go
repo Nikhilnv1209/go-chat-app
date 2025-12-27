@@ -13,6 +13,7 @@ type UserRepository interface {
 	FindByID(id uuid.UUID) (*models.User, error)
 	FindByEmail(email string) (*models.User, error)
 	UpdateOnlineStatus(userID uuid.UUID, isOnline bool, lastSeen time.Time) error
+	Search(query string, excludeUserID uuid.UUID) ([]models.User, error)
 }
 
 type MessageRepository interface {

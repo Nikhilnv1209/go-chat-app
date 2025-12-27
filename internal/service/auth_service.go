@@ -80,3 +80,11 @@ func (s *authService) Login(email, password string) (string, *models.User, error
 func (s *authService) ValidateToken(tokenString string) (uuid.UUID, error) {
 	return s.jwtService.ValidateToken(tokenString)
 }
+
+func (s *authService) SearchUsers(query string, excludeUserID uuid.UUID) ([]models.User, error) {
+	return s.userRepo.Search(query, excludeUserID)
+}
+
+func (s *authService) GetUser(id uuid.UUID) (*models.User, error) {
+	return s.userRepo.FindByID(id)
+}

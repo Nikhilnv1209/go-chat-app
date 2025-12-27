@@ -4,9 +4,11 @@ import (
 	"net/http"
 
 	"chat-app/internal/errors"
+	"chat-app/internal/middleware"
 	"chat-app/internal/service"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 )
 
 type AuthHandler struct {
@@ -61,6 +63,45 @@ func (h *AuthHandler) Login(c *gin.Context) {
 		"token": token,
 		"user":  user,
 	})
+}
+
+func (h *AuthHandler) SearchUsers(c *gin.Context) {
+	userID := middleware.GetUserIDFromContext(c)
+	if userID == uuid.Nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		return
+	}
+
+	query := c.Query("q")
+	users, err := h.service.SearchUsers(query, userID)
+	if err != nil {
+		h.handleError(c, err)
+		return
+	}
+
+	c.JSON(http.StatusOK, users)
+}
+
+func (h *AuthHandler) GetUser(c *gin.Context) {
+	idParam := c.Param("id")
+	userID, err := uuid.Parse(idParam)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID"})
+		return
+	}
+
+	user, err := h.service.GetUser(userID)
+	if err != nil {
+		h.handleError(c, err)
+		return
+	}
+
+	if user == nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
+		return
+	}
+
+	c.JSON(http.StatusOK, user)
 }
 
 func (h *AuthHandler) handleError(c *gin.Context, err error) {

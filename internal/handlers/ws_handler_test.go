@@ -45,6 +45,14 @@ func (m *MockUserRepository) UpdateOnlineStatus(userID uuid.UUID, isOnline bool,
 	return args.Error(0)
 }
 
+func (m *MockUserRepository) Search(query string, excludeUserID uuid.UUID) ([]models.User, error) {
+	args := m.Called(query, excludeUserID)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).([]models.User), args.Error(1)
+}
+
 func setupWSTest() (*handlers.WSHandler, *MockAuthService, *MockUserRepository, *gin.Engine) {
 	gin.SetMode(gin.TestMode)
 	mockAuthService := new(MockAuthService)

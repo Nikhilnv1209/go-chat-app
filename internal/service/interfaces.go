@@ -10,6 +10,8 @@ type AuthService interface {
 	Register(username, email, password string) (*models.User, error)
 	Login(email, password string) (string, *models.User, error)
 	ValidateToken(tokenString string) (uuid.UUID, error)
+	SearchUsers(query string, excludeUserID uuid.UUID) ([]models.User, error)
+	GetUser(id uuid.UUID) (*models.User, error)
 }
 
 type MessageService interface {

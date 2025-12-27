@@ -50,3 +50,22 @@ func (r *userRepository) UpdateOnlineStatus(userID uuid.UUID, isOnline bool, las
 		"last_seen": lastSeen,
 	}).Error
 }
+
+func (r *userRepository) Search(query string, excludeUserID uuid.UUID) ([]models.User, error) {
+	var users []models.User
+	db := r.db.Where("id != ?", excludeUserID)
+
+	if query != "" {
+		searchPattern := "%" + query + "%"
+		db = db.Where("username LIKE ? OR email LIKE ?", searchPattern, searchPattern)
+	} else {
+		// If query is empty, limit results (e.g., top 20 recent users or random)
+		// For now, let's just limit to 20 to avoid dumping the whole DB
+		db = db.Limit(20)
+	}
+
+	if err := db.Find(&users).Error; err != nil {
+		return nil, err
+	}
+	return users, nil
+}
