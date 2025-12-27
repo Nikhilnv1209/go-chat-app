@@ -72,7 +72,7 @@ export default function ChatPage() {
   return (
     <div className="flex flex-col h-full w-full bg-[#f9fafc] relative overflow-hidden">
       {/* Header */}
-      <div className="h-16 border-b border-[#7678ed]/10 bg-white flex items-center justify-between px-4 sticky top-0 z-10 shadow-sm">
+      <div className="h-16 flex-shrink-0 border-b border-[#7678ed]/10 bg-white flex items-center justify-between px-4 sticky top-0 z-10 shadow-sm">
         <div className="flex items-center gap-3">
             <Button variant="ghost" size="icon" className="md:hidden -ml-2 text-[#202022]/50 hover:text-[#202022] hover:bg-[#7678ed]/10" onClick={handleBack}>
                 <ArrowLeft className="w-5 h-5" />
@@ -117,19 +117,23 @@ export default function ChatPage() {
       </div>
 
       {/* Messages Area */}
-      <MessageList
-        messages={messages || []}
-        isLoading={isLoading}
-        conversationType={type}
-        targetName={conversation?.target_name}
-      />
+      <div className="flex-1 min-h-0 flex flex-col">
+        <MessageList
+          messages={messages || []}
+          isLoading={isLoading}
+          conversationType={type}
+          targetName={conversation?.target_name}
+        />
+      </div>
 
       {/* Input Area */}
-      <ChatInput
-        onSendMessage={handleSendMessage}
-        onTyping={handleTyping}
-        isLoading={false}
-      />
+      <div className="flex-shrink-0">
+        <ChatInput
+          onSendMessage={handleSendMessage}
+          onTyping={handleTyping}
+          isLoading={false}
+        />
+      </div>
     </div>
   );
 }

@@ -43,7 +43,7 @@ export default function MessageList({ messages, isLoading, conversationType, tar
 
   if (isLoading) {
     return (
-      <div className="flex-1 flex items-center justify-center">
+      <div className="flex-1 h-full flex items-center justify-center bg-[#f9fafc]">
         <div className="animate-spin rounded-full h-8 w-8 border-2 border-[#7678ed] border-t-transparent"></div>
       </div>
     );
@@ -51,9 +51,9 @@ export default function MessageList({ messages, isLoading, conversationType, tar
 
   if (messages.length === 0) {
     return (
-      <div className="flex-1 flex flex-col items-center justify-center text-[#202022]/50">
-        <p>No messages yet.</p>
-        <p className="text-sm">Say hello! 👋</p>
+      <div className="flex-1 h-full flex flex-col items-center justify-center text-[#202022]/50 bg-[#f9fafc]">
+        <p className="font-medium text-base">No messages yet</p>
+        <p className="text-sm">Start the conversation! 👋</p>
       </div>
     );
   }
@@ -61,13 +61,16 @@ export default function MessageList({ messages, isLoading, conversationType, tar
   const messageGroups = groupMessages(messages);
 
   return (
-    <ScrollArea className="flex-1 p-4" ref={scrollRef}>
-      <div className="space-y-4 pb-4">
+    <div
+      className="flex-1 overflow-y-auto p-4 space-y-4 scroll-smooth"
+      ref={scrollRef}
+      style={{ scrollbarWidth: 'thin', scrollbarColor: '#7678ed40 transparent' }}
+    >
+      <div className="flex flex-col gap-4 pb-4">
         {messageGroups.map((group, groupIndex) => {
           const isMe = group.senderId === user?.id;
           const firstMessage = group.messages[0];
 
-          // Determine avatar fallback and name
           let avatarLetter = '?';
           let displayName = '';
 
@@ -88,27 +91,29 @@ export default function MessageList({ messages, isLoading, conversationType, tar
             <div
               key={`group-${groupIndex}`}
               className={cn(
-                "flex gap-2.5",
-                isMe ? "justify-end" : "justify-start"
+                "flex gap-3 w-full",
+                isMe ? "flex-row-reverse" : "flex-row"
               )}
             >
-              {/* Avatar - only for other users, aligned to bottom of last message */}
-              {!isMe && (
-                <div className="flex flex-col justify-end pb-1">
-                  <Avatar className="h-9 w-9 flex-shrink-0">
-                    <AvatarFallback className="bg-gradient-to-br from-[#7678ed] to-[#5a5cd9] text-white text-xs font-semibold">
-                      {avatarLetter}
-                    </AvatarFallback>
-                  </Avatar>
-                </div>
-              )}
+              {/* Avatar */}
+              <div className="flex flex-col justify-end pb-1 flex-shrink-0">
+                <Avatar className="h-9 w-9 border border-[#7678ed]/10 shadow-sm">
+                  <AvatarFallback className={cn(
+                    "text-white text-xs font-bold",
+                    isMe
+                      ? "bg-gradient-to-br from-[#ff7a55] to-[#e66a47]"
+                      : "bg-gradient-to-br from-[#7678ed] to-[#5a5cd9]"
+                  )}>
+                    {avatarLetter}
+                  </AvatarFallback>
+                </Avatar>
+              </div>
 
               {/* Message bubbles container */}
               <div className={cn(
-                "flex flex-col gap-0.5 max-w-[65%]",
+                "flex flex-col gap-1 max-w-[75%]",
                 isMe ? "items-end" : "items-start"
               )}>
-                {/* Individual messages in the group */}
                 {group.messages.map((message, msgIndex) => {
                   const isLast = msgIndex === group.messages.length - 1;
 
@@ -116,35 +121,32 @@ export default function MessageList({ messages, isLoading, conversationType, tar
                     <div
                       key={message.id}
                       className={cn(
-                        "px-3 py-2 text-[13px] leading-relaxed",
+                        "px-4 py-2.5 text-[14px] leading-relaxed shadow-sm transition-all",
                         isMe
                           ? "bg-[#7678ed] text-white"
-                          : "bg-white text-[#202022]",
-                        // Rounded corners - only last message has tail
-                        isLast ? (
-                          isMe
-                            ? "rounded-[18px] rounded-br-[4px]" // My message tail bottom-right
-                            : "rounded-[18px] rounded-bl-[4px]" // Their message tail bottom-left
+                          : "bg-white text-[#202022] border border-[#7678ed]/5",
+                        isMe ? (
+                          isLast
+                            ? "rounded-2xl rounded-br-sm"
+                            : "rounded-2xl rounded-br-2xl"
                         ) : (
-                          "rounded-[18px]" // Earlier messages fully rounded
-                        ),
-                        !isMe && "shadow-sm"
+                          isLast
+                            ? "rounded-2xl rounded-bl-sm"
+                            : "rounded-2xl rounded-bl-2xl"
+                        )
                       )}
                     >
-                      {/* Sender name - INSIDE bubble, only for first message of group */}
                       {msgIndex === 0 && !isMe && displayName && (
-                        <div className="text-[11px] font-semibold text-[#7678ed] mb-1">
+                        <div className="text-[11px] font-bold text-[#7678ed] mb-1.5 uppercase tracking-wider">
                           {displayName}
                         </div>
                       )}
 
-                      {/* Message content */}
                       <p className="whitespace-pre-wrap break-words">{message.content}</p>
 
-                      {/* Time - INSIDE bubble at bottom right */}
                       <div className={cn(
-                        "text-[10px] mt-1 text-right opacity-60",
-                        isMe ? "text-white" : "text-[#202022]"
+                        "text-[10px] mt-1.5 text-right font-medium",
+                        isMe ? "text-white/80" : "text-[#202022]/40"
                       )}>
                         {format(new Date(message.created_at), 'HH:mm')}
                       </div>
@@ -152,22 +154,11 @@ export default function MessageList({ messages, isLoading, conversationType, tar
                   );
                 })}
               </div>
-
-              {/* Avatar for own messages - aligned to bottom of last message */}
-              {isMe && (
-                <div className="flex flex-col justify-end pb-1">
-                  <Avatar className="h-9 w-9 flex-shrink-0">
-                    <AvatarFallback className="bg-gradient-to-br from-[#ff7a55] to-[#e66a47] text-white text-xs font-semibold">
-                      {avatarLetter}
-                    </AvatarFallback>
-                  </Avatar>
-                </div>
-              )}
             </div>
           );
         })}
-        <div ref={bottomRef} />
+        <div ref={bottomRef} className="h-2" />
       </div>
-    </ScrollArea>
+    </div>
   );
 }
