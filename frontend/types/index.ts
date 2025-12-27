@@ -22,7 +22,7 @@ export interface Message {
   receiver_id: string | null;
   group_id: string | null;
   content: string;
-  msg_type: 'private' | 'group';
+  msg_type: 'DM' | 'GROUP';
   created_at: string;
   sender?: User;
 }

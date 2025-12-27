@@ -29,15 +29,17 @@ export function useSocketConnection() {
     if (!isAuthenticated || !token || !user) return;
 
     const handleNewMessage = (message: Message) => {
+      console.log('WS: Received Message:', message);
       dispatch(receiveMessage(message));
 
       let targetId = '';
-      let type = '';
+      let type: 'DM' | 'GROUP' = 'DM';
 
-      if (message.msg_type === 'group') {
-            targetId = message.group_id!;
-            type = 'GROUP';
+      if (message.msg_type === 'GROUP') {
+          targetId = message.group_id!;
+          type = 'GROUP';
       } else {
+          // It's a DM (backend uses 'private', but we normalize to 'DM' in types/store)
           if (message.sender_id === user.id) {
               targetId = message.receiver_id!;
           } else {
@@ -46,14 +48,33 @@ export function useSocketConnection() {
           type = 'DM';
       }
 
-      queryClient.setQueryData(['messages', targetId, type], (oldData: any) => {
-          if (!oldData) return [message];
-          if (oldData.some((m: Message) => m.id === message.id)) return oldData;
+      const queryKey = ['messages', targetId, type];
+      console.log('WS: Updating Query Cache with key:', queryKey);
+
+      queryClient.setQueryData(queryKey, (oldData: Message[] | undefined) => {
+          if (!oldData) {
+              console.log('WS: No old data in cache, creating new array');
+              return [message];
+          }
+
+          if (!Array.isArray(oldData)) {
+              console.error('WS: Unexpected cache data format (not an array):', oldData);
+              return [message];
+          }
+
+          const alreadyExists = oldData.some((m: Message) => m.id === message.id);
+          if (alreadyExists) {
+              console.log('WS: Message already in cache, ignoring');
+              return oldData;
+          }
+
+          console.log('WS: Appending message to cache. New count:', oldData.length + 1);
           return [...oldData, message];
       });
     };
 
     const handleMessageSent = (message: Message) => {
+        console.log('WS: Message Sent Confirmation:', message);
         handleNewMessage(message);
     };
 

@@ -60,21 +60,25 @@ const conversationSlice = createSlice({
     },
     receiveMessage: (state, action: PayloadAction<import('@/types').Message>) => {
       const msg = action.payload;
-      // Identify conversation target
-      const isGroup = msg.msg_type === 'group';
-      const targetId = isGroup ? msg.group_id : (msg.sender_id === state.activeConversationId /* logic mismatch here, activeConvId is UUID, sender_id is UUID */ ? msg.sender_id : msg.sender_id);
-
-      // Logic fix: In DM, if I receive a message, the conversation is with the Sender.
-      // If I sent a message (this event also fires for me?), the conversation is with Receiver.
-      // But we receive 'new_message' usually only if we are the recipient or it's a group broadcast.
+      const isGroup = msg.msg_type === 'GROUP';
 
       let conversationIndex = -1;
 
       if (isGroup) {
           conversationIndex = state.conversations.findIndex(c => c.target_id === msg.group_id && c.type === 'GROUP');
       } else {
-          // DM: Find conversation where target_id is the sender
+          // Identify the other participant's ID (target_id)
+          // For received messages, it's msg.sender_id
+          // For sent messages (if we receive our own echo or updated message), it would be receiver_id
+          // But usually we just need to find the conversation where the other user is involved.
+
+          // Try finding by sender first
           conversationIndex = state.conversations.findIndex(c => c.target_id === msg.sender_id && c.type === 'DM');
+
+          // If not found and there's a receiver (e.g. we sent it), try receiver_id
+          if (conversationIndex === -1 && msg.receiver_id) {
+            conversationIndex = state.conversations.findIndex(c => c.target_id === msg.receiver_id && c.type === 'DM');
+          }
       }
 
       if (conversationIndex !== -1) {
@@ -82,12 +86,14 @@ const conversationSlice = createSlice({
           conversation.last_message = msg.content;
           conversation.last_message_at = msg.created_at;
 
-          // Increment unread if not active
+          // Increment unread if NOT the active conversation
+          // Note: activeConversationId in this slice is the conversation UUID,
+          // while conversation.id is also that same UUID.
           if (conversation.id !== state.activeConversationId) {
              conversation.unread_count += 1;
           }
 
-          // Move to top
+          // Move updated conversation to top
           state.conversations.splice(conversationIndex, 1);
           state.conversations.unshift(conversation);
       }

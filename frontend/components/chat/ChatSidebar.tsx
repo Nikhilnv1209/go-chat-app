@@ -14,6 +14,7 @@ import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuTrigger, C
 import { Conversation } from '@/types';
 import { logout } from '@/store/features/authSlice';
 import { cn } from '@/lib/utils';
+import { NewChatDialog } from './NewChatDialog';
 
 interface ChatSidebarProps {
   isOpen?: boolean;
@@ -167,6 +168,11 @@ export default function ChatSidebar({ isOpen, onClose }: ChatSidebarProps = {}) 
             onChange={(e) => setSearchQuery(e.target.value)}
             className="pl-10 pr-4 h-11 bg-[#e8e8f5] border-0 text-[#202022] text-[15px] placeholder:text-[#202022]/40 focus:bg-[#dcdcf0] focus:ring-0 focus:ring-offset-0 focus-visible:ring-0 rounded-[12px] transition-colors"
           />
+        </div>
+
+        {/* New Chat Button */}
+        <div className="mt-4">
+            <NewChatDialog />
         </div>
       </div>
 

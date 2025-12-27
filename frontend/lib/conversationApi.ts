@@ -1,9 +1,35 @@
 import axios from 'axios';
-import { Conversation, Message } from '@/types';
+import { Conversation, Message, User } from '@/types';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
 
 export const conversationApi = {
+  /**
+   * Search for users
+   * GET /users?q=query
+   */
+  searchUsers: async (token: string, query: string): Promise<User[]> => {
+    const response = await axios.get(`${API_BASE_URL}/users`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      params: { q: query },
+    });
+    return response.data;
+  },
+
+  /**
+   * Fetch a specific user by ID
+   */
+  getUser: async (token: string, userId: string): Promise<User> => {
+    const response = await axios.get(`${API_BASE_URL}/users/${userId}`, {
+       headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    return response.data;
+  },
+
   /**
    * Fetch all conversations for the authenticated user
    * GET /conversations
@@ -14,11 +40,8 @@ export const conversationApi = {
         Authorization: `Bearer ${token}`,
       },
     });
-    // Normalize type to ensure it matches 'DM' | 'GROUP'
-    return response.data.map((conv: any) => ({
-      ...conv,
-      type: conv.type.toUpperCase(),
-    }));
+    // Backend now returns 'DM' or 'GROUP' directly
+    return response.data;
   },
 
   /**

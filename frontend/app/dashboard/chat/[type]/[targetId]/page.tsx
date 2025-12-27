@@ -49,6 +49,24 @@ export default function ChatPage() {
     enabled: !!token && !!targetId && !!type,
   });
 
+  // Fetch Target User details if not in conversation list (New Chat scenario)
+  const { data: targetUser } = useQuery({
+    queryKey: ['user', targetId],
+    queryFn: () => conversationApi.getUser(token!, targetId!),
+    enabled: !!token && !!targetId && type === 'DM' && !conversation,
+  });
+
+  const displayConversation = conversation || (targetUser ? {
+      id: 'new',
+      type: 'DM',
+      target_id: targetUser.id,
+      target_name: targetUser.username,
+      last_message: '',
+      last_message_at: new Date().toISOString(),
+      unread_count: 0,
+      is_online: targetUser.is_online,
+  } : null);
+
   const handleSendMessage = (content: string) => {
     if (targetId && type) {
         socketService.sendMessage(content, targetId, type);
@@ -83,24 +101,24 @@ export default function ChatPage() {
                 "text-white font-semibold",
                 type === 'GROUP' ? "bg-gradient-to-br from-[#ff7a55] to-[#e66a47]" : "bg-gradient-to-br from-[#7678ed] to-[#5a5cd9]"
             )}>
-              {conversation ? conversation.target_name.charAt(0).toUpperCase() : '?'}
+              {displayConversation ? displayConversation.target_name.charAt(0).toUpperCase() : '?'}
             </AvatarFallback>
           </Avatar>
           <div>
             <h2 className="text-sm font-semibold text-[#202022]">
-              {conversation
-                ? conversation.target_name
+              {displayConversation
+                ? displayConversation.target_name
                 : (conversations.length === 0 ? 'Loading...' : 'Chat not found')}
             </h2>
-            {conversation && type === 'DM' && (
+            {displayConversation && type === 'DM' && (
                <div className="flex items-center gap-1.5">
-                   <div className={cn("w-2 h-2 rounded-full", conversation.is_online ? "bg-green-500" : "bg-[#202022]/30")}></div>
-                   <span className="text-xs text-[#202022]/50">{conversation.is_online ? 'Online' : 'Offline'}</span>
+                   <div className={cn("w-2 h-2 rounded-full", displayConversation.is_online ? "bg-green-500" : "bg-[#202022]/30")}></div>
+                   <span className="text-xs text-[#202022]/50">{displayConversation.is_online ? 'Online' : 'Offline'}</span>
                </div>
             )}
-            {conversation && type === 'GROUP' && (
+            {displayConversation && type === 'GROUP' && (
                  <p className="text-xs text-[#202022]/50">
-                     {conversation.member_count ? `${conversation.member_count} members` : 'Group Chat'}
+                     {displayConversation.member_count ? `${displayConversation.member_count} members` : 'Group Chat'}
                  </p>
             )}
           </div>
