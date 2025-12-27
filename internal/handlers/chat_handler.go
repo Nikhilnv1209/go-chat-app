@@ -3,6 +3,7 @@ package handlers
 import (
 	"net/http"
 	"strconv"
+	"strings"
 
 	"chat-app/internal/middleware"
 	"chat-app/internal/repository"
@@ -70,14 +71,17 @@ func (h *ChatHandler) GetConversations(c *gin.Context) {
 		targetName := ""
 		memberCount := 0
 
-		switch conv.Type {
-		case "private":
+		// Normalize type for internal switching and response
+		upperType := strings.ToUpper(conv.Type)
+
+		switch upperType {
+		case "DM":
 			// Fetch user name
 			user, err := h.userRepo.FindByID(conv.TargetID)
 			if err == nil {
 				targetName = user.Username
 			}
-		case "group":
+		case "GROUP":
 			// Fetch group name and member count
 			group, err := h.groupRepo.FindByID(conv.TargetID)
 			if err == nil {
@@ -92,7 +96,7 @@ func (h *ChatHandler) GetConversations(c *gin.Context) {
 
 		response = append(response, ConversationResponse{
 			ID:            conv.ID,
-			Type:          conv.Type,
+			Type:          upperType,
 			TargetID:      conv.TargetID,
 			TargetName:    targetName,
 			LastMessageAt: conv.LastMessageAt.Format("2006-01-02T15:04:05Z07:00"),
@@ -128,10 +132,11 @@ func (h *ChatHandler) GetMessages(c *gin.Context) {
 		return
 	}
 
-	msgType := c.Query("type")
+	msgType := strings.ToUpper(c.Query("type"))
 	if msgType == "" {
 		msgType = "DM" // Default to DM
 	}
+
 	if msgType != "DM" && msgType != "GROUP" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "type must be DM or GROUP"})
 		return

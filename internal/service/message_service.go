@@ -53,7 +53,7 @@ func (s *messageService) SendDirectMessage(senderID, receiverID uuid.UUID, conte
 		SenderID:   senderID,
 		ReceiverID: &receiverID,
 		Content:    content,
-		MsgType:    "private",
+		MsgType:    "DM",
 	}
 
 	if err := s.msgRepo.Create(msg); err != nil {
@@ -81,7 +81,7 @@ func (s *messageService) SendDirectMessage(senderID, receiverID uuid.UUID, conte
 	// Upsert Sender's conversation with Receiver
 	s.convRepo.Upsert(&models.Conversation{
 		UserID:        senderID,
-		Type:          "private",
+		Type:          "DM",
 		TargetID:      receiverID,
 		LastMessageAt: msg.CreatedAt,
 		UnreadCount:   0, // Sender doesn't have unread
@@ -89,7 +89,7 @@ func (s *messageService) SendDirectMessage(senderID, receiverID uuid.UUID, conte
 
 	// 4. Update Conversations (Receiver)
 	// Increment Receiver's unread count for conversation with Sender
-	s.convRepo.IncrementUnread(receiverID, "private", senderID)
+	s.convRepo.IncrementUnread(receiverID, "DM", senderID)
 
 	// 5. Real-time Delivery via WebSocket
 	payload, _ := json.Marshal(map[string]interface{}{
@@ -119,7 +119,7 @@ func (s *messageService) SendGroupMessage(senderID, groupID uuid.UUID, content s
 		SenderID: senderID,
 		GroupID:  &groupID,
 		Content:  content,
-		MsgType:  "group",
+		MsgType:  "GROUP",
 	}
 
 	if err := s.msgRepo.Create(msg); err != nil {
@@ -170,7 +170,7 @@ func (s *messageService) SendGroupMessage(senderID, groupID uuid.UUID, content s
 			// Update sender's conversation without incrementing unread
 			s.convRepo.Upsert(&models.Conversation{
 				UserID:        senderID,
-				Type:          "group",
+				Type:          "GROUP",
 				TargetID:      groupID,
 				LastMessageAt: msg.CreatedAt,
 				UnreadCount:   0,
@@ -179,7 +179,7 @@ func (s *messageService) SendGroupMessage(senderID, groupID uuid.UUID, content s
 		}
 
 		// Update receiver's conversation and increment unread
-		s.convRepo.IncrementUnread(member.UserID, "group", groupID)
+		s.convRepo.IncrementUnread(member.UserID, "GROUP", groupID)
 
 		// Real-time delivery via WebSocket
 		payload, _ := json.Marshal(map[string]interface{}{

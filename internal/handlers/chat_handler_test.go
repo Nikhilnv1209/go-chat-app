@@ -92,6 +92,14 @@ func (m *MockUserRepo) UpdateOnlineStatus(userID uuid.UUID, isOnline bool, lastS
 	return args.Error(0)
 }
 
+func (m *MockUserRepo) Search(query string, excludeUserID uuid.UUID) ([]models.User, error) {
+	args := m.Called(query, excludeUserID)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).([]models.User), args.Error(1)
+}
+
 type MockGroupRepo struct {
 	mock.Mock
 }

@@ -129,6 +129,14 @@ func (m *MockUserRepo) UpdateOnlineStatus(userID uuid.UUID, isOnline bool, lastS
 	return args.Error(0)
 }
 
+func (m *MockUserRepo) Search(query string, excludeUserID uuid.UUID) ([]models.User, error) {
+	args := m.Called(query, excludeUserID)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).([]models.User), args.Error(1)
+}
+
 // MockMessageReceiptRepo [F06]
 type MockMessageReceiptRepo struct {
 	mock.Mock
@@ -190,7 +198,7 @@ func TestSendDirectMessage(t *testing.T) {
 	})).Return(nil)
 
 	// 3. Increment Unread for Receiver
-	mockConvRepo.On("IncrementUnread", receiverID, "private", senderID).Return(nil)
+	mockConvRepo.On("IncrementUnread", receiverID, "DM", senderID).Return(nil)
 
 	// 4. Send to Hub using MatchedBy to ignore dynamic JSON
 	mockHub.On("SendToUser", receiverID, mock.MatchedBy(func(payload []byte) bool {
@@ -234,13 +242,13 @@ func TestGetHistory_Conversation(t *testing.T) {
 			SenderID:   userID,
 			ReceiverID: &targetID,
 			Content:    "Message " + string(rune(i)),
-			MsgType:    "private",
+			MsgType:    "DM",
 		}
 	}
 
-	mockMsgRepo.On("FindByConversation", userID, targetID, "private", limit, (*uuid.UUID)(nil)).Return(mockMessages, nil)
+	mockMsgRepo.On("FindByConversation", userID, targetID, "DM", limit, (*uuid.UUID)(nil)).Return(mockMessages, nil)
 
-	history, err := svc.GetHistory(userID, targetID, "private", limit, nil)
+	history, err := svc.GetHistory(userID, targetID, "DM", limit, nil)
 	assert.NoError(t, err)
 	assert.Len(t, history, 10)
 	assert.Equal(t, "Message \x00", history[0].Content)
@@ -285,7 +293,7 @@ func TestLongConversationFlow(t *testing.T) {
 			return conv.UserID == sender && conv.TargetID == receiver
 		})).Return(nil).Once()
 
-		mockConvRepo.On("IncrementUnread", receiver, "private", sender).Return(nil).Once()
+		mockConvRepo.On("IncrementUnread", receiver, "DM", sender).Return(nil).Once()
 
 		mockHub.On("SendToUser", receiver, mock.Anything).Return().Once()
 
