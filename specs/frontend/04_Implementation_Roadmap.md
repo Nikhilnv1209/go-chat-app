@@ -60,10 +60,18 @@ This document outlines the step-by-step execution plan for the coding agents.
     *   Call `POST /read` on view.
     *   Debounce `typing_start` in input.
     *   Show animation in `MessageList`.
-*   [x] **Task 5.6**: Implement Chat Folders. **[Trace: F-FDB-05]**
+*   [ ] **Task 5.6**: Implement Chat Folders. **[Trace: F-FDB-05]**
     *   **COMPLETED**: Create `folderSlice` in Redux.
     *   **COMPLETED**: Add logical filtering to `ChatSidebar`.
     *   **COMPLETED**: Add UI for "Add to Folder" (Context Menu or Settings).
+*   [ ] **Task 5.7**: Implement Conversation Deletion. **[Trace: F-FCH-03]**
+    *   Add delete option to context menu/sidebar.
+    *   Calls `DELETE /conversations/:type/:id`.
+    *   Updates Redux state to remove conversation.
+*   [ ] **Task 5.8**: Advanced Group Management UI. **[Trace: F-FGR-04, F-FGR-05]**
+    *   Build "Group Info" slide-over/modal.
+    *   List members with Admin controls (Add/Remove).
+    *   Add "Leave Group" and "Delete Group" buttons.
 
 ---
 
@@ -91,6 +99,9 @@ Complete mapping from Feature → Story → Task(s).
 | **S-SYS-02** | Install Deps | Task 1.2 | ✅ **DONE** |
 | **S-SYS-03** | Configure Providers | Task 1.3 | ✅ **DONE** |
 | **S-SYS-04** | Setup Shadcn/UI | Task 1.4 | ✅ **DONE** |
+| **F-FCH-03** | Delete Coversation | Task 5.7 | ⬜ **TODO** |
+| **F-FGR-04** | View Group Info | Task 5.8 | ⬜ **TODO** |
+| **F-FGR-05** | Manage Group Members | Task 5.8 | ⬜ **TODO** |
 
 
 ---

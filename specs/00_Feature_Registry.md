@@ -9,13 +9,14 @@
 
 | Feature ID | Name | Story File | Status |
 |------------|------|------------|--------|
-| **F01** | User Authentication | `stories/1.1_user_auth.story.md` | DONE |
-| **F02** | WebSocket Hub | `stories/1.2_websocket_hub.story.md` | DONE |
-| **F03** | Direct Messaging | `stories/1.3_direct_messaging.story.md` | DONE |
-| **F04** | Group Messaging | `stories/1.4_group_messaging.story.md` | DONE |
-| **F05** | Inbox & History | `stories/1.5_inbox_history.story.md` | DONE |
-| **F06** | Read Receipts | `stories/1.6_read_receipts.story.md` | DONE |
-| **F07** | Typing Indicators | `stories/1.7_typing_indicators.story.md` | DONE |
+| **F01** | User Authentication | `stories/backend/1.1_user_auth.story.md` | DONE |
+| **F02** | WebSocket Hub | `stories/backend/1.2_websocket_hub.story.md` | DONE |
+| **F03** | Direct Messaging | `stories/backend/1.3_direct_messaging.story.md` | DONE |
+| **F04** | Group Messaging | `stories/backend/1.4_group_messaging.story.md` | DONE |
+| **F05** | Inbox & History | `stories/backend/1.5_inbox_history.story.md` | DONE |
+| **F06** | Read Receipts | `stories/backend/1.6_read_receipts.story.md` | DONE |
+| **F07** | Typing Indicators | `stories/backend/1.7_typing_indicators.story.md` | DONE |
+| **F08** | Conversation Management | `stories/backend/1.8_conversation_management.story.md` | TODO |
 
 ---
 

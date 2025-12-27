@@ -12,10 +12,11 @@
 | **User Authentication** | `F01` | ✅ **DONE** | 100% |
 | **WebSocket Hub** | `F02` | ✅ **DONE** | 100% |
 | **Direct Messaging** | `F03` | ✅ **DONE** | 100% |
-| **Group Messaging** | `F04` | ✅ **DONE** | 100% |
+| **Group Messaging** | `F04` | 🚧 **IN PROGRESS** | 60% |
 | **Inbox & History** | `F05` | ✅ **DONE** | 100% |
 | **Read Receipts** | `F06` | ✅ **DONE** | 100% |
 | **Typing Indicators** | `F07` | ✅ **DONE** | 100% |
+| **Conversation Mgmt** | `F08` | ⬜ **TODO** | 0% |
 | **Refactor: UUIDs** | `Refactor` | ✅ **DONE** | 100% |
 
 ---
@@ -79,7 +80,7 @@
 ---
 
 ### [F04] Group Messaging
-**Story 1.4: Group Management** (`stories/1.4_group_messaging.story.md`)
+**Story 1.4: Group Management** (`stories/backend/1.4_group_messaging.story.md`)
 | Task | Status | File(s) |
 |------|--------|---------|
 | Implement Group Repository | ✅ DONE | `internal/repository/group_repo.go` |
@@ -88,6 +89,19 @@
 | Update Message Service for Broadcast | ✅ DONE | `internal/service/message_service.go` |
 | Update WebSocket Handler | ✅ DONE | `internal/websocket/message_handler.go` |
 | **Verification** | ✅ DONE | 18 comprehensive tests - ALL PASSING ✅ |
+| Implement Member Management (Add/Remove) | ⬜ TODO | `GroupRepository`, `GroupService` |
+| Implement Group Deletion | ⬜ TODO | `GroupRepository`, `GroupService` |
+| Implement Leave Group | ⬜ TODO | `GroupRepository`, `GroupService` |
+
+---
+
+### [F08] Conversation Management
+**Story 1.8: Conversation Management** (`stories/backend/1.8_conversation_management.story.md`)
+| Task | Status | File(s) |
+|------|--------|---------|
+| Implement Delete Handler | ⬜ TODO | `internal/handlers/chat_handler.go` |
+| Implement Service Logic | ⬜ TODO | `internal/service/message_service.go` |
+| Verify Soft Delete | ⬜ TODO | Tests |
 
 ---
 

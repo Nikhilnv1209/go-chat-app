@@ -14,7 +14,7 @@
 | **Phase 2** | Authentication Module | ✅ **DONE** | 100% |
 | **Phase 3** | Dashboard Skeleton | ✅ **DONE** | 100% |
 | **Phase 4** | Core Messaging Features | ✅ **DONE** | 100% |
-| **Phase 5** | Refinement & Polish | 🚧 **IN PROGRESS** | 60% |
+| **Phase 5** | Refinement & Polish | 🚧 **IN PROGRESS** | 50% |
 
 ---
 
@@ -82,6 +82,10 @@
 | **Group Creation Modal** | `Task 5.8` | ⬜ **TODO** | UI for creating groups. |
 | **Read Receipt UI** | `Task 5.9` | ⬜ **TODO** | Checkmark icons logic. |
 | **Typing Indicators** | `Task 5.10` | ⬜ **TODO** | "Alice is typing..." animation. |
+| **Delete Conversation** | `Task 5.11` | ⬜ **TODO** | Clear DM or Group chat from list. |
+| **Group Info & Metadata** | `Task 5.12` | ⬜ **TODO** | Member list and group settings UI. |
+| **Member Management** | `Task 5.13` | ⬜ **TODO** | Add/Remove members (Admin only). |
+| **Leave/Delete Group** | `Task 5.14` | ⬜ **TODO** | Member exit and admin deletion. |
 
 ---
 

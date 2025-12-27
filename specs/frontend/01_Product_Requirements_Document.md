@@ -20,43 +20,17 @@ The Frontend for the Go Chat App is a premium, high-performance web interface de
 
 ## 3. Functional Requirements (User Stories)
 
-### Epic: Authentication & Onboarding
-| ID | Story | Priority |
-|---|---|---|
-| **F-FAU-01** | As a user, I want to Sign Up with email/password so I can create an account. | **Must** |
-| **F-FAU-02** | As a user, I want to Login and have my session persist so I don't have to log in every time. | **Must** |
-| **F-FAU-03** | As a user, I want to see a loading state during auth so I know the app is working. | **Should** |
+All user stories are detailed in the `specs/stories/frontend/` directory.
 
-### Epic: The Inbox (Dashboard)
-| ID | Story | Priority |
-|---|---|---|
-| **F-FDB-01** | As a user, I want a sidebar list of all my Conversations (DMs & Groups) sorted by recent activity. | **Must** |
-| **F-FDB-02** | As a user, I want to see "Unread" badges so I know where to focus. | **Should** |
-| **F-FDB-03** | As a user, I can toggle between Light and Dark mode. | **Could** |
-| **F-FDB-04** | As a user, I want a modern, floating sidebar layout that optimizes space on larger screens. | **Should** |
-| **F-FDB-05** | As a user, I want to organize my chats into custom folders (e.g., Work, Friends) to keep my workspace tidy. | **Should** |
-
-### Epic: Real-Time Messaging (Chat)
-| ID | Story | Priority |
-|---|---|---|
-| **F-FCH-01** | As a user, I want messages to appear *instantly* (Optimistic UI) when I send them. | **Must** |
-| **F-FCH-02** | As a user, I want to see who is Online via a green status dot. | **Could** |
-
-### Epic: History
-| ID | Story | Priority |
-|---|---|---|
-| **F-FHS-01** | As a user, I want to scroll up to see older message history (Infinite Scroll). | **Should** |
-
-### Epic: Read Receipts & Typing Indicators
-| ID | Story | Priority |
-|---|---|---|
-| **F-FRR-01** | As a user, I want to see checkmarks indicating if my message is Sent, Delivered, or Read. | **Should** |
-| **F-FTI-01** | As a user, I want to see a "User is typing..." animation when someone is typing to me. | **Should** |
-
-### Epic: Group Management
-| ID | Story | Priority |
-|---|---|---|
-| **F-FGR-01** | As a user, I want to create a group and select multiple members from a search list. | **Should** |
+| ID | Epic | Story File | Priority |
+|---|---|---|---|
+| **F-FAU** | Authentication | [`2.1_authentication.story.md`](../stories/frontend/2.1_authentication.story.md) | Must |
+| **F-FDB** | Dashboard | [`2.2_inbox_dashboard.story.md`](../stories/frontend/2.2_inbox_dashboard.story.md) | Must |
+| **F-FCH** | Chat | [`2.3_chat_messaging.story.md`](../stories/frontend/2.3_chat_messaging.story.md) | Must |
+| **F-FHS** | History | [`2.4_history.story.md`](../stories/frontend/2.4_history.story.md) | Should |
+| **F-FRR** | Read Receipts | [`2.5_read_receipts.story.md`](../stories/frontend/2.5_read_receipts.story.md) | Should |
+| **F-FTI** | Typing Indicators | [`2.6_typing_indicators.story.md`](../stories/frontend/2.6_typing_indicators.story.md) | Should |
+| **F-FGR** | Group Management | [`2.7_group_management.story.md`](../stories/frontend/2.7_group_management.story.md) | Should |
 
 ---
 
