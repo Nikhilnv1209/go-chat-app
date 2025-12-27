@@ -24,7 +24,7 @@ class SocketService {
   }
 
   public connect(token: string) {
-    if (this.socket?.readyState === WebSocket.OPEN) return;
+    if (this.socket?.readyState === WebSocket.OPEN || this.socket?.readyState === WebSocket.CONNECTING) return;
 
 
     this.token = token;

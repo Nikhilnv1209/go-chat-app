@@ -68,19 +68,15 @@ export default function UserProfile() {
         {/* Avatar Section */}
         <div className="flex flex-col items-center space-y-3 pb-4">
           <div className="relative">
-            <div className="w-24 h-24 rounded-full bg-gradient-to-br from-[#7678ed] to-[#5a5cd9] flex items-center justify-center text-white font-bold text-3xl shadow-lg shadow-[#7678ed]/30">
+              <div className="w-24 h-24 rounded-full bg-gradient-to-br from-[#7678ed] to-[#5a5cd9] flex items-center justify-center text-white font-bold text-3xl shadow-lg shadow-[#7678ed]/30">
               {user.username.charAt(0).toUpperCase()}
             </div>
-            <div className={`absolute bottom-1 right-1 w-6 h-6 border-4 border-[#f9fafc] rounded-full shadow-md ${
-              user.is_online ? 'bg-green-500' : 'bg-[#202022]/30'
-            }`}></div>
+            <div className={`absolute bottom-1 right-1 w-6 h-6 border-4 border-[#f9fafc] rounded-full shadow-md bg-green-500`}></div>
           </div>
           <div className="text-center">
             <h3 className="text-2xl font-bold text-[#202022] mb-1">{user.username}</h3>
-            <p className={`text-sm ${
-              user.is_online ? 'text-green-500' : 'text-[#202022]/50'
-            }`}>
-              {user.is_online ? 'Online' : formatLastSeen(user.last_seen)}
+            <p className="text-sm text-green-500">
+              Online
             </p>
           </div>
         </div>
@@ -125,17 +121,13 @@ export default function UserProfile() {
 
           <div className="bg-white border border-[#7678ed]/10 rounded-xl p-4 transition-all hover:border-[#7678ed]/20 shadow-sm">
             <div className="flex items-center gap-3">
-              <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
-                user.is_online ? 'bg-green-500/10' : 'bg-[#202022]/5'
-              }`}>
-                <div className={`w-5 h-5 rounded-full ${
-                  user.is_online ? 'bg-green-500' : 'bg-[#202022]/30'
-                }`}></div>
+              <div className={`w-10 h-10 rounded-xl flex items-center justify-center bg-green-500/10`}>
+                <div className={`w-5 h-5 rounded-full bg-green-500`}></div>
               </div>
               <div className="flex-1">
                 <p className="text-xs font-medium text-[#202022]/50 mb-1">Status</p>
                 <p className="text-base text-[#202022] font-medium">
-                  {user.is_online ? 'Available' : 'Offline'}
+                  Available
                 </p>
               </div>
             </div>
