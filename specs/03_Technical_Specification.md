@@ -155,6 +155,9 @@ type GroupRepository interface {
     GetMembers(groupID uint) ([]models.GroupMember, error)
     IsMember(groupID, userID uint) (bool, error)
     AddMember(groupID, userID uint, role string) error
+    RemoveMember(groupID, userID uint) error
+    GetMemberRole(groupID, userID uint) (string, error)
+    Delete(groupID uint) error
 }
 
 type ConversationRepository interface {
@@ -162,6 +165,7 @@ type ConversationRepository interface {
     FindByUser(userID uint) ([]models.Conversation, error)
     IncrementUnread(userID uint, convType string, targetID uint) error
     ResetUnread(userID uint, convType string, targetID uint) error
+    Delete(userID uint, convType string, targetID uint) error
 }
 ```
 
@@ -184,8 +188,11 @@ type MessageService interface {
 
 type GroupService interface {
     Create(creatorID uint, name string, memberIDs []uint) (*models.Group, error)
+    GetGroup(groupID uint) (*models.Group, error)
     AddMember(adminID, groupID, newMemberID uint) error
     RemoveMember(adminID, groupID, memberID uint) error
+    LeaveGroup(userID, groupID uint) error
+    DeleteGroup(adminID, groupID uint) error
 }
 ```
 
@@ -431,7 +438,13 @@ CREATE TABLE conversations (
 *   `POST /auth/register`
 *   `POST /auth/login`
 *   `POST /groups`
+*   `GET /groups/:id`
+*   `POST /groups/:id/members`
+*   `DELETE /groups/:id/members/:userId`
+*   `DELETE /groups/:id/leave`
+*   `DELETE /groups/:id`
 *   `GET /conversations`
+*   `DELETE /conversations/:type/:targetId`  **[F08]**
 *   `GET /messages`
 *   `POST /messages/:id/read` **[F06]** - Mark message as read
 *   `GET /messages/:id/receipts` **[F06]** - Query receipt status

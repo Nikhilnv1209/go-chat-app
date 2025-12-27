@@ -103,6 +103,8 @@ func main() {
 		chatRoutes.GET("/messages", chatHandler.GetMessages)
 		chatRoutes.POST("/messages/:id/read", chatHandler.MarkRead)
 		chatRoutes.GET("/messages/:id/receipts", chatHandler.GetReceipts)
+		chatRoutes.GET("/users", authHandler.SearchUsers)
+		chatRoutes.GET("/users/:id", authHandler.GetUser)
 	}
 
 	// Group Routes (protected)
