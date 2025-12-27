@@ -34,8 +34,13 @@ dev:
 		sleep 1; \
 	done
 	@echo "\n✅ PostgreSQL is ready!"
-	@echo "🔧 Running backend locally..."
-	go run cmd/server/main.go
+	@echo "🔧 Running backend with hot-reload..."
+	@if [ -f "$(HOME)/go/bin/air" ]; then \
+		$(HOME)/go/bin/air; \
+	else \
+		echo "⚠️ 'air' not found in $(HOME)/go/bin/. Falling back to 'go run'..."; \
+		go run cmd/server/main.go; \
+	fi
 
 # Run tests
 test:
