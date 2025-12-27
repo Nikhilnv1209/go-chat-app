@@ -22,7 +22,9 @@ const authSlice = createSlice({
       state.isLoading = false;
       if (typeof window !== 'undefined') {
         localStorage.setItem('token', action.payload.token);
-        localStorage.setItem('user', JSON.stringify(action.payload.user));
+        if (action.payload.user) {
+          localStorage.setItem('user', JSON.stringify(action.payload.user));
+        }
       }
     },
     logout: (state) => {
@@ -45,10 +47,15 @@ const authSlice = createSlice({
       const token = localStorage.getItem('token');
       const userStr = localStorage.getItem('user');
 
-      if (token && userStr) {
-        state.token = token;
-        state.user = JSON.parse(userStr);
-        state.isAuthenticated = true;
+      if (token && userStr && userStr !== 'undefined') {
+        try {
+          state.user = JSON.parse(userStr);
+          state.token = token;
+          state.isAuthenticated = true;
+        } catch (e) {
+          console.error('Failed to parse user from local storage', e);
+          localStorage.removeItem('user');
+        }
       }
       state.isLoading = false;
     }
