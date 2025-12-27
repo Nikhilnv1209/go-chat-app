@@ -1,7 +1,7 @@
 # BMAD Progress Tracker (Frontend)
 
 **Current Status**: 🚧 Phase 5 - Refinement & Polish In Progress
-**Last Action**: Completed comprehensive design system overhaul with new color palette, message grouping, and UI polish.
+**Last Action**: Fixed chat UI layout issues, scrolling failures, and refined message bubble/avatar styling.
 **Next Action**: Implement typing indicators, read receipts, and group creation features.
 
 ---
@@ -166,6 +166,8 @@
 - ✅ Fixed message bubble corner radius for proper tail effect
 - ✅ Fixed avatar positioning in message groups
 - ✅ Fixed search bar styling inconsistencies
+- ✅ Fixed chat UI scrolling failure and overflow issues
+- ✅ Fixed header and input displacement in chat view
 
 ---
 
