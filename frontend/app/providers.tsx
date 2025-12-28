@@ -3,7 +3,7 @@
 import { useRef, useEffect } from 'react';
 import { Provider } from 'react-redux';
 import { makeStore, AppStore } from '../store/store';
-import { initializeAuth } from '../store/features/authSlice';
+import { initializeAuth, setToken } from '../store/features/authSlice';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 export default function Providers({ children }: { children: React.ReactNode }) {
@@ -18,6 +18,19 @@ export default function Providers({ children }: { children: React.ReactNode }) {
     if (storeRef.current) {
       storeRef.current.dispatch(initializeAuth());
     }
+
+    const handleTokenRefresh = (event: CustomEvent<string>) => {
+      if (storeRef.current) {
+        // console.log('Syncing refreshed token to Redux store');
+        storeRef.current.dispatch(setToken(event.detail));
+      }
+    };
+
+    window.addEventListener('auth:token-refreshed', handleTokenRefresh as EventListener);
+
+    return () => {
+      window.removeEventListener('auth:token-refreshed', handleTokenRefresh as EventListener);
+    };
   }, []);
 
   const queryClientRef = useRef<QueryClient>(null);

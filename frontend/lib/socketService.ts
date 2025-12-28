@@ -24,10 +24,9 @@ class SocketService {
   }
 
   public connect(token: string) {
-    if (this.socket?.readyState === WebSocket.OPEN || this.socket?.readyState === WebSocket.CONNECTING) return;
-
-
     this.token = token;
+
+    if (this.socket?.readyState === WebSocket.OPEN || this.socket?.readyState === WebSocket.CONNECTING) return;
 
     // Determine the WebSocket URL
     // If we are in dev, and API is localhost:8080, we want ws://localhost:8080/ws
