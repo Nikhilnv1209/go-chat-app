@@ -53,12 +53,49 @@ func (m *MockUserRepository) Search(query string, excludeUserID uuid.UUID) ([]mo
 	return args.Get(0).([]models.User), args.Error(1)
 }
 
+// MockConversationRepository to mock conversation lookups for presence broadcasting
+type MockConversationRepository struct {
+	mock.Mock
+}
+
+func (m *MockConversationRepository) Upsert(conv *models.Conversation) error {
+	args := m.Called(conv)
+	return args.Error(0)
+}
+
+func (m *MockConversationRepository) FindByUser(userID uuid.UUID) ([]models.Conversation, error) {
+	args := m.Called(userID)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).([]models.Conversation), args.Error(1)
+}
+
+func (m *MockConversationRepository) IncrementUnread(userID uuid.UUID, convType string, targetID uuid.UUID, lastMessage string) error {
+	args := m.Called(userID, convType, targetID, lastMessage)
+	return args.Error(0)
+}
+
+func (m *MockConversationRepository) ResetUnread(userID uuid.UUID, convType string, targetID uuid.UUID) error {
+	args := m.Called(userID, convType, targetID)
+	return args.Error(0)
+}
+
+func (m *MockConversationRepository) FindContactsOfUser(userID uuid.UUID) ([]uuid.UUID, error) {
+	args := m.Called(userID)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).([]uuid.UUID), args.Error(1)
+}
+
 func setupWSTest() (*handlers.WSHandler, *MockAuthService, *MockUserRepository, *gin.Engine) {
 	gin.SetMode(gin.TestMode)
 	mockAuthService := new(MockAuthService)
 	mockUserRepo := new(MockUserRepository)
+	mockConvRepo := new(MockConversationRepository)
 
-	hub := websocket.NewHub(mockUserRepo)
+	hub := websocket.NewHub(mockUserRepo, mockConvRepo)
 	go hub.Run() // Start hub
 
 	handler := handlers.NewWSHandler(hub, mockAuthService)

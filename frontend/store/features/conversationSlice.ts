@@ -98,6 +98,21 @@ const conversationSlice = createSlice({
           state.conversations.unshift(conversation);
       }
     },
+    setUserOnlineStatus: (state, action: PayloadAction<{ userId: string; isOnline: boolean }>) => {
+      // Update is_online for any DM conversation where target_id matches the user
+      state.conversations.forEach((conv) => {
+        if (conv.type === 'DM' && conv.target_id === action.payload.userId) {
+          conv.is_online = action.payload.isOnline;
+        }
+      });
+    },
+    addConversation: (state, action: PayloadAction<import('@/types').Conversation>) => {
+      // Only add if not already exists
+      const exists = state.conversations.some(c => c.id === action.payload.id);
+      if (!exists) {
+        state.conversations.unshift(action.payload);
+      }
+    },
   },
 });
 
@@ -110,6 +125,8 @@ export const {
   setLoading,
   setError,
   receiveMessage,
+  setUserOnlineStatus,
+  addConversation,
 } = conversationSlice.actions;
 
 export default conversationSlice.reducer;

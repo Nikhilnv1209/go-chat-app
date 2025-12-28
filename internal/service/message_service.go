@@ -83,13 +83,14 @@ func (s *messageService) SendDirectMessage(senderID, receiverID uuid.UUID, conte
 		UserID:        senderID,
 		Type:          "DM",
 		TargetID:      receiverID,
+		LastMessage:   content,
 		LastMessageAt: msg.CreatedAt,
 		UnreadCount:   0, // Sender doesn't have unread
 	})
 
 	// 4. Update Conversations (Receiver)
 	// Increment Receiver's unread count for conversation with Sender
-	s.convRepo.IncrementUnread(receiverID, "DM", senderID)
+	s.convRepo.IncrementUnread(receiverID, "DM", senderID, content)
 
 	// 5. Real-time Delivery via WebSocket
 	payload, _ := json.Marshal(map[string]interface{}{
@@ -172,6 +173,7 @@ func (s *messageService) SendGroupMessage(senderID, groupID uuid.UUID, content s
 				UserID:        senderID,
 				Type:          "GROUP",
 				TargetID:      groupID,
+				LastMessage:   content,
 				LastMessageAt: msg.CreatedAt,
 				UnreadCount:   0,
 			})
@@ -179,7 +181,7 @@ func (s *messageService) SendGroupMessage(senderID, groupID uuid.UUID, content s
 		}
 
 		// Update receiver's conversation and increment unread
-		s.convRepo.IncrementUnread(member.UserID, "GROUP", groupID)
+		s.convRepo.IncrementUnread(member.UserID, "GROUP", groupID, content)
 
 		// Real-time delivery via WebSocket
 		payload, _ := json.Marshal(map[string]interface{}{

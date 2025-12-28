@@ -47,13 +47,21 @@ func (m *MockConversationRepo) FindByUser(userID uuid.UUID) ([]models.Conversati
 	args := m.Called(userID)
 	return args.Get(0).([]models.Conversation), args.Error(1)
 }
-func (m *MockConversationRepo) IncrementUnread(userID uuid.UUID, convType string, targetID uuid.UUID) error {
-	args := m.Called(userID, convType, targetID)
+func (m *MockConversationRepo) IncrementUnread(userID uuid.UUID, convType string, targetID uuid.UUID, lastMessage string) error {
+	args := m.Called(userID, convType, targetID, lastMessage)
 	return args.Error(0)
 }
 func (m *MockConversationRepo) ResetUnread(userID uuid.UUID, convType string, targetID uuid.UUID) error {
 	args := m.Called(userID, convType, targetID)
 	return args.Error(0)
+}
+
+func (m *MockConversationRepo) FindContactsOfUser(userID uuid.UUID) ([]uuid.UUID, error) {
+	args := m.Called(userID)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).([]uuid.UUID), args.Error(1)
 }
 
 // MockGroupRepo

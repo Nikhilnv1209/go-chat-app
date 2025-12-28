@@ -43,6 +43,7 @@ type ConversationResponse struct {
 	Type          string    `json:"type"`
 	TargetID      uuid.UUID `json:"target_id"`
 	TargetName    string    `json:"target_name"`
+	LastMessage   *string   `json:"last_message"`
 	LastMessageAt string    `json:"last_message_at"`
 	UnreadCount   int       `json:"unread_count"`
 	MemberCount   int       `json:"member_count,omitempty"` // Only for groups
@@ -94,11 +95,13 @@ func (h *ChatHandler) GetConversations(c *gin.Context) {
 			}
 		}
 
+		lastMsg := conv.LastMessage
 		response = append(response, ConversationResponse{
 			ID:            conv.ID,
 			Type:          upperType,
 			TargetID:      conv.TargetID,
 			TargetName:    targetName,
+			LastMessage:   &lastMsg,
 			LastMessageAt: conv.LastMessageAt.Format("2006-01-02T15:04:05Z07:00"),
 			UnreadCount:   conv.UnreadCount,
 			MemberCount:   memberCount,

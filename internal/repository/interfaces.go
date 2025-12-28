@@ -41,6 +41,7 @@ type GroupRepository interface {
 type ConversationRepository interface {
 	Upsert(conv *models.Conversation) error
 	FindByUser(userID uuid.UUID) ([]models.Conversation, error)
-	IncrementUnread(userID uuid.UUID, convType string, targetID uuid.UUID) error
+	IncrementUnread(userID uuid.UUID, convType string, targetID uuid.UUID, lastMessage string) error
 	ResetUnread(userID uuid.UUID, convType string, targetID uuid.UUID) error
+	FindContactsOfUser(userID uuid.UUID) ([]uuid.UUID, error) // For presence broadcasting
 }

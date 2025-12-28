@@ -70,4 +70,7 @@ export type WSIncomingEvent =
   | { type: 'message_sent'; payload: Message }
   | { type: 'user_typing'; payload: { user_id: string; username: string; conversation_type: string; target_id: string } }
   | { type: 'user_stopped_typing'; payload: { user_id: string; conversation_type: string; target_id: string } }
-  | { type: 'receipt_update'; payload: { message_id: string; user_id: string; status: string; updated_at: string } };
+  | { type: 'receipt_update'; payload: { message_id: string; user_id: string; status: string; updated_at: string } }
+  | { type: 'user_online'; payload: { user_id: string } }
+  | { type: 'user_offline'; payload: { user_id: string } }
+  | { type: 'conversation_created'; payload: Conversation };

@@ -11,6 +11,7 @@ type Conversation struct {
 	UserID        uuid.UUID `gorm:"type:uuid;not null;uniqueIndex:idx_user_conversation" json:"user_id"`
 	Type          string    `gorm:"size:10;uniqueIndex:idx_user_conversation" json:"type"` // DM or GROUP
 	TargetID      uuid.UUID `gorm:"type:uuid;not null;uniqueIndex:idx_user_conversation" json:"target_id"`
+	LastMessage   string    `gorm:"size:500" json:"last_message"`
 	LastMessageAt time.Time `json:"last_message_at"`
 	UnreadCount   int       `gorm:"default:0" json:"unread_count"`
 }
