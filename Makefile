@@ -47,6 +47,15 @@ test:
 	@echo "🧪 Running tests..."
 	go test ./... -v
 
+# Clean specific data
+clean-user:
+	@echo "🧹 Cleaning users table (and cascading relations)..."
+	podman exec chat_postgres psql -U user -d chat_db -c "TRUNCATE TABLE users CASCADE;"
+
+clean-conversation:
+	@echo "🧹 Cleaning conversations, messages, groups..."
+	podman exec chat_postgres psql -U user -d chat_db -c "TRUNCATE TABLE messages, conversations, groups, group_members, message_receipts CASCADE;"
+
 # Clean up volumes and containers
 clean:
 	@echo "🧹 Cleaning up..."
