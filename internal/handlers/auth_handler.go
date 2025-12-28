@@ -163,28 +163,32 @@ func (h *AuthHandler) handleError(c *gin.Context, err error) {
 // Helpers
 
 func (h *AuthHandler) setRefreshTokenCookie(c *gin.Context, token string) {
-	// HttpOnly=true, Secure=false (for localhost), Path=/auth
+	// Determine if we're in production (Secure flag should be true for HTTPS)
+	isProduction := gin.Mode() == gin.ReleaseMode
+
 	http.SetCookie(c.Writer, &http.Cookie{
 		Name:     "refresh_token",
 		Value:    token,
 		Expires:  time.Now().Add(7 * 24 * time.Hour),
 		MaxAge:   7 * 24 * 60 * 60,
-		Path:     "/auth",
+		Path:     "/",
 		HttpOnly: true,
-		Secure:   false, // Set to true in production
-		SameSite: http.SameSiteStrictMode,
+		Secure:   isProduction, // true in production (HTTPS), false in development (HTTP)
+		SameSite: http.SameSiteLaxMode,
 	})
 }
 
 func (h *AuthHandler) clearRefreshTokenCookie(c *gin.Context) {
+	isProduction := gin.Mode() == gin.ReleaseMode
+
 	http.SetCookie(c.Writer, &http.Cookie{
 		Name:     "refresh_token",
 		Value:    "",
 		Expires:  time.Unix(0, 0),
 		MaxAge:   -1,
-		Path:     "/auth",
+		Path:     "/",
 		HttpOnly: true,
-		Secure:   false,
-		SameSite: http.SameSiteStrictMode,
+		Secure:   isProduction,
+		SameSite: http.SameSiteLaxMode,
 	})
 }

@@ -125,7 +125,33 @@ The conversation model lacked a composite unique index, allowing duplicate conve
 
 ---
 
+### B005: Refresh Token Cookie Configuration Preventing Token Refresh
+**Severity**: High
+**Status**: ✅ Fixed
+**Date Fixed**: December 29, 2025
+
+**Description**:
+The refresh token flow was failing with 401 errors because the refresh token cookie was not being sent with `/auth/refresh` requests. The cookie was configured with `SameSite=Strict` and `Path=/auth`, which prevented it from being sent in cross-origin requests (frontend on port 3000, backend on port 8080).
+
+**Root Cause**:
+- `SameSite=Strict` blocked cookies from being sent with cross-origin requests
+- Frontend (localhost:3000) and backend (localhost:8080) are different origins
+- `Path=/auth` was unnecessarily restrictive
+- `Secure` flag was hardcoded to `false` instead of being environment-aware
+
+**Fix Details**:
+- Changed `SameSite` from `Strict` to `Lax` to allow same-site cross-origin requests
+- Changed `Path` from `/auth` to `/` to make cookie available for all endpoints
+- Made `Secure` flag environment-aware: `true` in production (GIN_MODE=release), `false` in development
+- Tested and verified: refresh flow now works correctly when frontend and backend use same hostname
+
+**Files Changed**:
+- `internal/handlers/auth_handler.go`
+
+---
+
 ## Frontend Bugs
+
 
 ### F001: WebSocket Connection and Listener Race Condition
 **Severity**: High
@@ -321,11 +347,11 @@ On mobile devices, the background layer caused visual artifacts and layout shift
 ## Summary Statistics
 
 ### Backend Bugs
-- **Total**: 4
-- **Fixed**: 4 (100%)
+- **Total**: 5
+- **Fixed**: 5 (100%)
 - **Severity Breakdown**:
-  - High: 2 (50%)
-  - Medium: 2 (50%)
+  - High: 3 (60%)
+  - Medium: 2 (40%)
   - Low: 0 (0%)
 
 ### Frontend Bugs
@@ -337,10 +363,11 @@ On mobile devices, the background layer caused visual artifacts and layout shift
   - Low: 1 (14.2%)
 
 ### Overall
-- **Total Bugs**: 11
-- **Total Fixed**: 11 (100%)
+- **Total Bugs**: 12
+- **Total Fixed**: 12 (100%)
 - **Average Resolution Time**: < 1 day
 - **Most Common Issue Category**: State Management & Race Conditions (4 bugs)
+
 
 ---
 
