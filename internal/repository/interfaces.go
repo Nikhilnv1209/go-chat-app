@@ -45,3 +45,10 @@ type ConversationRepository interface {
 	ResetUnread(userID uuid.UUID, convType string, targetID uuid.UUID) error
 	FindContactsOfUser(userID uuid.UUID) ([]uuid.UUID, error) // For presence broadcasting
 }
+
+type RefreshTokenRepository interface {
+	Create(token *models.RefreshToken) error
+	GetByHash(hash string) (*models.RefreshToken, error)
+	Revoke(id uuid.UUID) error
+	RevokeByUser(userID uuid.UUID) error
+}

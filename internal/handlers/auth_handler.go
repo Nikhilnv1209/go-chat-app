@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"net/http"
+	"time"
 
 	"chat-app/internal/errors"
 	"chat-app/internal/middleware"
@@ -32,14 +33,16 @@ func (h *AuthHandler) Register(c *gin.Context) {
 		return
 	}
 
-	token, user, err := h.service.Register(req.Username, req.Email, req.Password)
+	accessToken, refreshToken, user, err := h.service.Register(req.Username, req.Email, req.Password)
 	if err != nil {
 		h.handleError(c, err)
 		return
 	}
 
+	h.setRefreshTokenCookie(c, refreshToken)
+
 	c.JSON(http.StatusCreated, gin.H{
-		"token": token,
+		"token": accessToken,
 		"user":  user,
 	})
 }
@@ -56,16 +59,53 @@ func (h *AuthHandler) Login(c *gin.Context) {
 		return
 	}
 
-	token, user, err := h.service.Login(req.Email, req.Password)
+	accessToken, refreshToken, user, err := h.service.Login(req.Email, req.Password)
 	if err != nil {
 		h.handleError(c, err)
 		return
 	}
 
+	h.setRefreshTokenCookie(c, refreshToken)
+
 	c.JSON(http.StatusOK, gin.H{
-		"token": token,
+		"token": accessToken,
 		"user":  user,
 	})
+}
+
+func (h *AuthHandler) Refresh(c *gin.Context) {
+	refreshToken, err := c.Cookie("refresh_token")
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Refresh token required"})
+		return
+	}
+
+	accessToken, newRefreshToken, err := h.service.Refresh(refreshToken)
+	if err != nil {
+		// If refresh fails, clear cookie
+		h.clearRefreshTokenCookie(c)
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid or expired refresh token"})
+		return
+	}
+
+	// Update cookie if it changed (optional rotation)
+	if newRefreshToken != "" && newRefreshToken != refreshToken {
+		h.setRefreshTokenCookie(c, newRefreshToken)
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"token": accessToken,
+	})
+}
+
+func (h *AuthHandler) Logout(c *gin.Context) {
+	refreshToken, err := c.Cookie("refresh_token")
+	if err == nil && refreshToken != "" {
+		_ = h.service.Logout(refreshToken)
+	}
+
+	h.clearRefreshTokenCookie(c)
+	c.JSON(http.StatusOK, gin.H{"message": "Logged out successfully"})
 }
 
 func (h *AuthHandler) SearchUsers(c *gin.Context) {
@@ -118,4 +158,33 @@ func (h *AuthHandler) handleError(c *gin.Context, err error) {
 		return
 	}
 	c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal Server Error"})
+}
+
+// Helpers
+
+func (h *AuthHandler) setRefreshTokenCookie(c *gin.Context, token string) {
+	// HttpOnly=true, Secure=false (for localhost), Path=/auth
+	http.SetCookie(c.Writer, &http.Cookie{
+		Name:     "refresh_token",
+		Value:    token,
+		Expires:  time.Now().Add(7 * 24 * time.Hour),
+		MaxAge:   7 * 24 * 60 * 60,
+		Path:     "/auth",
+		HttpOnly: true,
+		Secure:   false, // Set to true in production
+		SameSite: http.SameSiteStrictMode,
+	})
+}
+
+func (h *AuthHandler) clearRefreshTokenCookie(c *gin.Context) {
+	http.SetCookie(c.Writer, &http.Cookie{
+		Name:     "refresh_token",
+		Value:    "",
+		Expires:  time.Unix(0, 0),
+		MaxAge:   -1,
+		Path:     "/auth",
+		HttpOnly: true,
+		Secure:   false,
+		SameSite: http.SameSiteStrictMode,
+	})
 }

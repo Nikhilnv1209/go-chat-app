@@ -53,7 +53,7 @@ func Load() *Config {
 		},
 		JWT: JWTConfig{
 			Secret:     getEnv("JWT_SECRET", "secret"),
-			Expiration: getEnvDuration("JWT_EXPIRATION", 24*time.Hour),
+			Expiration: getEnvDuration("JWT_EXPIRATION", 15*time.Minute),
 		},
 	}
 }

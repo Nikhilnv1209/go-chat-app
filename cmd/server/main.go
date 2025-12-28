@@ -38,6 +38,7 @@ func main() {
 		&models.Message{},
 		&models.MessageReceipt{},
 		&models.Conversation{},
+		&models.RefreshToken{},
 	)
 	if err != nil {
 		log.Fatal("Migration failed: ", err)
@@ -50,7 +51,8 @@ func main() {
 	msgRepo := repository.NewMessageRepository(db)
 	convRepo := repository.NewConversationRepository(db)
 	groupRepo := repository.NewGroupRepository(db)
-	receiptRepo := repository.NewMessageReceiptRepository(db) // [F06]
+	receiptRepo := repository.NewMessageReceiptRepository(db)    // [F06]
+	refreshTokenRepo := repository.NewRefreshTokenRepository(db) // [F09]
 
 	// WebSocket Hub
 	// We create this early because MessageService needs it
@@ -62,7 +64,7 @@ func main() {
 		Secret:     cfg.JWT.Secret,
 		Expiration: cfg.JWT.Expiration,
 	})
-	authService := service.NewAuthService(userRepo, jwtService)
+	authService := service.NewAuthService(userRepo, refreshTokenRepo, jwtService)
 	msgService := service.NewMessageService(msgRepo, convRepo, groupRepo, receiptRepo, userRepo, hub) // [F06][F07]
 
 	groupService := service.NewGroupService(groupRepo)
@@ -92,6 +94,8 @@ func main() {
 	{
 		authRoutes.POST("/register", authHandler.Register)
 		authRoutes.POST("/login", authHandler.Login)
+		authRoutes.POST("/refresh", authHandler.Refresh)
+		authRoutes.POST("/logout", authHandler.Logout)
 	}
 
 	// Protected routes (require JWT auth)
