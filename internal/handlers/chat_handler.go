@@ -46,6 +46,7 @@ type ConversationResponse struct {
 	LastMessage   *string   `json:"last_message"`
 	LastMessageAt string    `json:"last_message_at"`
 	UnreadCount   int       `json:"unread_count"`
+	IsOnline      *bool     `json:"is_online,omitempty"`    // Only for DM conversations
 	MemberCount   int       `json:"member_count,omitempty"` // Only for groups
 }
 
@@ -71,16 +72,18 @@ func (h *ChatHandler) GetConversations(c *gin.Context) {
 	for _, conv := range conversations {
 		targetName := ""
 		memberCount := 0
+		var isOnline *bool
 
 		// Normalize type for internal switching and response
 		upperType := strings.ToUpper(conv.Type)
 
 		switch upperType {
 		case "DM":
-			// Fetch user name
+			// Fetch user name and online status
 			user, err := h.userRepo.FindByID(conv.TargetID)
 			if err == nil {
 				targetName = user.Username
+				isOnline = &user.IsOnline
 			}
 		case "GROUP":
 			// Fetch group name and member count
@@ -104,6 +107,7 @@ func (h *ChatHandler) GetConversations(c *gin.Context) {
 			LastMessage:   &lastMsg,
 			LastMessageAt: conv.LastMessageAt.Format("2006-01-02T15:04:05Z07:00"),
 			UnreadCount:   conv.UnreadCount,
+			IsOnline:      isOnline,
 			MemberCount:   memberCount,
 		})
 	}
