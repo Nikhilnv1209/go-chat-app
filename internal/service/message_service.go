@@ -97,7 +97,12 @@ func (s *messageService) SendDirectMessage(senderID, receiverID uuid.UUID, conte
 		"type":    "new_message",
 		"payload": msg,
 	})
+
+	// Broadcast to receiver's devices
 	s.hub.SendToUser(receiverID, payload)
+
+	// Broadcast to sender's other devices for multi-device sync
+	s.hub.SendToUser(senderID, payload)
 
 	return msg, nil
 }
@@ -190,6 +195,13 @@ func (s *messageService) SendGroupMessage(senderID, groupID uuid.UUID, content s
 		})
 		s.hub.SendToUser(member.UserID, payload)
 	}
+
+	// Broadcast to sender's devices for multi-device sync
+	senderPayload, _ := json.Marshal(map[string]interface{}{
+		"type":    "new_message",
+		"payload": msg,
+	})
+	s.hub.SendToUser(senderID, senderPayload)
 
 	return msg, nil
 }

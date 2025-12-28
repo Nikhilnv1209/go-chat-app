@@ -150,6 +150,32 @@ The refresh token flow was failing with 401 errors because the refresh token coo
 
 ---
 
+### B006: Sender's Messages Not Syncing Across Multiple Devices in Real-Time
+**Severity**: High
+**Status**: ✅ Fixed
+**Date Fixed**: December 29, 2025
+
+**Description**:
+When a user (e.g., Bob) is logged in on multiple devices (laptop and mobile) and sends a message from one device, only that specific device receives the real-time update. The sender's other devices only sync the sent message after a page refresh. However, the recipient (e.g., Alice) correctly receives the message in real-time on all their devices.
+
+**Root Cause**:
+- In `SendDirectMessage` and `SendGroupMessage` functions, only the sending client receives the `message_sent` acknowledgment via `client.Send <- ack`
+- The message is broadcast to all of the receiver's devices via `hub.SendToUser(receiverID, payload)`
+- The sender's other devices are not notified because the acknowledgment is only sent to the current client, not to all of the sender's connected devices
+- Missing broadcast to sender's other devices using `hub.SendToUser(senderID, payload)`
+
+**Fix Details**:
+- Added `hub.SendToUser(senderID, payload)` after broadcasting to receiver in `SendDirectMessage`
+- Added `hub.SendToUser(senderID, senderPayload)` after broadcasting to group members in `SendGroupMessage`
+- Both DM and group messages now sync across all sender devices in real-time
+- Frontend already handles `new_message` events correctly for both sent and received messages
+- No frontend changes required - existing logic properly handles messages from current user
+
+**Files Changed**:
+- `internal/service/message_service.go`
+
+---
+
 ## Frontend Bugs
 
 
@@ -347,11 +373,11 @@ On mobile devices, the background layer caused visual artifacts and layout shift
 ## Summary Statistics
 
 ### Backend Bugs
-- **Total**: 5
-- **Fixed**: 5 (100%)
+- **Total**: 6
+- **Fixed**: 6 (100%)
 - **Severity Breakdown**:
-  - High: 3 (60%)
-  - Medium: 2 (40%)
+  - High: 4 (66.7%)
+  - Medium: 2 (33.3%)
   - Low: 0 (0%)
 
 ### Frontend Bugs
@@ -363,8 +389,8 @@ On mobile devices, the background layer caused visual artifacts and layout shift
   - Low: 1 (14.2%)
 
 ### Overall
-- **Total Bugs**: 12
-- **Total Fixed**: 12 (100%)
+- **Total Bugs**: 13
+- **Total Fixed**: 13 (100%)
 - **Average Resolution Time**: < 1 day
 - **Most Common Issue Category**: State Management & Race Conditions (4 bugs)
 
