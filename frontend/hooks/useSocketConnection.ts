@@ -1,8 +1,8 @@
 import { useEffect } from 'react';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { socketService } from '@/lib/socketService';
-import { Message } from '@/types';
-import { receiveMessage } from '@/store/features/conversationSlice';
+import { Message, Conversation } from '@/types';
+import { receiveMessage, setUserOnlineStatus, addConversation } from '@/store/features/conversationSlice';
 import { useQueryClient } from '@tanstack/react-query';
 
 export function useSocketConnection() {
@@ -78,12 +78,35 @@ export function useSocketConnection() {
         handleNewMessage(message);
     };
 
+    const handleUserOnline = (payload: { user_id: string }) => {
+      console.log('WS: User Online:', payload.user_id);
+      dispatch(setUserOnlineStatus({ userId: payload.user_id, isOnline: true }));
+    };
+
+    const handleUserOffline = (payload: { user_id: string }) => {
+      console.log('WS: User Offline:', payload.user_id);
+      dispatch(setUserOnlineStatus({ userId: payload.user_id, isOnline: false }));
+    };
+
+    const handleConversationCreated = (conversation: Conversation) => {
+      console.log('WS: Conversation Created:', conversation);
+      dispatch(addConversation(conversation));
+      // Also invalidate conversations query to ensure consistency
+      queryClient.invalidateQueries({ queryKey: ['conversations'] });
+    };
+
     socketService.on('new_message', handleNewMessage);
     socketService.on('message_sent', handleMessageSent);
+    socketService.on('user_online', handleUserOnline);
+    socketService.on('user_offline', handleUserOffline);
+    socketService.on('conversation_created', handleConversationCreated);
 
     return () => {
       socketService.off('new_message', handleNewMessage);
       socketService.off('message_sent', handleMessageSent);
+      socketService.off('user_online', handleUserOnline);
+      socketService.off('user_offline', handleUserOffline);
+      socketService.off('conversation_created', handleConversationCreated);
     };
   }, [isAuthenticated, token, user, dispatch, queryClient]);
 }

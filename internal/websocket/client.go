@@ -95,12 +95,8 @@ func (c *Client) WritePump() {
 			}
 			w.Write(message)
 
-			// Add queued chat messages to the current websocket message.
-			n := len(c.Send)
-			for i := 0; i < n; i++ {
-				w.Write([]byte{'\n'})
-				w.Write(<-c.Send)
-			}
+			// Optimization: We could batch messages here, but frontend expects one JSON per frame.
+			// So we send one message per NextWriter.
 
 			if err := w.Close(); err != nil {
 				return

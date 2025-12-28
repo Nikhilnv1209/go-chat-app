@@ -1,6 +1,7 @@
 package websocket
 
 import (
+	"encoding/json"
 	"log"
 	"sync"
 	"time"
@@ -27,14 +28,18 @@ type Hub struct {
 
 	// Repository to update user status
 	userRepo repository.UserRepository
+
+	// Repository to find user's contacts for presence broadcast
+	convRepo repository.ConversationRepository
 }
 
-func NewHub(userRepo repository.UserRepository) *Hub {
+func NewHub(userRepo repository.UserRepository, convRepo repository.ConversationRepository) *Hub {
 	return &Hub{
 		Register:   make(chan *Client),
 		Unregister: make(chan *Client),
 		Clients:    make(map[uuid.UUID][]*Client),
 		userRepo:   userRepo,
+		convRepo:   convRepo,
 	}
 }
 
@@ -43,12 +48,18 @@ func (h *Hub) Run() {
 		select {
 		case client := <-h.Register:
 			h.mu.Lock()
-			// If first connection, mark online
-			if len(h.Clients[client.UserID]) == 0 {
-				go h.updateUserStatus(client.UserID, true)
-			}
+			// If first connection, mark online and broadcast
+			wasOffline := len(h.Clients[client.UserID]) == 0
 			h.Clients[client.UserID] = append(h.Clients[client.UserID], client)
 			h.mu.Unlock()
+
+			if wasOffline {
+				go h.updateUserStatus(client.UserID, true)
+				go h.broadcastPresence(client.UserID, true)
+			}
+
+			// Send initial presence of contacts to the new client
+			go h.sendInitialPresence(client)
 
 		case client := <-h.Unregister:
 			h.mu.Lock()
@@ -61,18 +72,22 @@ func (h *Hub) Run() {
 					}
 				}
 
-				if len(newClients) == 0 {
+				isNowOffline := len(newClients) == 0
+				if isNowOffline {
 					delete(h.Clients, client.UserID)
-					// Verify this was the last connection before marking offline
-					// (Double check inside lock isn't strictly necessary if strict ordering is guaranteed,
-					// but good for safety if we add async stuff)
-					go h.updateUserStatus(client.UserID, false)
 				} else {
 					h.Clients[client.UserID] = newClients
 				}
 				close(client.Send)
+				h.mu.Unlock()
+
+				if isNowOffline {
+					go h.updateUserStatus(client.UserID, false)
+					go h.broadcastPresence(client.UserID, false)
+				}
+			} else {
+				h.mu.Unlock()
 			}
-			h.mu.Unlock()
 		}
 	}
 }
@@ -82,6 +97,33 @@ func (h *Hub) updateUserStatus(userID uuid.UUID, isOnline bool) {
 	if err := h.userRepo.UpdateOnlineStatus(userID, isOnline, time.Now()); err != nil {
 		// Log error but don't crash
 		log.Printf("Failed to update user status for %s: %v", userID, err)
+	}
+}
+
+// broadcastPresence sends presence updates to all users who have a DM conversation with this user
+func (h *Hub) broadcastPresence(userID uuid.UUID, isOnline bool) {
+	eventType := "user_offline"
+	if isOnline {
+		eventType = "user_online"
+	}
+
+	payload, _ := json.Marshal(map[string]interface{}{
+		"type": eventType,
+		"payload": map[string]interface{}{
+			"user_id": userID,
+		},
+	})
+
+	// Find all users who have this user as a target_id in their DM conversations
+	// These are the users that need to know about this user's presence
+	contacts, err := h.convRepo.FindContactsOfUser(userID)
+	if err != nil {
+		log.Printf("Failed to find contacts for presence broadcast: %v", err)
+		return
+	}
+
+	for _, contactID := range contacts {
+		h.SendToUser(contactID, payload)
 	}
 }
 
@@ -97,6 +139,37 @@ func (h *Hub) SendToUser(userID uuid.UUID, message []byte) {
 			default:
 				close(client.Send)
 				// Clean up locked client in next loop or let ReadPump handle it
+			}
+		}
+	}
+}
+
+// sendInitialPresence sends the current online status of contacts to a newly connected client
+func (h *Hub) sendInitialPresence(client *Client) {
+	// 1. Get user's conversations
+	convs, err := h.convRepo.FindByUser(client.UserID)
+	if err != nil {
+		log.Printf("Failed to fetch conversations for initial presence sync: %v", err)
+		return
+	}
+
+	// 2. Filter for DMs and checking online status
+	h.mu.RLock()
+	defer h.mu.RUnlock()
+
+	for _, conv := range convs {
+		if conv.Type == "DM" {
+			targetID := conv.TargetID
+			// Check if target is online (has active clients)
+			if clients, ok := h.Clients[targetID]; ok && len(clients) > 0 {
+				// 3. Send 'user_online' event to THIS client only
+				payload, _ := json.Marshal(map[string]interface{}{
+					"type": "user_online",
+					"payload": map[string]interface{}{
+						"user_id": targetID,
+					},
+				})
+				client.Send <- payload
 			}
 		}
 	}

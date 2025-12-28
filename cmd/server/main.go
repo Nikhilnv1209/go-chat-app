@@ -54,7 +54,7 @@ func main() {
 
 	// WebSocket Hub
 	// We create this early because MessageService needs it
-	hub := websocket.NewHub(userRepo)
+	hub := websocket.NewHub(userRepo, convRepo)
 	go hub.Run()
 
 	// Services
