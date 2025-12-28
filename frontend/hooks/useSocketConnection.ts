@@ -10,24 +10,14 @@ export function useSocketConnection() {
   const queryClient = useQueryClient();
   const { token, isAuthenticated, user } = useAppSelector((state) => state.auth);
 
-  // 1. Connection Management Effect
+  // Combined Effect: Attach listeners THEN connect to prevent race conditions
   useEffect(() => {
-    if (isAuthenticated && token && user) {
-        socketService.connect(token);
+    if (!isAuthenticated || !token || !user) {
+      socketService.disconnect();
+      return;
     }
-    // We do NOT disconnect on cleanup of this effect if dependencies change,
-    // because we want the socket to persist across navigations/renders.
-    // We only want to disconnect if the user explicitly logs out (token becomes null).
 
-    if (!isAuthenticated || !token) {
-        socketService.disconnect();
-    }
-  }, [isAuthenticated, token, user]);
-
-  // 2. Event Listener Management Effect
-  useEffect(() => {
-    if (!isAuthenticated || !token || !user) return;
-
+    // Define event handlers
     const handleNewMessage = (message: Message) => {
       console.log('WS: Received Message:', message);
       dispatch(receiveMessage(message));
@@ -71,6 +61,10 @@ export function useSocketConnection() {
           console.log('WS: Appending message to cache. New count:', oldData.length + 1);
           return [...oldData, message];
       });
+
+      // Always invalidate conversations list when a new message arrives
+      // This ensures the inbox list (sidebar) updates its order, unread counts, and shows new conversations instantly.
+      queryClient.invalidateQueries({ queryKey: ['conversations'] });
     };
 
     const handleMessageSent = (message: Message) => {
@@ -95,18 +89,28 @@ export function useSocketConnection() {
       queryClient.invalidateQueries({ queryKey: ['conversations'] });
     };
 
+    // Step 1: Attach all event listeners FIRST
+    console.log('WS: Attaching event listeners...');
     socketService.on('new_message', handleNewMessage);
     socketService.on('message_sent', handleMessageSent);
     socketService.on('user_online', handleUserOnline);
     socketService.on('user_offline', handleUserOffline);
     socketService.on('conversation_created', handleConversationCreated);
 
+    // Step 2: THEN connect (this ensures we don't miss any events)
+    console.log('WS: Connecting to socket...');
+    socketService.connect(token);
+
+    // Cleanup
     return () => {
+      console.log('WS: Cleaning up event listeners...');
       socketService.off('new_message', handleNewMessage);
       socketService.off('message_sent', handleMessageSent);
       socketService.off('user_online', handleUserOnline);
       socketService.off('user_offline', handleUserOffline);
       socketService.off('conversation_created', handleConversationCreated);
+      // Note: We don't disconnect here to allow socket to persist across renders
+      // Only disconnect when auth state changes (handled by the condition at the top)
     };
   }, [isAuthenticated, token, user, dispatch, queryClient]);
 }
