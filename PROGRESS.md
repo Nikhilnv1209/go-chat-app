@@ -143,5 +143,18 @@
 | **Verification** | ✅ DONE | 5 typing-related tests - ALL PASSING ✅ |
 
 ---
+### [F09] Session Management
+**Story 1.9: Session Management** (`specs/stories/backend/1.9_session_management.story.md`)
+| Task | Status | File(s) |
+|------|--------|---------|
+| Create RefreshToken Model/Migration | ✅ DONE | `internal/models/refresh_token.go` |
+| Update JWT/Token Service | ✅ DONE | `pkg/jwt/jwt.go` |
+| Update Auth Service (Login/Reg) | ✅ DONE | `internal/service/auth_service.go` |
+| Implement Refresh Handler | ✅ DONE | `internal/handlers/auth_handler.go` |
+| Implement Logout Handler | ✅ DONE | `internal/handlers/auth_handler.go` |
+| Frontend Interceptor Logic | ✅ DONE | `frontend/lib/api.ts` |
+| **Verification** | ✅ DONE | Curl / Browser Cookie Check |
+
+---
 **Legend**:
 ✅ DONE | 🚧 IN PROGRESS | ⬜ TODO | 🔴 BLOCKED
