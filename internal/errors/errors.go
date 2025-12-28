@@ -18,7 +18,7 @@ var (
 	ErrEmailExists        = &AppError{Code: "AUTH_EMAIL_EXISTS", Message: "Email already registered", Status: 409}
 	ErrUnauthorized       = &AppError{Code: "AUTH_UNAUTHORIZED", Message: "Authentication required", Status: 401}
 	ErrForbidden          = &AppError{Code: "AUTH_FORBIDDEN", Message: "You don't have permission", Status: 403}
-	ErrNotFound           = &AppError{Code: "RESOURCE_NOT_FOUND", Message: "Resource not found", Status: 404}
+	ErrNotFound           = &AppError{Code: "RESOURCE_NOT_FOUND", Message: "User not found", Status: 404}
 	ErrValidation         = &AppError{Code: "VALIDATION_ERROR", Message: "Invalid input", Status: 400}
 	ErrInternalServer     = &AppError{Code: "INTERNAL_SERVER_ERROR", Message: "An unexpected error occurred", Status: 500}
 )
