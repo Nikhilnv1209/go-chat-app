@@ -20,6 +20,8 @@ const conversationSlice = createSlice({
   initialState,
   reducers: {
     setConversations: (state, action: PayloadAction<Conversation[]>) => {
+      // Backend is_online is the source of truth when fetched
+      // Real-time WebSocket updates will override this via setUserOnlineStatus
       state.conversations = action.payload;
       state.isLoading = false;
       state.error = null;
