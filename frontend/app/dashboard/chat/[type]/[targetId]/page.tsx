@@ -45,14 +45,14 @@ export default function ChatPage() {
   // Fetch Messages
   const { data: messages, isLoading } = useQuery({
     queryKey: ['messages', targetId, type],
-    queryFn: () => conversationApi.getMessages(token!, targetId!, type),
+    queryFn: () => conversationApi.getMessages(targetId!, type),
     enabled: !!token && !!targetId && !!type,
   });
 
   // Fetch Target User details if not in conversation list (New Chat scenario)
   const { data: targetUser } = useQuery({
     queryKey: ['user', targetId],
-    queryFn: () => conversationApi.getUser(token!, targetId!),
+    queryFn: () => conversationApi.getUser(targetId!),
     enabled: !!token && !!targetId && type === 'DM' && !conversation,
   });
 

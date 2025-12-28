@@ -147,7 +147,8 @@ export default function LoginPage() {
               <div className="p-4 text-sm text-[#ff7a55] bg-[#ff7a55]/10 border border-[#ff7a55]/20 rounded-xl animate-enter">
                 {(() => {
                   const axiosError = loginMutation.error as AxiosError<{ error: { code: string; message: string } }>;
-                  return axiosError.response?.data?.error?.message || 'Authentication failed';
+                  // Fallback to "Invalid credentials" if specific message is missing but it's an auth error, or show specific backend message if available
+                  return axiosError.response?.data?.error?.message || 'Invalid credentials';
                 })()}
               </div>
             )}

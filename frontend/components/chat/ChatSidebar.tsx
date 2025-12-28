@@ -33,7 +33,7 @@ export default function ChatSidebar({ isOpen, onClose }: ChatSidebarProps = {}) 
   // Fetch conversations
   const { data, isLoading, isError } = useQuery({
     queryKey: ['conversations'],
-    queryFn: () => conversationApi.getConversations(token!),
+    queryFn: () => conversationApi.getConversations(),
     enabled: !!token,
   });
 

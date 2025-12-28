@@ -32,20 +32,20 @@ export function NewChatDialog() {
   const [query, setQuery] = useState('');
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(false);
-  const { token, user: currentUser } = useAppSelector((state) => state.auth);
+  const { user: currentUser } = useAppSelector((state) => state.auth);
 
   const debouncedQuery = useDebounce(query, 300);
 
   useEffect(() => {
     async function search() {
-      if (!debouncedQuery.trim() || !token) {
+      if (!debouncedQuery.trim()) {
         setUsers([]);
         return;
       }
 
       setLoading(true);
       try {
-        const results = await conversationApi.searchUsers(token, debouncedQuery);
+        const results = await conversationApi.searchUsers(debouncedQuery);
         setUsers(results);
       } catch (error) {
         console.error('Failed to search users:', error);
@@ -55,7 +55,7 @@ export function NewChatDialog() {
     }
 
     search();
-  }, [debouncedQuery, token]);
+  }, [debouncedQuery]);
 
   const handleStartChat = (targetUser: User) => {
     // Navigate to DM URL: /dashboard/chat/dm/{targetId}
