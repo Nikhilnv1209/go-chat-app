@@ -1,7 +1,9 @@
 package handlers
 
 import (
+	"context"
 	"net/http"
+	"time"
 
 	"chat-app/internal/middleware"
 	"chat-app/internal/service"
@@ -45,8 +47,11 @@ func (h *GroupHandler) CreateGroup(c *gin.Context) {
 		return
 	}
 
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 10*time.Second)
+	defer cancel()
+
 	// 3. Create group
-	group, err := h.groupService.Create(userID, req.Name, req.MemberIDs)
+	group, err := h.groupService.Create(ctx, userID, req.Name, req.MemberIDs)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -83,8 +88,11 @@ func (h *GroupHandler) AddMember(c *gin.Context) {
 		return
 	}
 
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 10*time.Second)
+	defer cancel()
+
 	// 4. Add member
-	err = h.groupService.AddMember(adminID, groupID, req.UserID)
+	err = h.groupService.AddMember(ctx, adminID, groupID, req.UserID)
 	if err != nil {
 		if err.Error() == "only admins can add members" {
 			c.JSON(http.StatusForbidden, gin.H{"error": err.Error()})

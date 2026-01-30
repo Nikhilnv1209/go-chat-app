@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"time"
@@ -44,7 +45,7 @@ func NewMessageService(
 	}
 }
 
-func (s *messageService) SendDirectMessage(senderID, receiverID uuid.UUID, content string) (*models.Message, error) {
+func (s *messageService) SendDirectMessage(ctx context.Context, senderID, receiverID uuid.UUID, content string) (*models.Message, error) {
 	// 1. Create Message
 	msg := &models.Message{
 		BaseModel: models.BaseModel{
@@ -56,12 +57,12 @@ func (s *messageService) SendDirectMessage(senderID, receiverID uuid.UUID, conte
 		MsgType:    "DM",
 	}
 
-	if err := s.msgRepo.Create(msg); err != nil {
+	if err := s.msgRepo.Create(ctx, msg); err != nil {
 		return nil, err
 	}
 
 	// 1.5 Populate Sender info for response/broadcast
-	sender, err := s.userRepo.FindByID(senderID)
+	sender, err := s.userRepo.FindByID(ctx, senderID)
 	if err == nil {
 		msg.Sender = *sender
 	}
@@ -72,14 +73,14 @@ func (s *messageService) SendDirectMessage(senderID, receiverID uuid.UUID, conte
 		UserID:    receiverID,
 		Status:    "SENT",
 	}
-	if err := s.receiptRepo.Create(receipt); err != nil {
+	if err := s.receiptRepo.Create(ctx, receipt); err != nil {
 		// Log error but don't fail the message send
 		// In production, use proper logging
 	}
 
 	// 3. Update Conversations (Sender)
 	// Upsert Sender's conversation with Receiver
-	s.convRepo.Upsert(&models.Conversation{
+	s.convRepo.Upsert(ctx, &models.Conversation{
 		UserID:        senderID,
 		Type:          "DM",
 		TargetID:      receiverID,
@@ -90,7 +91,7 @@ func (s *messageService) SendDirectMessage(senderID, receiverID uuid.UUID, conte
 
 	// 4. Update Conversations (Receiver)
 	// Increment Receiver's unread count for conversation with Sender
-	s.convRepo.IncrementUnread(receiverID, "DM", senderID, content)
+	s.convRepo.IncrementUnread(ctx, receiverID, "DM", senderID, content)
 
 	// 5. Real-time Delivery via WebSocket
 	payload, _ := json.Marshal(map[string]interface{}{
@@ -107,9 +108,9 @@ func (s *messageService) SendDirectMessage(senderID, receiverID uuid.UUID, conte
 	return msg, nil
 }
 
-func (s *messageService) SendGroupMessage(senderID, groupID uuid.UUID, content string) (*models.Message, error) {
+func (s *messageService) SendGroupMessage(ctx context.Context, senderID, groupID uuid.UUID, content string) (*models.Message, error) {
 	// 1. Verify sender is a member of the group
-	isMember, err := s.groupRepo.IsMember(groupID, senderID)
+	isMember, err := s.groupRepo.IsMember(ctx, groupID, senderID)
 	if err != nil {
 		return nil, err
 	}
@@ -128,18 +129,18 @@ func (s *messageService) SendGroupMessage(senderID, groupID uuid.UUID, content s
 		MsgType:  "GROUP",
 	}
 
-	if err := s.msgRepo.Create(msg); err != nil {
+	if err := s.msgRepo.Create(ctx, msg); err != nil {
 		return nil, err
 	}
 
 	// 2.5 Populate Sender info for response/broadcast
-	sender, err := s.userRepo.FindByID(senderID)
+	sender, err := s.userRepo.FindByID(ctx, senderID)
 	if err == nil {
 		msg.Sender = *sender
 	}
 
 	// 3. Create Receipts for all members except sender [F06] - Batch Optimized
-	members, err := s.groupRepo.GetMembers(groupID)
+	members, err := s.groupRepo.GetMembers(ctx, groupID)
 	if err != nil {
 		return nil, err
 	}
@@ -161,7 +162,7 @@ func (s *messageService) SendGroupMessage(senderID, groupID uuid.UUID, content s
 	}
 
 	if len(receipts) > 0 {
-		if err := s.receiptRepo.CreateBatch(receipts); err != nil {
+		if err := s.receiptRepo.CreateBatch(ctx, receipts); err != nil {
 			// Log error but continue? Or fail?
 			// Ideally fail if data integrity is key, but for chat performant delivery
 			// we might log. For now, strict: return error.
@@ -174,7 +175,7 @@ func (s *messageService) SendGroupMessage(senderID, groupID uuid.UUID, content s
 
 		if member.UserID == senderID {
 			// Update sender's conversation without incrementing unread
-			s.convRepo.Upsert(&models.Conversation{
+			s.convRepo.Upsert(ctx, &models.Conversation{
 				UserID:        senderID,
 				Type:          "GROUP",
 				TargetID:      groupID,
@@ -186,7 +187,7 @@ func (s *messageService) SendGroupMessage(senderID, groupID uuid.UUID, content s
 		}
 
 		// Update receiver's conversation and increment unread
-		s.convRepo.IncrementUnread(member.UserID, "GROUP", groupID, content)
+		s.convRepo.IncrementUnread(ctx, member.UserID, "GROUP", groupID, content)
 
 		// Real-time delivery via WebSocket
 		payload, _ := json.Marshal(map[string]interface{}{
@@ -209,28 +210,28 @@ func (s *messageService) SendGroupMessage(senderID, groupID uuid.UUID, content s
 // Custom error for group messaging
 var ErrNotGroupMember = errors.New("sender is not a member of the group")
 
-func (s *messageService) GetHistory(userID, targetID uuid.UUID, convType string, limit int, beforeID *uuid.UUID) ([]models.Message, error) {
-	return s.msgRepo.FindByConversation(userID, targetID, convType, limit, beforeID)
+func (s *messageService) GetHistory(ctx context.Context, userID, targetID uuid.UUID, convType string, limit int, beforeID *uuid.UUID) ([]models.Message, error) {
+	return s.msgRepo.FindByConversation(ctx, userID, targetID, convType, limit, beforeID)
 }
 
-func (s *messageService) MarkAsRead(userID uuid.UUID, messageIDs []uuid.UUID) error {
-	return s.updateReceiptStatus(userID, messageIDs, "READ")
+func (s *messageService) MarkAsRead(ctx context.Context, userID uuid.UUID, messageIDs []uuid.UUID) error {
+	return s.updateReceiptStatus(ctx, userID, messageIDs, "READ")
 }
 
-func (s *messageService) MarkAsDelivered(userID uuid.UUID, messageIDs []uuid.UUID) error {
-	return s.updateReceiptStatus(userID, messageIDs, "DELIVERED")
+func (s *messageService) MarkAsDelivered(ctx context.Context, userID uuid.UUID, messageIDs []uuid.UUID) error {
+	return s.updateReceiptStatus(ctx, userID, messageIDs, "DELIVERED")
 }
 
-func (s *messageService) updateReceiptStatus(userID uuid.UUID, messageIDs []uuid.UUID, status string) error {
+func (s *messageService) updateReceiptStatus(ctx context.Context, userID uuid.UUID, messageIDs []uuid.UUID, status string) error {
 	for _, msgID := range messageIDs {
 		// 1. Update Receipt Status
-		if err := s.receiptRepo.UpdateStatus(msgID, userID, status); err != nil {
+		if err := s.receiptRepo.UpdateStatus(ctx, msgID, userID, status); err != nil {
 			// Skip or log error, but continue for other messages
 			continue
 		}
 
 		// 2. Find Message to identify Sender
-		msg, err := s.msgRepo.FindByID(msgID)
+		msg, err := s.msgRepo.FindByID(ctx, msgID)
 		if err != nil {
 			continue
 		}
@@ -253,9 +254,9 @@ func (s *messageService) updateReceiptStatus(userID uuid.UUID, messageIDs []uuid
 	return nil
 }
 
-func (s *messageService) GetMessageReceipts(userID, messageID uuid.UUID) ([]models.MessageReceipt, error) {
+func (s *messageService) GetMessageReceipts(ctx context.Context, userID, messageID uuid.UUID) ([]models.MessageReceipt, error) {
 	// 1. Fetch Message to verify access
-	msg, err := s.msgRepo.FindByID(messageID)
+	msg, err := s.msgRepo.FindByID(ctx, messageID)
 	if err != nil {
 		return nil, err
 	}
@@ -267,7 +268,7 @@ func (s *messageService) GetMessageReceipts(userID, messageID uuid.UUID) ([]mode
 	} else if msg.ReceiverID != nil && *msg.ReceiverID == userID {
 		hasAccess = true
 	} else if msg.GroupID != nil {
-		isMember, err := s.groupRepo.IsMember(*msg.GroupID, userID)
+		isMember, err := s.groupRepo.IsMember(ctx, *msg.GroupID, userID)
 		if err == nil && isMember {
 			hasAccess = true
 		}
@@ -278,14 +279,14 @@ func (s *messageService) GetMessageReceipts(userID, messageID uuid.UUID) ([]mode
 	}
 
 	// 3. Fetch Receipts
-	return s.receiptRepo.FindByMessageID(messageID)
+	return s.receiptRepo.FindByMessageID(ctx, messageID)
 }
 
-func (s *messageService) GetUserInfo(userID uuid.UUID) (*models.User, error) {
-	return s.userRepo.FindByID(userID)
+func (s *messageService) GetUserInfo(ctx context.Context, userID uuid.UUID) (*models.User, error) {
+	return s.userRepo.FindByID(ctx, userID)
 }
 
-func (s *messageService) BroadcastTypingIndicator(userID uuid.UUID, username, convType string, targetID uuid.UUID, isTyping bool) error {
+func (s *messageService) BroadcastTypingIndicator(ctx context.Context, userID uuid.UUID, username, convType string, targetID uuid.UUID, isTyping bool) error {
 	// Build event type
 	eventType := "user_typing"
 	if !isTyping {
@@ -317,7 +318,7 @@ func (s *messageService) BroadcastTypingIndicator(userID uuid.UUID, username, co
 		}
 	case "GROUP":
 		// Verify sender is a member
-		isMember, err := s.groupRepo.IsMember(targetID, userID)
+		isMember, err := s.groupRepo.IsMember(ctx, targetID, userID)
 		if err != nil {
 			return err
 		}
@@ -326,7 +327,7 @@ func (s *messageService) BroadcastTypingIndicator(userID uuid.UUID, username, co
 		}
 
 		// Get all group members
-		members, err := s.groupRepo.GetMembers(targetID)
+		members, err := s.groupRepo.GetMembers(ctx, targetID)
 		if err != nil {
 			return err
 		}

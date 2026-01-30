@@ -1,6 +1,7 @@
 package websocket
 
 import (
+	"context"
 	"chat-app/internal/service"
 	"encoding/json"
 	"log"
@@ -44,9 +45,10 @@ func HandleMessage(message []byte, client *Client, msgService service.MessageSer
 			return
 		}
 
+		ctx := context.Background()
 		if payload.ToUserID != uuid.Nil {
 			// Direct Message
-			msg, err := msgService.SendDirectMessage(client.UserID, payload.ToUserID, payload.Content)
+			msg, err := msgService.SendDirectMessage(ctx, client.UserID, payload.ToUserID, payload.Content)
 			if err != nil {
 				log.Printf("Failed to send DM: %v", err)
 				return
@@ -60,7 +62,7 @@ func HandleMessage(message []byte, client *Client, msgService service.MessageSer
 			client.Send <- ack
 		} else if payload.GroupID != uuid.Nil {
 			// Group Message
-			msg, err := msgService.SendGroupMessage(client.UserID, payload.GroupID, payload.Content)
+			msg, err := msgService.SendGroupMessage(ctx, client.UserID, payload.GroupID, payload.Content)
 			if err != nil {
 				log.Printf("Failed to send group message: %v", err)
 				return
@@ -81,7 +83,8 @@ func HandleMessage(message []byte, client *Client, msgService service.MessageSer
 			return
 		}
 
-		if err := msgService.MarkAsDelivered(client.UserID, []uuid.UUID{payload.MessageID}); err != nil {
+		ctx := context.Background()
+		if err := msgService.MarkAsDelivered(ctx, client.UserID, []uuid.UUID{payload.MessageID}); err != nil {
 			log.Printf("Failed to mark delivered: %v", err)
 		}
 
@@ -114,8 +117,9 @@ func handleTypingStart(client *Client, payload json.RawMessage, msgService servi
 		return
 	}
 
+	ctx := context.Background()
 	// Get user info for the typing user
-	user, err := msgService.GetUserInfo(client.UserID)
+	user, err := msgService.GetUserInfo(ctx, client.UserID)
 	if err != nil {
 		log.Printf("Failed to get user info: %v", err)
 		return
@@ -126,7 +130,7 @@ func handleTypingStart(client *Client, payload json.RawMessage, msgService servi
 	}
 
 	// Broadcast typing event
-	if err := msgService.BroadcastTypingIndicator(client.UserID, user.Username, typingPayload.ConversationType, typingPayload.TargetID, true); err != nil {
+	if err := msgService.BroadcastTypingIndicator(ctx, client.UserID, user.Username, typingPayload.ConversationType, typingPayload.TargetID, true); err != nil {
 		log.Printf("Failed to broadcast typing_start: %v", err)
 	}
 }
@@ -144,8 +148,9 @@ func handleTypingStop(client *Client, payload json.RawMessage, msgService servic
 		return // Silent ignore for stop events to handle spam/race conditions gracefully
 	}
 
+	ctx := context.Background()
 	// Broadcast typing stop event
-	if err := msgService.BroadcastTypingIndicator(client.UserID, "", typingPayload.ConversationType, typingPayload.TargetID, false); err != nil {
+	if err := msgService.BroadcastTypingIndicator(ctx, client.UserID, "", typingPayload.ConversationType, typingPayload.TargetID, false); err != nil {
 		log.Printf("Failed to broadcast typing_stop: %v", err)
 	}
 }

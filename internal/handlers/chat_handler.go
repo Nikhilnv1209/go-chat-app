@@ -1,9 +1,11 @@
 package handlers
 
 import (
+	"context"
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 
 	"chat-app/internal/middleware"
 	"chat-app/internal/repository"
@@ -60,8 +62,11 @@ func (h *ChatHandler) GetConversations(c *gin.Context) {
 		return
 	}
 
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
+	defer cancel()
+
 	// 2. Fetch conversations for this user
-	conversations, err := h.convRepo.FindByUser(userID)
+	conversations, err := h.convRepo.FindByUser(ctx, userID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to fetch conversations"})
 		return
@@ -80,19 +85,19 @@ func (h *ChatHandler) GetConversations(c *gin.Context) {
 		switch upperType {
 		case "DM":
 			// Fetch user name and online status
-			user, err := h.userRepo.FindByID(conv.TargetID)
+			user, err := h.userRepo.FindByID(ctx, conv.TargetID)
 			if err == nil {
 				targetName = user.Username
 				isOnline = &user.IsOnline
 			}
 		case "GROUP":
 			// Fetch group name and member count
-			group, err := h.groupRepo.FindByID(conv.TargetID)
+			group, err := h.groupRepo.FindByID(ctx, conv.TargetID)
 			if err == nil {
 				targetName = group.Name
 			}
 			// Get member count
-			members, err := h.groupRepo.GetMembers(conv.TargetID)
+			members, err := h.groupRepo.GetMembers(ctx, conv.TargetID)
 			if err == nil {
 				memberCount = len(members)
 			}
@@ -167,10 +172,13 @@ func (h *ChatHandler) GetMessages(c *gin.Context) {
 		beforeID = &parsed
 	}
 
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
+	defer cancel()
+
 	// 3. Verify user has access to this conversation
 	if msgType == "GROUP" {
 		// Check if user is a member of the group
-		isMember, err := h.groupRepo.IsMember(targetID, userID)
+		isMember, err := h.groupRepo.IsMember(ctx, targetID, userID)
 		if err != nil || !isMember {
 			c.JSON(http.StatusForbidden, gin.H{"error": "you are not a member of this group"})
 			return
@@ -178,14 +186,14 @@ func (h *ChatHandler) GetMessages(c *gin.Context) {
 	}
 
 	// 4. Fetch messages
-	messages, err := h.msgService.GetHistory(userID, targetID, msgType, limit, beforeID)
+	messages, err := h.msgService.GetHistory(ctx, userID, targetID, msgType, limit, beforeID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to fetch messages"})
 		return
 	}
 
 	// 5. Reset unread count for this conversation
-	_ = h.convRepo.ResetUnread(userID, msgType, targetID)
+	_ = h.convRepo.ResetUnread(ctx, userID, msgType, targetID)
 
 	// 6. Return messages
 	c.JSON(http.StatusOK, messages)
@@ -208,8 +216,11 @@ func (h *ChatHandler) MarkRead(c *gin.Context) {
 		return
 	}
 
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
+	defer cancel()
+
 	// 3. Mark as read
-	if err := h.msgService.MarkAsRead(userID, []uuid.UUID{messageID}); err != nil {
+	if err := h.msgService.MarkAsRead(ctx, userID, []uuid.UUID{messageID}); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to mark as read"})
 		return
 	}
@@ -232,7 +243,10 @@ func (h *ChatHandler) GetReceipts(c *gin.Context) {
 		return
 	}
 
-	receipts, err := h.msgService.GetMessageReceipts(userID, messageID)
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
+	defer cancel()
+
+	receipts, err := h.msgService.GetMessageReceipts(ctx, userID, messageID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return

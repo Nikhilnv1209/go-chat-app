@@ -1,6 +1,7 @@
 package websocket
 
 import (
+	"context"
 	"encoding/json"
 	"log"
 	"sync"
@@ -31,21 +32,33 @@ type Hub struct {
 
 	// Repository to find user's contacts for presence broadcast
 	convRepo repository.ConversationRepository
+
+	// Context for graceful shutdown
+	ctx    context.Context
+	cancel context.CancelFunc
+	wg     sync.WaitGroup
 }
 
 func NewHub(userRepo repository.UserRepository, convRepo repository.ConversationRepository) *Hub {
+	ctx, cancel := context.WithCancel(context.Background())
 	return &Hub{
 		Register:   make(chan *Client),
 		Unregister: make(chan *Client),
 		Clients:    make(map[uuid.UUID][]*Client),
 		userRepo:   userRepo,
 		convRepo:   convRepo,
+		ctx:        ctx,
+		cancel:     cancel,
 	}
 }
 
 func (h *Hub) Run() {
 	for {
 		select {
+		case <-h.ctx.Done():
+			h.shutdown()
+			return
+
 		case client := <-h.Register:
 			h.mu.Lock()
 			// If first connection, mark online and broadcast
@@ -54,18 +67,21 @@ func (h *Hub) Run() {
 			h.mu.Unlock()
 
 			if wasOffline {
+				h.wg.Add(1)
 				go h.updateUserStatus(client.UserID, true)
+				h.wg.Add(1)
 				go h.broadcastPresence(client.UserID, true)
 			}
 
 			// Send initial presence of contacts to the new client
+			h.wg.Add(1)
 			go h.sendInitialPresence(client)
 
 		case client := <-h.Unregister:
 			h.mu.Lock()
 			if clients, ok := h.Clients[client.UserID]; ok {
 				// Filter out the client being unregistered
-				newClients := make([]*Client, 0)
+				newClients := make([]*Client, 0, len(clients)-1)
 				for _, c := range clients {
 					if c != client {
 						newClients = append(newClients, c)
@@ -82,7 +98,9 @@ func (h *Hub) Run() {
 				h.mu.Unlock()
 
 				if isNowOffline {
+					h.wg.Add(1)
 					go h.updateUserStatus(client.UserID, false)
+					h.wg.Add(1)
 					go h.broadcastPresence(client.UserID, false)
 				}
 			} else {
@@ -93,15 +111,63 @@ func (h *Hub) Run() {
 }
 
 func (h *Hub) updateUserStatus(userID uuid.UUID, isOnline bool) {
-	// We might want to pass context later
-	if err := h.userRepo.UpdateOnlineStatus(userID, isOnline, time.Now()); err != nil {
+	defer h.wg.Done()
+
+	// Create context with timeout for DB operation
+	ctx, cancel := context.WithTimeout(h.ctx, 5*time.Second)
+	defer cancel()
+
+	if err := h.userRepo.UpdateOnlineStatus(ctx, userID, isOnline, time.Now()); err != nil {
 		// Log error but don't crash
 		log.Printf("Failed to update user status for %s: %v", userID, err)
 	}
 }
 
+// Shutdown gracefully closes the hub
+func (h *Hub) Shutdown(ctx context.Context) error {
+	log.Println("Hub: Initiating shutdown...")
+	h.cancel()
+
+	done := make(chan struct{})
+	go func() {
+		h.wg.Wait()
+		close(done)
+	}()
+
+	select {
+	case <-done:
+		log.Println("Hub: All goroutines finished cleanly")
+		return nil
+	case <-ctx.Done():
+		log.Println("Hub: Shutdown timed out, forcing exit")
+		return ctx.Err()
+	}
+}
+
+// shutdown performs internal cleanup
+func (h *Hub) shutdown() {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+
+	for userID, clients := range h.Clients {
+		for _, client := range clients {
+			close(client.Send)
+		}
+		delete(h.Clients, userID)
+		log.Printf("Hub: Closed %d connections for user %s", len(clients), userID)
+	}
+
+	log.Println("Hub: Shutdown complete")
+}
+
 // broadcastPresence sends presence updates to all users who have a DM conversation with this user
 func (h *Hub) broadcastPresence(userID uuid.UUID, isOnline bool) {
+	defer h.wg.Done()
+
+	// Create context with timeout for DB operation
+	ctx, cancel := context.WithTimeout(h.ctx, 5*time.Second)
+	defer cancel()
+
 	eventType := "user_offline"
 	if isOnline {
 		eventType = "user_online"
@@ -116,7 +182,7 @@ func (h *Hub) broadcastPresence(userID uuid.UUID, isOnline bool) {
 
 	// Find all users who have this user as a target_id in their DM conversations
 	// These are the users that need to know about this user's presence
-	contacts, err := h.convRepo.FindContactsOfUser(userID)
+	contacts, err := h.convRepo.FindContactsOfUser(ctx, userID)
 	if err != nil {
 		log.Printf("Failed to find contacts for presence broadcast: %v", err)
 		return
@@ -146,8 +212,14 @@ func (h *Hub) SendToUser(userID uuid.UUID, message []byte) {
 
 // sendInitialPresence sends the current online status of contacts to a newly connected client
 func (h *Hub) sendInitialPresence(client *Client) {
+	defer h.wg.Done()
+
+	// Create context with timeout for DB operation
+	ctx, cancel := context.WithTimeout(h.ctx, 5*time.Second)
+	defer cancel()
+
 	// 1. Get user's conversations
-	convs, err := h.convRepo.FindByUser(client.UserID)
+	convs, err := h.convRepo.FindByUser(ctx, client.UserID)
 	if err != nil {
 		log.Printf("Failed to fetch conversations for initial presence sync: %v", err)
 		return
@@ -169,7 +241,11 @@ func (h *Hub) sendInitialPresence(client *Client) {
 						"user_id": targetID,
 					},
 				})
-				client.Send <- payload
+				select {
+				case client.Send <- payload:
+				case <-h.ctx.Done():
+					return
+				}
 			}
 		}
 	}

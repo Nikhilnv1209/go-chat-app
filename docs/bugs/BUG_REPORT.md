@@ -1,7 +1,7 @@
 # Bug Report
 **Project**: Go Chat Application
-**Report Period**: December 14, 2025 - December 28, 2025 (Past 2 Weeks)
-**Last Updated**: December 28, 2025
+**Report Period**: December 14, 2025 - January 26, 2026 (Past 2 Weeks)
+**Last Updated**: January 26, 2026
 
 ---
 
@@ -173,6 +173,43 @@ When a user (e.g., Bob) is logged in on multiple devices (laptop and mobile) and
 
 **Files Changed**:
 - `internal/service/message_service.go`
+
+---
+
+### B007: Context Propagation and Timeout Management (Improvement)
+**Severity**: Medium
+**Status**: ✅ Implemented
+**Date Fixed**: January 26, 2026
+
+**Description**:
+Added `context.Context` propagation throughout all I/O operations for proper cancellation, timeout management, and graceful shutdown. This addresses potential goroutine leaks and improves production readiness.
+
+**Root Cause**:
+- No context propagation existed in the codebase
+- Database operations had no timeout protection
+- WebSocket hub had no graceful shutdown mechanism
+- Fire-and-forget goroutines without lifecycle management
+
+**Fix Details**:
+- **Configuration**: Added `TimeoutConfig` with configurable HTTP (30s), DatabaseQuery (5s), and HubShutdown (5s) timeouts
+- **Repository Layer**: All 25 methods across 6 repositories now accept `context.Context` as first parameter and use `db.WithContext(ctx)`
+- **Service Layer**: All 21 methods across 3 services now accept and propagate context through to repositories
+- **Handler Layer**: All handlers create context with timeout using `context.WithTimeout(c.Request.Context(), timeout)` before calling services
+- **WebSocket Hub**: Added context for graceful shutdown with `Shutdown()` method, `sync.WaitGroup` for goroutine tracking, and proper cleanup
+- **Main Server**: Implemented graceful shutdown with signal handling (SIGINT/SIGTERM), hub shutdown, and HTTP server shutdown
+- Increased default server read/write timeouts from 15s to 30s
+
+**Files Changed**:
+- `internal/config/config.go`
+- `internal/repository/interfaces.go`
+- `internal/repository/*.go` (all 6 repository implementations)
+- `internal/service/interfaces.go`
+- `internal/service/*.go` (all 3 service implementations)
+- `internal/handlers/*.go` (all 3 handlers)
+- `internal/websocket/hub.go`
+- `internal/websocket/message_handler.go`
+- `cmd/server/main.go`
+- `.env.example`
 
 ---
 
@@ -373,11 +410,11 @@ On mobile devices, the background layer caused visual artifacts and layout shift
 ## Summary Statistics
 
 ### Backend Bugs
-- **Total**: 6
-- **Fixed**: 6 (100%)
+- **Total**: 7
+- **Fixed**: 7 (100%)
 - **Severity Breakdown**:
-  - High: 4 (66.7%)
-  - Medium: 2 (33.3%)
+  - High: 4 (57.1%)
+  - Medium: 3 (42.9%)
   - Low: 0 (0%)
 
 ### Frontend Bugs
@@ -389,8 +426,8 @@ On mobile devices, the background layer caused visual artifacts and layout shift
   - Low: 1 (14.2%)
 
 ### Overall
-- **Total Bugs**: 13
-- **Total Fixed**: 13 (100%)
+- **Total Bugs**: 14
+- **Total Fixed**: 14 (100%)
 - **Average Resolution Time**: < 1 day
 - **Most Common Issue Category**: State Management & Race Conditions (4 bugs)
 

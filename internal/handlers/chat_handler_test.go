@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
@@ -20,28 +21,28 @@ type MockConversationRepo struct {
 	mock.Mock
 }
 
-func (m *MockConversationRepo) Upsert(conv *models.Conversation) error {
-	args := m.Called(conv)
+func (m *MockConversationRepo) Upsert(ctx context.Context, conv *models.Conversation) error {
+	args := m.Called(ctx, conv)
 	return args.Error(0)
 }
 
-func (m *MockConversationRepo) FindByUser(userID uuid.UUID) ([]models.Conversation, error) {
-	args := m.Called(userID)
+func (m *MockConversationRepo) FindByUser(ctx context.Context, userID uuid.UUID) ([]models.Conversation, error) {
+	args := m.Called(ctx, userID)
 	return args.Get(0).([]models.Conversation), args.Error(1)
 }
 
-func (m *MockConversationRepo) IncrementUnread(userID uuid.UUID, convType string, targetID uuid.UUID, lastMessage string) error {
-	args := m.Called(userID, convType, targetID, lastMessage)
+func (m *MockConversationRepo) IncrementUnread(ctx context.Context, userID uuid.UUID, convType string, targetID uuid.UUID, lastMessage string) error {
+	args := m.Called(ctx, userID, convType, targetID, lastMessage)
 	return args.Error(0)
 }
 
-func (m *MockConversationRepo) ResetUnread(userID uuid.UUID, convType string, targetID uuid.UUID) error {
-	args := m.Called(userID, convType, targetID)
+func (m *MockConversationRepo) ResetUnread(ctx context.Context, userID uuid.UUID, convType string, targetID uuid.UUID) error {
+	args := m.Called(ctx, userID, convType, targetID)
 	return args.Error(0)
 }
 
-func (m *MockConversationRepo) FindContactsOfUser(userID uuid.UUID) ([]uuid.UUID, error) {
-	args := m.Called(userID)
+func (m *MockConversationRepo) FindContactsOfUser(ctx context.Context, userID uuid.UUID) ([]uuid.UUID, error) {
+	args := m.Called(ctx, userID)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
 	}
@@ -52,18 +53,18 @@ type MockMessageRepo struct {
 	mock.Mock
 }
 
-func (m *MockMessageRepo) Create(msg *models.Message) error {
-	args := m.Called(msg)
+func (m *MockMessageRepo) Create(ctx context.Context, msg *models.Message) error {
+	args := m.Called(ctx, msg)
 	return args.Error(0)
 }
 
-func (m *MockMessageRepo) FindByConversation(userID, targetID uuid.UUID, msgType string, limit int, beforeID *uuid.UUID) ([]models.Message, error) {
-	args := m.Called(userID, targetID, msgType, limit, beforeID)
+func (m *MockMessageRepo) FindByConversation(ctx context.Context, userID, targetID uuid.UUID, msgType string, limit int, beforeID *uuid.UUID) ([]models.Message, error) {
+	args := m.Called(ctx, userID, targetID, msgType, limit, beforeID)
 	return args.Get(0).([]models.Message), args.Error(1)
 }
 
-func (m *MockMessageRepo) FindByID(id uuid.UUID) (*models.Message, error) {
-	args := m.Called(id)
+func (m *MockMessageRepo) FindByID(ctx context.Context, id uuid.UUID) (*models.Message, error) {
+	args := m.Called(ctx, id)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
 	}
@@ -74,34 +75,34 @@ type MockUserRepo struct {
 	mock.Mock
 }
 
-func (m *MockUserRepo) Create(user *models.User) error {
-	args := m.Called(user)
+func (m *MockUserRepo) Create(ctx context.Context, user *models.User) error {
+	args := m.Called(ctx, user)
 	return args.Error(0)
 }
 
-func (m *MockUserRepo) FindByID(id uuid.UUID) (*models.User, error) {
-	args := m.Called(id)
+func (m *MockUserRepo) FindByID(ctx context.Context, id uuid.UUID) (*models.User, error) {
+	args := m.Called(ctx, id)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
 	}
 	return args.Get(0).(*models.User), args.Error(1)
 }
 
-func (m *MockUserRepo) FindByEmail(email string) (*models.User, error) {
-	args := m.Called(email)
+func (m *MockUserRepo) FindByEmail(ctx context.Context, email string) (*models.User, error) {
+	args := m.Called(ctx, email)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
 	}
 	return args.Get(0).(*models.User), args.Error(1)
 }
 
-func (m *MockUserRepo) UpdateOnlineStatus(userID uuid.UUID, isOnline bool, lastSeen time.Time) error {
-	args := m.Called(userID, isOnline, lastSeen)
+func (m *MockUserRepo) UpdateOnlineStatus(ctx context.Context, userID uuid.UUID, isOnline bool, lastSeen time.Time) error {
+	args := m.Called(ctx, userID, isOnline, lastSeen)
 	return args.Error(0)
 }
 
-func (m *MockUserRepo) Search(query string, excludeUserID uuid.UUID) ([]models.User, error) {
-	args := m.Called(query, excludeUserID)
+func (m *MockUserRepo) Search(ctx context.Context, query string, excludeUserID uuid.UUID) ([]models.User, error) {
+	args := m.Called(ctx, query, excludeUserID)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
 	}
@@ -112,31 +113,31 @@ type MockGroupRepo struct {
 	mock.Mock
 }
 
-func (m *MockGroupRepo) Create(group *models.Group) error {
-	args := m.Called(group)
+func (m *MockGroupRepo) Create(ctx context.Context, group *models.Group) error {
+	args := m.Called(ctx, group)
 	return args.Error(0)
 }
 
-func (m *MockGroupRepo) FindByID(id uuid.UUID) (*models.Group, error) {
-	args := m.Called(id)
+func (m *MockGroupRepo) FindByID(ctx context.Context, id uuid.UUID) (*models.Group, error) {
+	args := m.Called(ctx, id)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
 	}
 	return args.Get(0).(*models.Group), args.Error(1)
 }
 
-func (m *MockGroupRepo) GetMembers(groupID uuid.UUID) ([]models.GroupMember, error) {
-	args := m.Called(groupID)
+func (m *MockGroupRepo) GetMembers(ctx context.Context, groupID uuid.UUID) ([]models.GroupMember, error) {
+	args := m.Called(ctx, groupID)
 	return args.Get(0).([]models.GroupMember), args.Error(1)
 }
 
-func (m *MockGroupRepo) IsMember(groupID, userID uuid.UUID) (bool, error) {
-	args := m.Called(groupID, userID)
+func (m *MockGroupRepo) IsMember(ctx context.Context, groupID, userID uuid.UUID) (bool, error) {
+	args := m.Called(ctx, groupID, userID)
 	return args.Bool(0), args.Error(1)
 }
 
-func (m *MockGroupRepo) AddMember(groupID, userID uuid.UUID, role string) error {
-	args := m.Called(groupID, userID, role)
+func (m *MockGroupRepo) AddMember(ctx context.Context, groupID, userID uuid.UUID, role string) error {
+	args := m.Called(ctx, groupID, userID, role)
 	return args.Error(0)
 }
 
@@ -145,52 +146,52 @@ type MockMessageService struct {
 	mock.Mock
 }
 
-func (m *MockMessageService) SendDirectMessage(senderID, receiverID uuid.UUID, content string) (*models.Message, error) {
-	args := m.Called(senderID, receiverID, content)
+func (m *MockMessageService) SendDirectMessage(ctx context.Context, senderID, receiverID uuid.UUID, content string) (*models.Message, error) {
+	args := m.Called(ctx, senderID, receiverID, content)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
 	}
 	return args.Get(0).(*models.Message), args.Error(1)
 }
 
-func (m *MockMessageService) SendGroupMessage(senderID, groupID uuid.UUID, content string) (*models.Message, error) {
-	args := m.Called(senderID, groupID, content)
+func (m *MockMessageService) SendGroupMessage(ctx context.Context, senderID, groupID uuid.UUID, content string) (*models.Message, error) {
+	args := m.Called(ctx, senderID, groupID, content)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
 	}
 	return args.Get(0).(*models.Message), args.Error(1)
 }
 
-func (m *MockMessageService) GetHistory(userID, targetID uuid.UUID, convType string, limit int, beforeID *uuid.UUID) ([]models.Message, error) {
-	args := m.Called(userID, targetID, convType, limit, beforeID)
+func (m *MockMessageService) GetHistory(ctx context.Context, userID, targetID uuid.UUID, convType string, limit int, beforeID *uuid.UUID) ([]models.Message, error) {
+	args := m.Called(ctx, userID, targetID, convType, limit, beforeID)
 	return args.Get(0).([]models.Message), args.Error(1)
 }
 
-func (m *MockMessageService) MarkAsRead(userID uuid.UUID, messageIDs []uuid.UUID) error {
-	args := m.Called(userID, messageIDs)
+func (m *MockMessageService) MarkAsRead(ctx context.Context, userID uuid.UUID, messageIDs []uuid.UUID) error {
+	args := m.Called(ctx, userID, messageIDs)
 	return args.Error(0)
 }
 
-func (m *MockMessageService) MarkAsDelivered(userID uuid.UUID, messageIDs []uuid.UUID) error {
-	args := m.Called(userID, messageIDs)
+func (m *MockMessageService) MarkAsDelivered(ctx context.Context, userID uuid.UUID, messageIDs []uuid.UUID) error {
+	args := m.Called(ctx, userID, messageIDs)
 	return args.Error(0)
 }
 
-func (m *MockMessageService) GetMessageReceipts(userID, messageID uuid.UUID) ([]models.MessageReceipt, error) {
-	args := m.Called(userID, messageID)
+func (m *MockMessageService) GetMessageReceipts(ctx context.Context, userID, messageID uuid.UUID) ([]models.MessageReceipt, error) {
+	args := m.Called(ctx, userID, messageID)
 	return args.Get(0).([]models.MessageReceipt), args.Error(1)
 }
 
-func (m *MockMessageService) GetUserInfo(userID uuid.UUID) (*models.User, error) {
-	args := m.Called(userID)
+func (m *MockMessageService) GetUserInfo(ctx context.Context, userID uuid.UUID) (*models.User, error) {
+	args := m.Called(ctx, userID)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
 	}
 	return args.Get(0).(*models.User), args.Error(1)
 }
 
-func (m *MockMessageService) BroadcastTypingIndicator(userID uuid.UUID, username, convType string, targetID uuid.UUID, isTyping bool) error {
-	args := m.Called(userID, username, convType, targetID, isTyping)
+func (m *MockMessageService) BroadcastTypingIndicator(ctx context.Context, userID uuid.UUID, username, convType string, targetID uuid.UUID, isTyping bool) error {
+	args := m.Called(ctx, userID, username, convType, targetID, isTyping)
 	return args.Error(0)
 }
 
@@ -242,14 +243,19 @@ func TestGetConversations_Success(t *testing.T) {
 	}
 
 	// Mock expectations
-	mockConvRepo.On("FindByUser", userID).Return(conversations, nil)
-	mockUserRepo.On("FindByID", targetUserID).Return(&models.User{
+	mockConvRepo.On("FindByUser", mock.AnythingOfType("*context.timerCtx"), userID).Return(conversations, nil)
+	mockUserRepo.On("FindByID", mock.AnythingOfType("*context.timerCtx"), targetUserID).Return(&models.User{
 		BaseModel: models.BaseModel{ID: targetUserID},
 		Username:  "Bob",
 	}, nil)
-	mockGroupRepo.On("FindByID", groupID).Return(&models.Group{
+	mockGroupRepo.On("FindByID", mock.AnythingOfType("*context.timerCtx"), groupID).Return(&models.Group{
 		BaseModel: models.BaseModel{ID: groupID},
 		Name:      "Family",
+	}, nil)
+	// Mock GetMembers for group member count
+	mockGroupRepo.On("GetMembers", mock.AnythingOfType("*context.timerCtx"), groupID).Return([]models.GroupMember{
+		{GroupID: groupID, UserID: userID, Role: "MEMBER"},
+		{GroupID: groupID, UserID: uuid.New(), Role: "MEMBER"},
 	}, nil)
 
 	// Create router with mock auth middleware
@@ -336,8 +342,8 @@ func TestGetMessages_DM_Success(t *testing.T) {
 	}
 
 	// Mock expectations
-	mockMsgService.On("GetHistory", userID, targetID, mock.Anything, 50, (*uuid.UUID)(nil)).Return(messages, nil)
-	mockConvRepo.On("ResetUnread", userID, "DM", targetID).Return(nil)
+	mockMsgService.On("GetHistory", mock.AnythingOfType("*context.timerCtx"), userID, targetID, mock.Anything, 50, (*uuid.UUID)(nil)).Return(messages, nil)
+	mockConvRepo.On("ResetUnread", mock.AnythingOfType("*context.timerCtx"), userID, "DM", targetID).Return(nil)
 
 	// Create router with mock auth middleware
 	r := gin.New()
@@ -386,9 +392,9 @@ func TestGetMessages_Group_Success(t *testing.T) {
 	}
 
 	// Mock expectations
-	mockGroupRepo.On("IsMember", groupID, userID).Return(true, nil)
-	mockMsgService.On("GetHistory", userID, groupID, mock.Anything, 50, (*uuid.UUID)(nil)).Return(messages, nil)
-	mockConvRepo.On("ResetUnread", userID, "GROUP", groupID).Return(nil)
+	mockGroupRepo.On("IsMember", mock.AnythingOfType("*context.timerCtx"), groupID, userID).Return(true, nil)
+	mockMsgService.On("GetHistory", mock.AnythingOfType("*context.timerCtx"), userID, groupID, mock.Anything, 50, (*uuid.UUID)(nil)).Return(messages, nil)
+	mockConvRepo.On("ResetUnread", mock.AnythingOfType("*context.timerCtx"), userID, "GROUP", groupID).Return(nil)
 
 	// Create router with mock auth middleware
 	r := gin.New()
@@ -429,7 +435,7 @@ func TestGetMessages_Group_NotMember(t *testing.T) {
 	groupID := uuid.New()
 
 	// Mock expectations
-	mockGroupRepo.On("IsMember", groupID, userID).Return(false, nil)
+	mockGroupRepo.On("IsMember", mock.AnythingOfType("*context.timerCtx"), groupID, userID).Return(false, nil)
 
 	// Create router with mock auth middleware
 	r := gin.New()
@@ -522,8 +528,8 @@ func TestGetMessages_CustomLimit(t *testing.T) {
 	messages := []models.Message{}
 
 	// Mock expectations - should use limit=20
-	mockMsgService.On("GetHistory", userID, targetID, mock.Anything, 20, (*uuid.UUID)(nil)).Return(messages, nil)
-	mockConvRepo.On("ResetUnread", userID, "DM", targetID).Return(nil)
+	mockMsgService.On("GetHistory", mock.AnythingOfType("*context.timerCtx"), userID, targetID, mock.Anything, 20, (*uuid.UUID)(nil)).Return(messages, nil)
+	mockConvRepo.On("ResetUnread", mock.AnythingOfType("*context.timerCtx"), userID, "DM", targetID).Return(nil)
 
 	// Create router with mock auth middleware
 	r := gin.New()
@@ -558,7 +564,7 @@ func TestMarkRead_Success(t *testing.T) {
 	msgID := uuid.New()
 
 	// Mock expectations
-	mockMsgService.On("MarkAsRead", userID, []uuid.UUID{msgID}).Return(nil)
+	mockMsgService.On("MarkAsRead", mock.AnythingOfType("*context.timerCtx"), userID, []uuid.UUID{msgID}).Return(nil)
 
 	// Create router with mock auth middleware
 	r := gin.New()
@@ -625,7 +631,7 @@ func TestGetReceipts_Success(t *testing.T) {
 			Status:    "READ",
 		},
 	}
-	mockMsgService.On("GetMessageReceipts", userID, messageID).Return(mockReceipts, nil)
+	mockMsgService.On("GetMessageReceipts", mock.AnythingOfType("*context.timerCtx"), userID, messageID).Return(mockReceipts, nil)
 
 	// Create router with mock auth middleware
 	r := gin.New()

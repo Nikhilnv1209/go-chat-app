@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"errors"
 
 	"chat-app/internal/models"
@@ -20,17 +21,17 @@ func NewGroupService(groupRepo repository.GroupRepository) GroupService {
 }
 
 // Create creates a new group with the given creator as admin and adds the specified members
-func (s *groupService) Create(creatorID uuid.UUID, name string, memberIDs []uuid.UUID) (*models.Group, error) {
+func (s *groupService) Create(ctx context.Context, creatorID uuid.UUID, name string, memberIDs []uuid.UUID) (*models.Group, error) {
 	// 1. Create the group
 	group := &models.Group{
 		Name: name,
 	}
-	if err := s.groupRepo.Create(group); err != nil {
+	if err := s.groupRepo.Create(ctx, group); err != nil {
 		return nil, err
 	}
 
 	// 2. Add creator as ADMIN
-	if err := s.groupRepo.AddMember(group.ID, creatorID, "ADMIN"); err != nil {
+	if err := s.groupRepo.AddMember(ctx, group.ID, creatorID, "ADMIN"); err != nil {
 		return nil, err
 	}
 
@@ -40,7 +41,7 @@ func (s *groupService) Create(creatorID uuid.UUID, name string, memberIDs []uuid
 		if memberID == creatorID {
 			continue
 		}
-		if err := s.groupRepo.AddMember(group.ID, memberID, "MEMBER"); err != nil {
+		if err := s.groupRepo.AddMember(ctx, group.ID, memberID, "MEMBER"); err != nil {
 			// Log the error but continue adding other members
 			// In production, you might want to rollback or handle this differently
 			continue
@@ -51,9 +52,9 @@ func (s *groupService) Create(creatorID uuid.UUID, name string, memberIDs []uuid
 }
 
 // AddMember adds a new member to the group (only admins can do this)
-func (s *groupService) AddMember(adminID, groupID, newMemberID uuid.UUID) error {
+func (s *groupService) AddMember(ctx context.Context, adminID, groupID, newMemberID uuid.UUID) error {
 	// 1. Check if the requester is a member and has admin role
-	members, err := s.groupRepo.GetMembers(groupID)
+	members, err := s.groupRepo.GetMembers(ctx, groupID)
 	if err != nil {
 		return err
 	}
@@ -71,7 +72,7 @@ func (s *groupService) AddMember(adminID, groupID, newMemberID uuid.UUID) error 
 	}
 
 	// 2. Check if the new member is already in the group
-	isMember, err := s.groupRepo.IsMember(groupID, newMemberID)
+	isMember, err := s.groupRepo.IsMember(ctx, groupID, newMemberID)
 	if err != nil {
 		return err
 	}
@@ -80,13 +81,13 @@ func (s *groupService) AddMember(adminID, groupID, newMemberID uuid.UUID) error 
 	}
 
 	// 3. Add the new member
-	return s.groupRepo.AddMember(groupID, newMemberID, "MEMBER")
+	return s.groupRepo.AddMember(ctx, groupID, newMemberID, "MEMBER")
 }
 
 // RemoveMember removes a member from the group (only admins can do this)
-func (s *groupService) RemoveMember(adminID, groupID, memberID uuid.UUID) error {
+func (s *groupService) RemoveMember(ctx context.Context, adminID, groupID, memberID uuid.UUID) error {
 	// 1. Check if the requester is an admin
-	members, err := s.groupRepo.GetMembers(groupID)
+	members, err := s.groupRepo.GetMembers(ctx, groupID)
 	if err != nil {
 		return err
 	}

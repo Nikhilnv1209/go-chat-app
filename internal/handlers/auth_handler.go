@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"net/http"
 	"time"
 
@@ -33,7 +34,10 @@ func (h *AuthHandler) Register(c *gin.Context) {
 		return
 	}
 
-	accessToken, refreshToken, user, err := h.service.Register(req.Username, req.Email, req.Password)
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 30*time.Second)
+	defer cancel()
+
+	accessToken, refreshToken, user, err := h.service.Register(ctx, req.Username, req.Email, req.Password)
 	if err != nil {
 		h.handleError(c, err)
 		return
@@ -59,7 +63,10 @@ func (h *AuthHandler) Login(c *gin.Context) {
 		return
 	}
 
-	accessToken, refreshToken, user, err := h.service.Login(req.Email, req.Password)
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 30*time.Second)
+	defer cancel()
+
+	accessToken, refreshToken, user, err := h.service.Login(ctx, req.Email, req.Password)
 	if err != nil {
 		h.handleError(c, err)
 		return
@@ -80,7 +87,10 @@ func (h *AuthHandler) Refresh(c *gin.Context) {
 		return
 	}
 
-	accessToken, newRefreshToken, err := h.service.Refresh(refreshToken)
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 30*time.Second)
+	defer cancel()
+
+	accessToken, newRefreshToken, err := h.service.Refresh(ctx, refreshToken)
 	if err != nil {
 		// If refresh fails, clear cookie
 		h.clearRefreshTokenCookie(c)
@@ -101,7 +111,9 @@ func (h *AuthHandler) Refresh(c *gin.Context) {
 func (h *AuthHandler) Logout(c *gin.Context) {
 	refreshToken, err := c.Cookie("refresh_token")
 	if err == nil && refreshToken != "" {
-		_ = h.service.Logout(refreshToken)
+		ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
+		defer cancel()
+		_ = h.service.Logout(ctx, refreshToken)
 	}
 
 	h.clearRefreshTokenCookie(c)
@@ -116,7 +128,11 @@ func (h *AuthHandler) SearchUsers(c *gin.Context) {
 	}
 
 	query := c.Query("q")
-	users, err := h.service.SearchUsers(query, userID)
+
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
+	defer cancel()
+
+	users, err := h.service.SearchUsers(ctx, query, userID)
 	if err != nil {
 		h.handleError(c, err)
 		return
@@ -133,7 +149,10 @@ func (h *AuthHandler) GetUser(c *gin.Context) {
 		return
 	}
 
-	user, err := h.service.GetUser(userID)
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
+	defer cancel()
+
+	user, err := h.service.GetUser(ctx, userID)
 	if err != nil {
 		h.handleError(c, err)
 		return

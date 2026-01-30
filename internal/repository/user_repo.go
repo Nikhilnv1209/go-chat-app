@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"context"
 	"errors"
 	"time"
 
@@ -18,13 +19,13 @@ func NewUserRepository(db *gorm.DB) UserRepository {
 	return &userRepository{db: db}
 }
 
-func (r *userRepository) Create(user *models.User) error {
-	return r.db.Create(user).Error
+func (r *userRepository) Create(ctx context.Context, user *models.User) error {
+	return r.db.WithContext(ctx).Create(user).Error
 }
 
-func (r *userRepository) FindByID(id uuid.UUID) (*models.User, error) {
+func (r *userRepository) FindByID(ctx context.Context, id uuid.UUID) (*models.User, error) {
 	var user models.User
-	if err := r.db.First(&user, "id = ?", id).Error; err != nil {
+	if err := r.db.WithContext(ctx).First(&user, "id = ?", id).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, nil // Or return a specific NotFound error?
 		}
@@ -33,9 +34,9 @@ func (r *userRepository) FindByID(id uuid.UUID) (*models.User, error) {
 	return &user, nil
 }
 
-func (r *userRepository) FindByEmail(email string) (*models.User, error) {
+func (r *userRepository) FindByEmail(ctx context.Context, email string) (*models.User, error) {
 	var user models.User
-	if err := r.db.Where("email = ?", email).First(&user).Error; err != nil {
+	if err := r.db.WithContext(ctx).Where("email = ?", email).First(&user).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, nil
 		}
@@ -44,16 +45,16 @@ func (r *userRepository) FindByEmail(email string) (*models.User, error) {
 	return &user, nil
 }
 
-func (r *userRepository) UpdateOnlineStatus(userID uuid.UUID, isOnline bool, lastSeen time.Time) error {
-	return r.db.Model(&models.User{}).Where("id = ?", userID).Updates(map[string]interface{}{
+func (r *userRepository) UpdateOnlineStatus(ctx context.Context, userID uuid.UUID, isOnline bool, lastSeen time.Time) error {
+	return r.db.WithContext(ctx).Model(&models.User{}).Where("id = ?", userID).Updates(map[string]interface{}{
 		"is_online": isOnline,
 		"last_seen": lastSeen,
 	}).Error
 }
 
-func (r *userRepository) Search(query string, excludeUserID uuid.UUID) ([]models.User, error) {
+func (r *userRepository) Search(ctx context.Context, query string, excludeUserID uuid.UUID) ([]models.User, error) {
 	var users []models.User
-	db := r.db.Where("id != ?", excludeUserID)
+	db := r.db.WithContext(ctx).Where("id != ?", excludeUserID)
 
 	if query != "" {
 		searchPattern := "%" + query + "%"

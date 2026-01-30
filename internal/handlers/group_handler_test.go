@@ -2,6 +2,7 @@ package handlers_test
 
 import (
 	"bytes"
+	"context"
 	"chat-app/internal/handlers"
 	"chat-app/internal/models"
 	"encoding/json"
@@ -21,21 +22,21 @@ type MockGroupService struct {
 	mock.Mock
 }
 
-func (m *MockGroupService) Create(creatorID uuid.UUID, name string, memberIDs []uuid.UUID) (*models.Group, error) {
-	args := m.Called(creatorID, name, memberIDs)
+func (m *MockGroupService) Create(ctx context.Context, creatorID uuid.UUID, name string, memberIDs []uuid.UUID) (*models.Group, error) {
+	args := m.Called(ctx, creatorID, name, memberIDs)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
 	}
 	return args.Get(0).(*models.Group), args.Error(1)
 }
 
-func (m *MockGroupService) AddMember(adminID, groupID, newMemberID uuid.UUID) error {
-	args := m.Called(adminID, groupID, newMemberID)
+func (m *MockGroupService) AddMember(ctx context.Context, adminID, groupID, newMemberID uuid.UUID) error {
+	args := m.Called(ctx, adminID, groupID, newMemberID)
 	return args.Error(0)
 }
 
-func (m *MockGroupService) RemoveMember(adminID, groupID, memberID uuid.UUID) error {
-	args := m.Called(adminID, groupID, memberID)
+func (m *MockGroupService) RemoveMember(ctx context.Context, adminID, groupID, memberID uuid.UUID) error {
+	args := m.Called(ctx, adminID, groupID, memberID)
 	return args.Error(0)
 }
 
@@ -71,7 +72,7 @@ func TestCreateGroup_Success(t *testing.T) {
 		BaseModel: models.BaseModel{ID: groupID},
 		Name:      "Test Group",
 	}
-	mockGroupService.On("Create", creatorID, "Test Group", []uuid.UUID{member1, member2}).Return(group, nil)
+	mockGroupService.On("Create", mock.AnythingOfType("*context.timerCtx"), creatorID, "Test Group", []uuid.UUID{member1, member2}).Return(group, nil)
 
 	// Prepare request
 	body := map[string]interface{}{
@@ -138,7 +139,7 @@ func TestAddMember_Success(t *testing.T) {
 	r.POST("/groups/:id/members", mockAuthMiddleware(adminID), handler.AddMember)
 
 	// Mock adding member
-	mockGroupService.On("AddMember", adminID, groupID, newMemberID).Return(nil)
+	mockGroupService.On("AddMember", mock.AnythingOfType("*context.timerCtx"), adminID, groupID, newMemberID).Return(nil)
 
 	// Prepare request
 	body := map[string]string{"user_id": newMemberID.String()}
@@ -170,7 +171,7 @@ func TestAddMember_Forbidden_NotAdmin(t *testing.T) {
 
 	// Mock service returning forbidden error
 	forbiddenErr := errors.New("only admins can add members")
-	mockGroupService.On("AddMember", regularUserID, groupID, newMemberID).Return(forbiddenErr)
+	mockGroupService.On("AddMember", mock.AnythingOfType("*context.timerCtx"), regularUserID, groupID, newMemberID).Return(forbiddenErr)
 
 	// Prepare request
 	body := map[string]string{"user_id": newMemberID.String()}

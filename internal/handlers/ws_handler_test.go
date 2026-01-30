@@ -1,6 +1,7 @@
 package handlers_test
 
 import (
+	"context"
 	"chat-app/internal/errors"
 	"chat-app/internal/handlers"
 	"chat-app/internal/models"
@@ -22,31 +23,31 @@ type MockUserRepository struct {
 	mock.Mock
 }
 
-func (m *MockUserRepository) Create(user *models.User) error {
-	args := m.Called(user)
+func (m *MockUserRepository) Create(ctx context.Context, user *models.User) error {
+	args := m.Called(ctx, user)
 	return args.Error(0)
 }
-func (m *MockUserRepository) FindByID(id uuid.UUID) (*models.User, error) {
-	args := m.Called(id)
+func (m *MockUserRepository) FindByID(ctx context.Context, id uuid.UUID) (*models.User, error) {
+	args := m.Called(ctx, id)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
 	}
 	return args.Get(0).(*models.User), args.Error(1)
 }
-func (m *MockUserRepository) FindByEmail(email string) (*models.User, error) {
-	args := m.Called(email)
+func (m *MockUserRepository) FindByEmail(ctx context.Context, email string) (*models.User, error) {
+	args := m.Called(ctx, email)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
 	}
 	return args.Get(0).(*models.User), args.Error(1)
 }
-func (m *MockUserRepository) UpdateOnlineStatus(userID uuid.UUID, isOnline bool, lastSeen time.Time) error {
-	args := m.Called(userID, isOnline, lastSeen)
+func (m *MockUserRepository) UpdateOnlineStatus(ctx context.Context, userID uuid.UUID, isOnline bool, lastSeen time.Time) error {
+	args := m.Called(ctx, userID, isOnline, lastSeen)
 	return args.Error(0)
 }
 
-func (m *MockUserRepository) Search(query string, excludeUserID uuid.UUID) ([]models.User, error) {
-	args := m.Called(query, excludeUserID)
+func (m *MockUserRepository) Search(ctx context.Context, query string, excludeUserID uuid.UUID) ([]models.User, error) {
+	args := m.Called(ctx, query, excludeUserID)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
 	}
@@ -58,38 +59,38 @@ type MockConversationRepository struct {
 	mock.Mock
 }
 
-func (m *MockConversationRepository) Upsert(conv *models.Conversation) error {
-	args := m.Called(conv)
+func (m *MockConversationRepository) Upsert(ctx context.Context, conv *models.Conversation) error {
+	args := m.Called(ctx, conv)
 	return args.Error(0)
 }
 
-func (m *MockConversationRepository) FindByUser(userID uuid.UUID) ([]models.Conversation, error) {
-	args := m.Called(userID)
+func (m *MockConversationRepository) FindByUser(ctx context.Context, userID uuid.UUID) ([]models.Conversation, error) {
+	args := m.Called(ctx, userID)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
 	}
 	return args.Get(0).([]models.Conversation), args.Error(1)
 }
 
-func (m *MockConversationRepository) IncrementUnread(userID uuid.UUID, convType string, targetID uuid.UUID, lastMessage string) error {
-	args := m.Called(userID, convType, targetID, lastMessage)
+func (m *MockConversationRepository) IncrementUnread(ctx context.Context, userID uuid.UUID, convType string, targetID uuid.UUID, lastMessage string) error {
+	args := m.Called(ctx, userID, convType, targetID, lastMessage)
 	return args.Error(0)
 }
 
-func (m *MockConversationRepository) ResetUnread(userID uuid.UUID, convType string, targetID uuid.UUID) error {
-	args := m.Called(userID, convType, targetID)
+func (m *MockConversationRepository) ResetUnread(ctx context.Context, userID uuid.UUID, convType string, targetID uuid.UUID) error {
+	args := m.Called(ctx, userID, convType, targetID)
 	return args.Error(0)
 }
 
-func (m *MockConversationRepository) FindContactsOfUser(userID uuid.UUID) ([]uuid.UUID, error) {
-	args := m.Called(userID)
+func (m *MockConversationRepository) FindContactsOfUser(ctx context.Context, userID uuid.UUID) ([]uuid.UUID, error) {
+	args := m.Called(ctx, userID)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
 	}
 	return args.Get(0).([]uuid.UUID), args.Error(1)
 }
 
-func setupWSTest() (*handlers.WSHandler, *MockAuthService, *MockUserRepository, *gin.Engine) {
+func setupWSTest() (*handlers.WSHandler, *MockAuthService, *MockUserRepository, *MockConversationRepository, *gin.Engine) {
 	gin.SetMode(gin.TestMode)
 	mockAuthService := new(MockAuthService)
 	mockUserRepo := new(MockUserRepository)
@@ -100,11 +101,11 @@ func setupWSTest() (*handlers.WSHandler, *MockAuthService, *MockUserRepository, 
 
 	handler := handlers.NewWSHandler(hub, mockAuthService)
 	r := gin.New()
-	return handler, mockAuthService, mockUserRepo, r
+	return handler, mockAuthService, mockUserRepo, mockConvRepo, r
 }
 
 func TestServeWS_NoToken(t *testing.T) {
-	handler, _, _, r := setupWSTest()
+	handler, _, _, _, r := setupWSTest()
 	r.GET("/ws", handler.ServeWS)
 
 	req, _ := http.NewRequest("GET", "/ws", nil)
@@ -115,7 +116,7 @@ func TestServeWS_NoToken(t *testing.T) {
 }
 
 func TestServeWS_InvalidToken(t *testing.T) {
-	handler, mockService, _, r := setupWSTest()
+	handler, mockService, _, _, r := setupWSTest()
 	r.GET("/ws", handler.ServeWS)
 
 	mockService.On("ValidateToken", "invalid_token").Return(uuid.Nil, errors.ErrUnauthorized)
@@ -128,17 +129,30 @@ func TestServeWS_InvalidToken(t *testing.T) {
 }
 
 func TestServeWS_Success(t *testing.T) {
-	handler, mockService, mockRepo, r := setupWSTest()
+	handler, mockService, mockRepo, mockConvRepo, r := setupWSTest()
 	r.GET("/ws", handler.ServeWS)
 
 	userID := uuid.New()
 	mockService.On("ValidateToken", "valid_token").Return(userID, nil)
 
 	// Expect UpdateOnlineStatus to be called with true (Online)
-	mockRepo.On("UpdateOnlineStatus", userID, true, mock.Anything).Return(nil).Maybe()
+	mockRepo.On("UpdateOnlineStatus", mock.AnythingOfType("*context.timerCtx"), userID, true, mock.Anything).Return(nil).Maybe()
 
 	// Expect UpdateOnlineStatus to be called with false (Offline) eventually
-	mockRepo.On("UpdateOnlineStatus", userID, false, mock.Anything).Return(nil).Maybe()
+	mockRepo.On("UpdateOnlineStatus", mock.AnythingOfType("*context.timerCtx"), userID, false, mock.Anything).Return(nil).Maybe()
+
+	// Expect FindByID to be called for getting user info (for presence broadcasting)
+	mockRepo.On("FindByID", mock.AnythingOfType("*context.timerCtx"), userID).Return(&models.User{
+		BaseModel: models.BaseModel{ID: userID},
+		Username:  "TestUser",
+		IsOnline:  true,
+	}, nil).Maybe()
+
+	// Expect FindByUser to be called for initial presence sync
+	mockConvRepo.On("FindByUser", mock.AnythingOfType("*context.timerCtx"), userID).Return([]models.Conversation{}, nil).Maybe()
+
+	// Expect FindContactsOfUser to be called for presence broadcasting
+	mockConvRepo.On("FindContactsOfUser", mock.AnythingOfType("*context.timerCtx"), userID).Return([]uuid.UUID{}, nil).Maybe()
 
 	// Create a test server to handle the websocket upgrade
 	s := httptest.NewServer(r)

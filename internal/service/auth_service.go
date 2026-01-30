@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	apperrors "chat-app/internal/errors"
 	"chat-app/internal/models"
 	"chat-app/internal/repository"
@@ -31,9 +32,9 @@ func NewAuthService(userRepo repository.UserRepository, refreshTokenRepo reposit
 	}
 }
 
-func (s *authService) Register(username, email, password string) (string, string, *models.User, error) {
+func (s *authService) Register(ctx context.Context, username, email, password string) (string, string, *models.User, error) {
 	// 1. Check if user already exists
-	existing, err := s.userRepo.FindByEmail(email)
+	existing, err := s.userRepo.FindByEmail(ctx, email)
 	if err != nil {
 		return "", "", nil, err
 	}
@@ -56,7 +57,7 @@ func (s *authService) Register(username, email, password string) (string, string
 		IsOnline: true,
 	}
 
-	if err := s.userRepo.Create(user); err != nil {
+	if err := s.userRepo.Create(ctx, user); err != nil {
 		return "", "", nil, err
 	}
 
@@ -66,7 +67,7 @@ func (s *authService) Register(username, email, password string) (string, string
 		return "", "", nil, err
 	}
 
-	refreshToken, err := s.createRefreshToken(user.ID)
+	refreshToken, err := s.createRefreshToken(ctx, user.ID)
 	if err != nil {
 		return "", "", nil, err
 	}
@@ -74,9 +75,9 @@ func (s *authService) Register(username, email, password string) (string, string
 	return accessToken, refreshToken, user, nil
 }
 
-func (s *authService) Login(email, password string) (string, string, *models.User, error) {
+func (s *authService) Login(ctx context.Context, email, password string) (string, string, *models.User, error) {
 	// 1. Find user
-	user, err := s.userRepo.FindByEmail(email)
+	user, err := s.userRepo.FindByEmail(ctx, email)
 	if err != nil {
 		return "", "", nil, err
 	}
@@ -95,7 +96,7 @@ func (s *authService) Login(email, password string) (string, string, *models.Use
 		return "", "", nil, err
 	}
 
-	refreshToken, err := s.createRefreshToken(user.ID)
+	refreshToken, err := s.createRefreshToken(ctx, user.ID)
 	if err != nil {
 		return "", "", nil, err
 	}
@@ -103,12 +104,12 @@ func (s *authService) Login(email, password string) (string, string, *models.Use
 	return accessToken, refreshToken, user, nil
 }
 
-func (s *authService) Refresh(refreshToken string) (string, string, error) {
+func (s *authService) Refresh(ctx context.Context, refreshToken string) (string, string, error) {
 	// 1. Hash the incoming token
 	hash := hashToken(refreshToken)
 
 	// 2. Find in DB
-	storedToken, err := s.refreshTokenRepo.GetByHash(hash)
+	storedToken, err := s.refreshTokenRepo.GetByHash(ctx, hash)
 	if err != nil {
 		// Could check if err is "record not found" -> return ErrInvalidToken
 		return "", "", apperrors.ErrInvalidCredentials // Or a specific ErrInvalidToken
@@ -140,30 +141,30 @@ func (s *authService) Refresh(refreshToken string) (string, string, error) {
 	return accessToken, refreshToken, nil
 }
 
-func (s *authService) Logout(refreshToken string) error {
+func (s *authService) Logout(ctx context.Context, refreshToken string) error {
 	hash := hashToken(refreshToken)
-	storedToken, err := s.refreshTokenRepo.GetByHash(hash)
+	storedToken, err := s.refreshTokenRepo.GetByHash(ctx, hash)
 	if err != nil {
 		return nil // Already gone or invalid, just ignore
 	}
-	return s.refreshTokenRepo.Revoke(storedToken.ID)
+	return s.refreshTokenRepo.Revoke(ctx, storedToken.ID)
 }
 
 func (s *authService) ValidateToken(tokenString string) (uuid.UUID, error) {
 	return s.jwtService.ValidateToken(tokenString)
 }
 
-func (s *authService) SearchUsers(query string, excludeUserID uuid.UUID) ([]models.User, error) {
-	return s.userRepo.Search(query, excludeUserID)
+func (s *authService) SearchUsers(ctx context.Context, query string, excludeUserID uuid.UUID) ([]models.User, error) {
+	return s.userRepo.Search(ctx, query, excludeUserID)
 }
 
-func (s *authService) GetUser(id uuid.UUID) (*models.User, error) {
-	return s.userRepo.FindByID(id)
+func (s *authService) GetUser(ctx context.Context, id uuid.UUID) (*models.User, error) {
+	return s.userRepo.FindByID(ctx, id)
 }
 
 // Helpers
 
-func (s *authService) createRefreshToken(userID uuid.UUID) (string, error) {
+func (s *authService) createRefreshToken(ctx context.Context, userID uuid.UUID) (string, error) {
 	// Generate 32 bytes of random entropy
 	b := make([]byte, 32)
 	if _, err := rand.Read(b); err != nil {
@@ -181,7 +182,7 @@ func (s *authService) createRefreshToken(userID uuid.UUID) (string, error) {
 		Revoked:   false,
 	}
 
-	if err := s.refreshTokenRepo.Create(token); err != nil {
+	if err := s.refreshTokenRepo.Create(ctx, token); err != nil {
 		return "", err
 	}
 

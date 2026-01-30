@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"context"
 	"time"
 
 	"chat-app/internal/models"
@@ -17,42 +18,42 @@ func NewGroupRepository(db *gorm.DB) GroupRepository {
 	return &groupRepository{db: db}
 }
 
-func (r *groupRepository) Create(group *models.Group) error {
+func (r *groupRepository) Create(ctx context.Context, group *models.Group) error {
 	group.ID = uuid.New()
 	group.CreatedAt = time.Now()
 	group.UpdatedAt = time.Now()
-	return r.db.Create(group).Error
+	return r.db.WithContext(ctx).Create(group).Error
 }
 
-func (r *groupRepository) FindByID(id uuid.UUID) (*models.Group, error) {
+func (r *groupRepository) FindByID(ctx context.Context, id uuid.UUID) (*models.Group, error) {
 	var group models.Group
-	err := r.db.First(&group, "id = ?", id).Error
+	err := r.db.WithContext(ctx).First(&group, "id = ?", id).Error
 	if err != nil {
 		return nil, err
 	}
 	return &group, nil
 }
 
-func (r *groupRepository) GetMembers(groupID uuid.UUID) ([]models.GroupMember, error) {
+func (r *groupRepository) GetMembers(ctx context.Context, groupID uuid.UUID) ([]models.GroupMember, error) {
 	var members []models.GroupMember
-	err := r.db.Where("group_id = ?", groupID).Find(&members).Error
+	err := r.db.WithContext(ctx).Where("group_id = ?", groupID).Find(&members).Error
 	return members, err
 }
 
-func (r *groupRepository) IsMember(groupID, userID uuid.UUID) (bool, error) {
+func (r *groupRepository) IsMember(ctx context.Context, groupID, userID uuid.UUID) (bool, error) {
 	var count int64
-	err := r.db.Model(&models.GroupMember{}).
+	err := r.db.WithContext(ctx).Model(&models.GroupMember{}).
 		Where("group_id = ? AND user_id = ?", groupID, userID).
 		Count(&count).Error
 	return count > 0, err
 }
 
-func (r *groupRepository) AddMember(groupID, userID uuid.UUID, role string) error {
+func (r *groupRepository) AddMember(ctx context.Context, groupID, userID uuid.UUID, role string) error {
 	member := &models.GroupMember{
 		GroupID:  groupID,
 		UserID:   userID,
 		Role:     role,
 		JoinedAt: time.Now(),
 	}
-	return r.db.Create(member).Error
+	return r.db.WithContext(ctx).Create(member).Error
 }

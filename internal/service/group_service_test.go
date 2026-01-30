@@ -1,6 +1,7 @@
 package service_test
 
 import (
+	"context"
 	"chat-app/internal/models"
 	"chat-app/internal/service"
 	"testing"
@@ -11,6 +12,7 @@ import (
 )
 
 func TestGroupService_Create_Success(t *testing.T) {
+	ctx := context.Background()
 	mockGroupRepo := new(MockGroupRepo)
 	svc := service.NewGroupService(mockGroupRepo)
 
@@ -19,20 +21,20 @@ func TestGroupService_Create_Success(t *testing.T) {
 	groupName := "Test Group"
 
 	// Mock group creation
-	mockGroupRepo.On("Create", mock.MatchedBy(func(g *models.Group) bool {
+	mockGroupRepo.On("Create", ctx, mock.MatchedBy(func(g *models.Group) bool {
 		return g.Name == groupName
 	})).Return(nil)
 
 	// Mock adding creator as admin
-	mockGroupRepo.On("AddMember", mock.Anything, creatorID, "ADMIN").Return(nil)
+	mockGroupRepo.On("AddMember", ctx, mock.Anything, creatorID, "ADMIN").Return(nil)
 
 	// Mock adding other members
 	for _, memberID := range memberIDs {
-		mockGroupRepo.On("AddMember", mock.Anything, memberID, "MEMBER").Return(nil)
+		mockGroupRepo.On("AddMember", ctx, mock.Anything, memberID, "MEMBER").Return(nil)
 	}
 
 	// Execute
-	group, err := svc.Create(creatorID, groupName, memberIDs)
+	group, err := svc.Create(ctx, creatorID, groupName, memberIDs)
 
 	// Assert
 	assert.NoError(t, err)
@@ -42,6 +44,7 @@ func TestGroupService_Create_Success(t *testing.T) {
 }
 
 func TestGroupService_Create_SkipsDuplicateCreator(t *testing.T) {
+	ctx := context.Background()
 	mockGroupRepo := new(MockGroupRepo)
 	svc := service.NewGroupService(mockGroupRepo)
 
@@ -50,16 +53,16 @@ func TestGroupService_Create_SkipsDuplicateCreator(t *testing.T) {
 	memberIDs := []uuid.UUID{creatorID, uuid.New(), uuid.New()}
 	groupName := "Test Group"
 
-	mockGroupRepo.On("Create", mock.Anything).Return(nil)
-	mockGroupRepo.On("AddMember", mock.Anything, creatorID, "ADMIN").Return(nil)
+	mockGroupRepo.On("Create", ctx, mock.Anything).Return(nil)
+	mockGroupRepo.On("AddMember", ctx, mock.Anything, creatorID, "ADMIN").Return(nil)
 
 	// Should only be called for the 2 non-creator members
-	mockGroupRepo.On("AddMember", mock.Anything, mock.MatchedBy(func(id uuid.UUID) bool {
+	mockGroupRepo.On("AddMember", ctx, mock.Anything, mock.MatchedBy(func(id uuid.UUID) bool {
 		return id != creatorID
 	}), "MEMBER").Return(nil).Times(2)
 
 	// Execute
-	group, err := svc.Create(creatorID, groupName, memberIDs)
+	group, err := svc.Create(ctx, creatorID, groupName, memberIDs)
 
 	// Assert
 	assert.NoError(t, err)
@@ -68,6 +71,7 @@ func TestGroupService_Create_SkipsDuplicateCreator(t *testing.T) {
 }
 
 func TestGroupService_AddMember_Success_AsAdmin(t *testing.T) {
+	ctx := context.Background()
 	mockGroupRepo := new(MockGroupRepo)
 	svc := service.NewGroupService(mockGroupRepo)
 
@@ -80,16 +84,16 @@ func TestGroupService_AddMember_Success_AsAdmin(t *testing.T) {
 		{GroupID: groupID, UserID: adminID, Role: "ADMIN"},
 		{GroupID: groupID, UserID: uuid.New(), Role: "MEMBER"},
 	}
-	mockGroupRepo.On("GetMembers", groupID).Return(members, nil)
+	mockGroupRepo.On("GetMembers", ctx, groupID).Return(members, nil)
 
 	// Mock: Check if new member already exists
-	mockGroupRepo.On("IsMember", groupID, newMemberID).Return(false, nil)
+	mockGroupRepo.On("IsMember", ctx, groupID, newMemberID).Return(false, nil)
 
 	// Mock: Add member
-	mockGroupRepo.On("AddMember", groupID, newMemberID, "MEMBER").Return(nil)
+	mockGroupRepo.On("AddMember", ctx, groupID, newMemberID, "MEMBER").Return(nil)
 
 	// Execute
-	err := svc.AddMember(adminID, groupID, newMemberID)
+	err := svc.AddMember(ctx, adminID, groupID, newMemberID)
 
 	// Assert
 	assert.NoError(t, err)
@@ -97,6 +101,7 @@ func TestGroupService_AddMember_Success_AsAdmin(t *testing.T) {
 }
 
 func TestGroupService_AddMember_FailsForNonAdmin(t *testing.T) {
+	ctx := context.Background()
 	mockGroupRepo := new(MockGroupRepo)
 	svc := service.NewGroupService(mockGroupRepo)
 
@@ -109,10 +114,10 @@ func TestGroupService_AddMember_FailsForNonAdmin(t *testing.T) {
 		{GroupID: groupID, UserID: regularUserID, Role: "MEMBER"},
 		{GroupID: groupID, UserID: uuid.New(), Role: "MEMBER"},
 	}
-	mockGroupRepo.On("GetMembers", groupID).Return(members, nil)
+	mockGroupRepo.On("GetMembers", ctx, groupID).Return(members, nil)
 
 	// Execute
-	err := svc.AddMember(regularUserID, groupID, newMemberID)
+	err := svc.AddMember(ctx, regularUserID, groupID, newMemberID)
 
 	// Assert
 	assert.Error(t, err)
@@ -121,6 +126,7 @@ func TestGroupService_AddMember_FailsForNonAdmin(t *testing.T) {
 }
 
 func TestGroupService_AddMember_FailsIfAlreadyMember(t *testing.T) {
+	ctx := context.Background()
 	mockGroupRepo := new(MockGroupRepo)
 	svc := service.NewGroupService(mockGroupRepo)
 
@@ -133,13 +139,13 @@ func TestGroupService_AddMember_FailsIfAlreadyMember(t *testing.T) {
 		{GroupID: groupID, UserID: adminID, Role: "ADMIN"},
 		{GroupID: groupID, UserID: existingMemberID, Role: "MEMBER"},
 	}
-	mockGroupRepo.On("GetMembers", groupID).Return(members, nil)
+	mockGroupRepo.On("GetMembers", ctx, groupID).Return(members, nil)
 
 	// Mock: Member already exists
-	mockGroupRepo.On("IsMember", groupID, existingMemberID).Return(true, nil)
+	mockGroupRepo.On("IsMember", ctx, groupID, existingMemberID).Return(true, nil)
 
 	// Execute
-	err := svc.AddMember(adminID, groupID, existingMemberID)
+	err := svc.AddMember(ctx, adminID, groupID, existingMemberID)
 
 	// Assert
 	assert.Error(t, err)
@@ -148,6 +154,7 @@ func TestGroupService_AddMember_FailsIfAlreadyMember(t *testing.T) {
 }
 
 func TestGroupService_RemoveMember_NotYetImplemented(t *testing.T) {
+	ctx := context.Background()
 	mockGroupRepo := new(MockGroupRepo)
 	svc := service.NewGroupService(mockGroupRepo)
 
@@ -160,10 +167,10 @@ func TestGroupService_RemoveMember_NotYetImplemented(t *testing.T) {
 		{GroupID: groupID, UserID: adminID, Role: "ADMIN"},
 		{GroupID: groupID, UserID: memberID, Role: "MEMBER"},
 	}
-	mockGroupRepo.On("GetMembers", groupID).Return(members, nil)
+	mockGroupRepo.On("GetMembers", ctx, groupID).Return(members, nil)
 
 	// Execute
-	err := svc.RemoveMember(adminID, groupID, memberID)
+	err := svc.RemoveMember(ctx, adminID, groupID, memberID)
 
 	// Assert - should return not implemented error
 	assert.Error(t, err)

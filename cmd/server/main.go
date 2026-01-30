@@ -1,8 +1,12 @@
 package main
 
 import (
+	"context"
 	"log"
 	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
 
 	"chat-app/internal/config"
 	"chat-app/internal/database"
@@ -127,7 +131,7 @@ func main() {
 		c.JSON(200, gin.H{"status": "ok"})
 	})
 
-	// 6. Start Server with Timeouts
+	// 6. Start Server with Timeouts and Graceful Shutdown
 	srv := &http.Server{
 		Addr:         ":" + cfg.Server.Port,
 		Handler:      r,
@@ -135,8 +139,33 @@ func main() {
 		WriteTimeout: cfg.Server.WriteTimeout,
 	}
 
-	log.Printf("Server started on :%s", cfg.Server.Port)
-	if err := srv.ListenAndServe(); err != nil {
-		log.Fatal("Server failed: ", err)
+	// Start server in goroutine
+	go func() {
+		log.Printf("Server started on :%s", cfg.Server.Port)
+		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			log.Fatal("Server failed: ", err)
+		}
+	}()
+
+	// Wait for interrupt signal
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+	<-quit
+	log.Println("Shutdown signal received...")
+
+	// Graceful shutdown
+	shutdownCtx, cancel := context.WithTimeout(context.Background(), cfg.Server.ShutdownTimeout)
+	defer cancel()
+
+	log.Println("Shutting down WebSocket Hub...")
+	if err := hub.Shutdown(shutdownCtx); err != nil {
+		log.Printf("Hub shutdown error: %v", err)
 	}
+
+	log.Println("Shutting down HTTP server...")
+	if err := srv.Shutdown(shutdownCtx); err != nil {
+		log.Printf("HTTP server shutdown error: %v", err)
+	}
+
+	log.Println("Server shutdown complete")
 }

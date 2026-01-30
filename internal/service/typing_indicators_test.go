@@ -1,6 +1,7 @@
 package service_test
 
 import (
+	"context"
 	"chat-app/internal/models"
 	"chat-app/internal/service"
 	"encoding/json"
@@ -14,6 +15,7 @@ import (
 // Tests for F07 - Typing Indicators
 
 func TestBroadcastTypingIndicator_DM_TypingStart(t *testing.T) {
+	ctx := context.Background()
 	mockMsgRepo := new(MockMessageRepo)
 	mockConvRepo := new(MockConversationRepo)
 	mockGroupRepo := new(MockGroupRepo)
@@ -44,7 +46,7 @@ func TestBroadcastTypingIndicator_DM_TypingStart(t *testing.T) {
 	})).Return()
 
 	// Execute
-	err := svc.BroadcastTypingIndicator(senderID, senderUsername, "DM", targetID, true)
+	err := svc.BroadcastTypingIndicator(ctx, senderID, senderUsername, "DM", targetID, true)
 
 	// Assert
 	assert.NoError(t, err)
@@ -52,6 +54,7 @@ func TestBroadcastTypingIndicator_DM_TypingStart(t *testing.T) {
 }
 
 func TestBroadcastTypingIndicator_DM_TypingStop(t *testing.T) {
+	ctx := context.Background()
 	mockMsgRepo := new(MockMessageRepo)
 	mockConvRepo := new(MockConversationRepo)
 	mockGroupRepo := new(MockGroupRepo)
@@ -83,7 +86,7 @@ func TestBroadcastTypingIndicator_DM_TypingStop(t *testing.T) {
 	})).Return()
 
 	// Execute
-	err := svc.BroadcastTypingIndicator(senderID, "", "DM", targetID, false)
+	err := svc.BroadcastTypingIndicator(ctx, senderID, "", "DM", targetID, false)
 
 	// Assert
 	assert.NoError(t, err)
@@ -91,6 +94,7 @@ func TestBroadcastTypingIndicator_DM_TypingStop(t *testing.T) {
 }
 
 func TestBroadcastTypingIndicator_Group_Success(t *testing.T) {
+	ctx := context.Background()
 	mockMsgRepo := new(MockMessageRepo)
 	mockConvRepo := new(MockConversationRepo)
 	mockGroupRepo := new(MockGroupRepo)
@@ -107,7 +111,7 @@ func TestBroadcastTypingIndicator_Group_Success(t *testing.T) {
 	senderUsername := "Carol"
 
 	// Mock: Sender is a member of the group
-	mockGroupRepo.On("IsMember", groupID, senderID).Return(true, nil)
+	mockGroupRepo.On("IsMember", ctx, groupID, senderID).Return(true, nil)
 
 	// Mock: Get group members
 	members := []models.GroupMember{
@@ -115,7 +119,7 @@ func TestBroadcastTypingIndicator_Group_Success(t *testing.T) {
 		{GroupID: groupID, UserID: member1, Role: "MEMBER"},
 		{GroupID: groupID, UserID: member2, Role: "MEMBER"},
 	}
-	mockGroupRepo.On("GetMembers", groupID).Return(members, nil)
+	mockGroupRepo.On("GetMembers", ctx, groupID).Return(members, nil)
 
 	// Mock: Hub.SendToUser should be called for EACH OTHER member (not sender)
 	mockHub.On("SendToUser", member1, mock.MatchedBy(func(payload []byte) bool {
@@ -131,7 +135,7 @@ func TestBroadcastTypingIndicator_Group_Success(t *testing.T) {
 	})).Return()
 
 	// Execute
-	err := svc.BroadcastTypingIndicator(senderID, senderUsername, "GROUP", groupID, true)
+	err := svc.BroadcastTypingIndicator(ctx, senderID, senderUsername, "GROUP", groupID, true)
 
 	// Assert
 	assert.NoError(t, err)
@@ -143,6 +147,7 @@ func TestBroadcastTypingIndicator_Group_Success(t *testing.T) {
 }
 
 func TestBroadcastTypingIndicator_Group_NotMember(t *testing.T) {
+	ctx := context.Background()
 	mockMsgRepo := new(MockMessageRepo)
 	mockConvRepo := new(MockConversationRepo)
 	mockGroupRepo := new(MockGroupRepo)
@@ -156,10 +161,10 @@ func TestBroadcastTypingIndicator_Group_NotMember(t *testing.T) {
 	groupID := uuid.New()
 
 	// Mock: Sender is NOT a member
-	mockGroupRepo.On("IsMember", groupID, nonMemberID).Return(false, nil)
+	mockGroupRepo.On("IsMember", ctx, groupID, nonMemberID).Return(false, nil)
 
 	// Execute
-	err := svc.BroadcastTypingIndicator(nonMemberID, "Hacker", "GROUP", groupID, true)
+	err := svc.BroadcastTypingIndicator(ctx, nonMemberID, "Hacker", "GROUP", groupID, true)
 
 	// Assert
 	assert.Error(t, err)
@@ -170,6 +175,7 @@ func TestBroadcastTypingIndicator_Group_NotMember(t *testing.T) {
 }
 
 func TestGetUserInfo_Success(t *testing.T) {
+	ctx := context.Background()
 	mockMsgRepo := new(MockMessageRepo)
 	mockConvRepo := new(MockConversationRepo)
 	mockGroupRepo := new(MockGroupRepo)
@@ -187,10 +193,10 @@ func TestGetUserInfo_Success(t *testing.T) {
 	}
 
 	// Mock
-	mockUserRepo.On("FindByID", userID).Return(expectedUser, nil)
+	mockUserRepo.On("FindByID", ctx, userID).Return(expectedUser, nil)
 
 	// Execute
-	user, err := svc.GetUserInfo(userID)
+	user, err := svc.GetUserInfo(ctx, userID)
 
 	// Assert
 	assert.NoError(t, err)

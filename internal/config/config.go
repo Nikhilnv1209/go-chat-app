@@ -10,12 +10,14 @@ type Config struct {
 	Server   ServerConfig
 	Database DatabaseConfig
 	JWT      JWTConfig
+	Timeout  TimeoutConfig
 }
 
 type ServerConfig struct {
-	Port         string
-	ReadTimeout  time.Duration
-	WriteTimeout time.Duration
+	Port            string
+	ReadTimeout     time.Duration
+	WriteTimeout    time.Duration
+	ShutdownTimeout time.Duration
 }
 
 type DatabaseConfig struct {
@@ -34,12 +36,19 @@ type JWTConfig struct {
 	Expiration time.Duration
 }
 
+type TimeoutConfig struct {
+	HTTP          time.Duration
+	DatabaseQuery time.Duration
+	HubShutdown   time.Duration
+}
+
 func Load() *Config {
 	return &Config{
 		Server: ServerConfig{
-			Port:         getEnv("SERVER_PORT", "8080"),
-			ReadTimeout:  getEnvDuration("SERVER_READ_TIMEOUT", 15*time.Second),
-			WriteTimeout: getEnvDuration("SERVER_WRITE_TIMEOUT", 15*time.Second),
+			Port:            getEnv("SERVER_PORT", "8080"),
+			ReadTimeout:     getEnvDuration("SERVER_READ_TIMEOUT", 30*time.Second),
+			WriteTimeout:    getEnvDuration("SERVER_WRITE_TIMEOUT", 30*time.Second),
+			ShutdownTimeout: getEnvDuration("SERVER_SHUTDOWN_TIMEOUT", 10*time.Second),
 		},
 		Database: DatabaseConfig{
 			Host:            getEnv("DB_HOST", "localhost"),
@@ -54,6 +63,11 @@ func Load() *Config {
 		JWT: JWTConfig{
 			Secret:     getEnv("JWT_SECRET", "secret"),
 			Expiration: getEnvDuration("JWT_EXPIRATION", 15*time.Minute),
+		},
+		Timeout: TimeoutConfig{
+			HTTP:          getEnvDuration("TIMEOUT_HTTP", 30*time.Second),
+			DatabaseQuery: getEnvDuration("TIMEOUT_DATABASE_QUERY", 5*time.Second),
+			HubShutdown:   getEnvDuration("TIMEOUT_HUB_SHUTDOWN", 5*time.Second),
 		},
 	}
 }
