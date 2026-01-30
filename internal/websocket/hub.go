@@ -210,6 +210,44 @@ func (h *Hub) SendToUser(userID uuid.UUID, message []byte) {
 	}
 }
 
+// IsUserViewingConversation checks if any client of the user is currently viewing the specified conversation.
+// Returns true if at least one client has this conversation as active.
+func (h *Hub) IsUserViewingConversation(convType string, targetID uuid.UUID) bool {
+	h.mu.RLock()
+	defer h.mu.RUnlock()
+
+	targetConv := convType + ":" + targetID.String()
+
+	// Check if any client of the target user has this conversation active
+	// Note: This is called from message sending context where we check the RECEIVER
+	// We need to find all clients and check if any of them is viewing this conversation
+	for _, clients := range h.Clients {
+		for _, client := range clients {
+			if client.ActiveConversation == targetConv {
+				return true
+			}
+		}
+	}
+
+	return false
+}
+
+// SetActiveConversation sets the active conversation for a specific client.
+func (h *Hub) SetActiveConversation(client *Client, convType string, targetID uuid.UUID) {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+
+	client.ActiveConversation = convType + ":" + targetID.String()
+}
+
+// ClearActiveConversation clears the active conversation for a specific client.
+func (h *Hub) ClearActiveConversation(client *Client) {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+
+	client.ActiveConversation = ""
+}
+
 // sendInitialPresence sends the current online status of contacts to a newly connected client
 func (h *Hub) sendInitialPresence(client *Client) {
 	defer h.wg.Done()

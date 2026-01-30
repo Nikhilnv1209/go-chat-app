@@ -29,6 +29,11 @@ type TypingPayload struct {
 	TargetID         uuid.UUID `json:"target_id"`         // user ID for DM, group ID for GROUP
 }
 
+type SetActiveConversationPayload struct {
+	ConversationType string    `json:"conversation_type"` // "DM" or "GROUP"
+	TargetID         uuid.UUID `json:"target_id"`         // user ID for DM, group ID for GROUP
+}
+
 // HandleMessage routes incoming WS messages to appropriate services
 func HandleMessage(message []byte, client *Client, msgService service.MessageService) {
 	var wsMsg WSMessage
@@ -38,6 +43,26 @@ func HandleMessage(message []byte, client *Client, msgService service.MessageSer
 	}
 
 	switch wsMsg.Type {
+	case "set_active_conversation":
+		var payload SetActiveConversationPayload
+		if err := json.Unmarshal(wsMsg.Payload, &payload); err != nil {
+			log.Printf("Invalid Payload for set_active_conversation: %v", err)
+			return
+		}
+
+		// Validate conversation type
+		if payload.ConversationType != "DM" && payload.ConversationType != "GROUP" {
+			log.Printf("Invalid conversation type: %s", payload.ConversationType)
+			return
+		}
+
+		// Set or clear active conversation
+		if payload.TargetID == uuid.Nil {
+			client.Hub.ClearActiveConversation(client)
+		} else {
+			client.Hub.SetActiveConversation(client, payload.ConversationType, payload.TargetID)
+		}
+
 	case "send_message":
 		var payload SendMessagePayload
 		if err := json.Unmarshal(wsMsg.Payload, &payload); err != nil {

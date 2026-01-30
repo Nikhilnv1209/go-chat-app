@@ -166,6 +166,16 @@ class SocketService {
           payload: { message_id: messageId }
       });
   }
+
+  public setActiveConversation(type: 'DM' | 'GROUP' | null, targetId: string | null) {
+    this.send({
+      type: 'set_active_conversation',
+      payload: {
+        conversation_type: type || 'DM',
+        target_id: targetId || null,
+      },
+    });
+  }
 }
 
 export const socketService = SocketService.getInstance();

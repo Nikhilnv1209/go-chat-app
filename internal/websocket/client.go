@@ -38,6 +38,11 @@ type Client struct {
 
 	// Service to handle incoming messages
 	MsgService service.MessageService
+
+	// ActiveConversation tracks which conversation this client is currently viewing.
+	// Format: "DM:{userID}" or "GROUP:{groupID}"
+	// Empty string means no active conversation (e.g., on conversation list screen)
+	ActiveConversation string
 }
 
 // readPump pumps messages from the websocket connection to the hub.

@@ -107,6 +107,11 @@ func (m *MockHub) SendToUser(userID uuid.UUID, message []byte) {
 	m.Called(userID, message)
 }
 
+func (m *MockHub) IsUserViewingConversation(convType string, targetID uuid.UUID) bool {
+	args := m.Called(convType, targetID)
+	return args.Bool(0)
+}
+
 // MockUserRepo [F07]
 type MockUserRepo struct {
 	mock.Mock
@@ -214,6 +219,9 @@ func TestSendDirectMessage(t *testing.T) {
 	mockConvRepo.On("Upsert", ctx, mock.MatchedBy(func(conv *models.Conversation) bool {
 		return conv.UserID == senderID && conv.TargetID == receiverID
 	})).Return(nil)
+
+	// 3.5 Check if receiver is viewing the conversation (returns false by default for this test)
+	mockHub.On("IsUserViewingConversation", "DM", senderID).Return(false)
 
 	// 3. Increment Unread for Receiver (now with 5 params including lastMessage)
 	mockConvRepo.On("IncrementUnread", ctx, receiverID, "DM", senderID, content).Return(nil)
@@ -329,6 +337,9 @@ func TestLongConversationFlow(t *testing.T) {
 			return conv.UserID == sender && conv.TargetID == receiver
 		})).Return(nil).Once()
 
+		// Check if viewing conversation (returns false by default)
+		mockHub.On("IsUserViewingConversation", "DM", sender).Return(false).Once()
+
 		mockConvRepo.On("IncrementUnread", ctx, receiver, "DM", sender, content).Return(nil).Once()
 
 		// B006: Send to both receiver and sender (for multi-device sync)
@@ -392,6 +403,9 @@ func TestSendGroupMessage_Success(t *testing.T) {
 		{GroupID: groupID, UserID: member2, Role: "MEMBER"},
 	}
 	mockGroupRepo.On("GetMembers", ctx, groupID).Return(members, nil)
+
+	// Mock: Check if viewing conversation (returns false for all members)
+	mockHub.On("IsUserViewingConversation", "GROUP", groupID).Return(false).Times(2)
 
 	// Mock: Upsert sender's conversation
 	mockConvRepo.On("Upsert", ctx, mock.MatchedBy(func(conv *models.Conversation) bool {
@@ -514,6 +528,9 @@ func TestSendGroupMessage_BroadcastsToAllMembers(t *testing.T) {
 	mockGroupRepo.On("GetMembers", ctx, groupID).Return(members, nil)
 	mockConvRepo.On("Upsert", ctx, mock.Anything).Return(nil)
 
+	// Mock: Check if viewing conversation (returns false for all members in this test)
+	mockHub.On("IsUserViewingConversation", "GROUP", groupID).Return(false).Times(4)
+
 	// Mock for each other member
 	for _, memberID := range otherMemberIDs {
 		mockConvRepo.On("IncrementUnread", ctx, memberID, "GROUP", groupID, mock.AnythingOfType("string")).Return(nil)
@@ -573,6 +590,9 @@ func TestSendGroupMessage_UpdatesConversationForAllMembers(t *testing.T) {
 		return len(receipts) == 2
 	})).Return(nil).Once()
 	mockGroupRepo.On("GetMembers", ctx, groupID).Return(members, nil)
+
+	// Mock: Check if viewing conversation (returns false for all members)
+	mockHub.On("IsUserViewingConversation", "GROUP", groupID).Return(false).Times(2)
 
 	// Expect conversation upsert for sender (unread = 0)
 	mockConvRepo.On("Upsert", ctx, mock.MatchedBy(func(conv *models.Conversation) bool {
@@ -634,6 +654,10 @@ func TestSendGroupMessage_SenderDoesNotReceiveOwnMessage(t *testing.T) {
 		return len(receipts) == 1
 	})).Return(nil).Once()
 	mockGroupRepo.On("GetMembers", ctx, groupID).Return(members, nil)
+
+	// Mock: Check if viewing conversation (returns false for all members)
+	mockHub.On("IsUserViewingConversation", "GROUP", groupID).Return(false).Times(1)
+
 	mockConvRepo.On("Upsert", ctx, mock.Anything).Return(nil)
 	mockConvRepo.On("IncrementUnread", ctx, member1, "GROUP", groupID, mock.AnythingOfType("string")).Return(nil)
 	mockHub.On("SendToUser", member1, mock.Anything).Return()

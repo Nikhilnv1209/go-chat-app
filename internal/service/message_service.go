@@ -16,6 +16,7 @@ import (
 // This decouples the service package from the websocket package.
 type Hub interface {
 	SendToUser(userID uuid.UUID, message []byte)
+	IsUserViewingConversation(convType string, targetID uuid.UUID) bool
 }
 
 type messageService struct {
@@ -90,8 +91,23 @@ func (s *messageService) SendDirectMessage(ctx context.Context, senderID, receiv
 	})
 
 	// 4. Update Conversations (Receiver)
-	// Increment Receiver's unread count for conversation with Sender
-	s.convRepo.IncrementUnread(ctx, receiverID, "DM", senderID, content)
+	// Check if receiver is currently viewing this conversation
+	// If yes, reset unread to 0 (standard chat app behavior)
+	// If no, increment unread count
+	if s.hub.IsUserViewingConversation("DM", senderID) {
+		// Receiver is viewing the chat, update last message but keep unread at 0
+		s.convRepo.Upsert(ctx, &models.Conversation{
+			UserID:        receiverID,
+			Type:          "DM",
+			TargetID:      senderID,
+			LastMessage:   content,
+			LastMessageAt: msg.CreatedAt,
+			UnreadCount:   0,
+		})
+	} else {
+		// Receiver is not viewing the chat, increment unread
+		s.convRepo.IncrementUnread(ctx, receiverID, "DM", senderID, content)
+	}
 
 	// 5. Real-time Delivery via WebSocket
 	payload, _ := json.Marshal(map[string]interface{}{
@@ -186,8 +202,22 @@ func (s *messageService) SendGroupMessage(ctx context.Context, senderID, groupID
 			continue
 		}
 
-		// Update receiver's conversation and increment unread
-		s.convRepo.IncrementUnread(ctx, member.UserID, "GROUP", groupID, content)
+		// Update receiver's conversation
+		// Check if member is currently viewing this group conversation
+		if s.hub.IsUserViewingConversation("GROUP", groupID) {
+			// Member is viewing the group, update last message but keep unread at 0
+			s.convRepo.Upsert(ctx, &models.Conversation{
+				UserID:        member.UserID,
+				Type:          "GROUP",
+				TargetID:      groupID,
+				LastMessage:   content,
+				LastMessageAt: msg.CreatedAt,
+				UnreadCount:   0,
+			})
+		} else {
+			// Member is not viewing the group, increment unread
+			s.convRepo.IncrementUnread(ctx, member.UserID, "GROUP", groupID, content)
+		}
 
 		// Real-time delivery via WebSocket
 		payload, _ := json.Marshal(map[string]interface{}{

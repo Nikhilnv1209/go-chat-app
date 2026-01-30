@@ -29,16 +29,20 @@ export default function ChatPage() {
     (c) => c.target_id === targetId && c.type === type
   );
 
-  // Set active conversation in Redux
+  // Set active conversation in Redux and notify backend via WebSocket
   useEffect(() => {
     if (conversation) {
       dispatch(setActiveConversation(conversation.id));
+      // Notify backend that this user is viewing this conversation
+      socketService.setActiveConversation(type, targetId || null);
     } else {
-        dispatch(setActiveConversation(null));
+      dispatch(setActiveConversation(null));
     }
 
     return () => {
-        dispatch(setActiveConversation(null));
+      dispatch(setActiveConversation(null));
+      // Notify backend that this user is no longer viewing this conversation
+      socketService.setActiveConversation(null, null);
     };
   }, [conversation, dispatch, targetId, type]);
 

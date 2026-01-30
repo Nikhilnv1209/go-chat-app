@@ -1,7 +1,7 @@
 # Bug Report
 **Project**: Go Chat Application
-**Report Period**: December 14, 2025 - January 26, 2026 (Past 2 Weeks)
-**Last Updated**: January 26, 2026
+**Report Period**: December 14, 2025 - January 30, 2026 (Past 2 Weeks)
+**Last Updated**: January 30, 2026
 
 ---
 
@@ -177,6 +177,83 @@ When a user (e.g., Bob) is logged in on multiple devices (laptop and mobile) and
 ---
 
 ### B007: Context Propagation and Timeout Management (Improvement)
+**Severity**: Medium
+**Status**: ✅ Implemented
+**Date Fixed**: January 26, 2026
+
+**Description**:
+Added `context.Context` propagation throughout all I/O operations for proper cancellation, timeout management, and graceful shutdown. This addresses potential goroutine leaks and improves production readiness.
+
+**Root Cause**:
+- No context propagation existed in the codebase
+- Database operations had no timeout protection
+- WebSocket hub had no graceful shutdown mechanism
+- Fire-and-forget goroutines without lifecycle management
+
+**Fix Details**:
+- **Configuration**: Added `TimeoutConfig` with configurable HTTP (30s), DatabaseQuery (5s), and HubShutdown (5s) timeouts
+- **Repository Layer**: All 25 methods across 6 repositories now accept `context.Context` as first parameter and use `db.WithContext(ctx)`
+- **Service Layer**: All 21 methods across 3 services now accept and propagate context through to repositories
+- **Handler Layer**: All handlers create context with timeout using `context.WithTimeout(c.Request.Context(), timeout)` before calling services
+- **WebSocket Hub**: Added context for graceful shutdown with `Shutdown()` method, `sync.WaitGroup` for goroutine tracking, and proper cleanup
+- **Main Server**: Implemented graceful shutdown with signal handling (SIGINT/SIGTERM), hub shutdown, and HTTP server shutdown
+- Increased default server read/write timeouts from 15s to 30s
+
+**Files Changed**:
+- `internal/config/config.go`
+- `internal/repository/interfaces.go`
+- `internal/repository/*.go` (all 6 repository implementations)
+- `internal/service/interfaces.go`
+- `internal/service/*.go` (all 3 service implementations)
+- `internal/handlers/*.go` (all 3 handlers)
+- `internal/websocket/hub.go`
+- `internal/websocket/message_handler.go`
+- `cmd/server/main.go`
+- `.env.example`
+
+---
+
+### B008: Unread Count Increments Even When User Is Viewing the Chat
+**Severity**: Medium
+**Status**: ✅ Fixed
+**Date Fixed**: January 30, 2026
+
+**Description**:
+When a user was viewing a chat conversation and a new message arrived, the unread count was still incremented. This caused the conversation list to show an incorrect unread badge even when the user was actively reading that conversation. This is inconsistent with standard messaging app behavior (WhatsApp, Telegram, iMessage).
+
+**Root Cause**:
+- No tracking of which conversation each user was actively viewing
+- `IncrementUnread()` was called unconditionally for all incoming messages
+- No frontend signal to indicate when a user opened/closed a chat
+- Backend had no way to know if the recipient was viewing the conversation
+
+**Fix Details**:
+- **Backend (Go)**:
+  - Added `ActiveConversation` field to `Client` struct in `internal/websocket/client.go`
+  - Added `IsUserViewingConversation()` method to Hub to check if any client is viewing a specific conversation
+  - Added `SetActiveConversation()` and `ClearActiveConversation()` methods to Hub
+  - Added `set_active_conversation` WebSocket message handler in `internal/websocket/message_handler.go`
+  - Modified `SendDirectMessage()` to check if receiver is viewing chat before incrementing unread
+  - Modified `SendGroupMessage()` to check if each member is viewing group before incrementing unread
+  - Updated `Hub` interface in `internal/service/message_service.go`
+- **Frontend (Next.js/TypeScript)**:
+  - Added `set_active_conversation` to `WSOutgoingEvent` type in `frontend/types/index.ts`
+  - Added `setActiveConversation()` method to `socketService` in `frontend/lib/socketService.ts`
+  - Chat page now sends `set_active_conversation` on mount and clears on unmount
+
+**Files Changed**:
+- `internal/websocket/client.go`
+- `internal/websocket/hub.go`
+- `internal/websocket/message_handler.go`
+- `internal/service/message_service.go`
+- `internal/service/message_service_test.go`
+- `frontend/types/index.ts`
+- `frontend/lib/socketService.ts`
+- `frontend/app/dashboard/chat/[type]/[targetId]/page.tsx`
+
+---
+
+## Frontend Bugs
 **Severity**: Medium
 **Status**: ✅ Implemented
 **Date Fixed**: January 26, 2026
@@ -410,11 +487,11 @@ On mobile devices, the background layer caused visual artifacts and layout shift
 ## Summary Statistics
 
 ### Backend Bugs
-- **Total**: 7
-- **Fixed**: 7 (100%)
+- **Total**: 8
+- **Fixed**: 8 (100%)
 - **Severity Breakdown**:
-  - High: 4 (57.1%)
-  - Medium: 3 (42.9%)
+  - High: 4 (50%)
+  - Medium: 4 (50%)
   - Low: 0 (0%)
 
 ### Frontend Bugs
@@ -426,8 +503,8 @@ On mobile devices, the background layer caused visual artifacts and layout shift
   - Low: 1 (14.2%)
 
 ### Overall
-- **Total Bugs**: 14
-- **Total Fixed**: 14 (100%)
+- **Total Bugs**: 15
+- **Total Fixed**: 15 (100%)
 - **Average Resolution Time**: < 1 day
 - **Most Common Issue Category**: State Management & Race Conditions (4 bugs)
 
