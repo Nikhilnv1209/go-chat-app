@@ -9,8 +9,21 @@ export default function ProfilePage() {
   const router = useRouter();
 
   return (
-    <div className="h-screen bg-[#f9fafc] flex flex-col ios-safe-area no-bounce">
-      {/* Header - Hidden on mobile since mobile header is handled by dashboard layout */}
+    <div className="min-h-screen bg-[#f9fafc] flex flex-col">
+      {/* Mobile Header */}
+      <header className="md:hidden flex items-center gap-3 h-14 px-4 bg-white border-b border-[#7678ed]/10 sticky top-0 z-10">
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => router.push('/dashboard')}
+          className="text-[#202022]/50 hover:text-[#202022] hover:bg-[#7678ed]/10 h-9 w-9"
+        >
+          <ArrowLeft className="w-5 h-5" />
+        </Button>
+        <h1 className="text-lg font-semibold text-[#202022]">Profile</h1>
+      </header>
+
+      {/* Desktop Header */}
       <header className="hidden md:block border-b border-[#7678ed]/10 bg-white">
         <div className="relative h-14 px-6">
           <Button
@@ -29,7 +42,7 @@ export default function ProfilePage() {
       </header>
 
       {/* Main Content */}
-      <div className="flex-1 overflow-hidden">
+      <div className="flex-1 overflow-y-auto">
         <UserProfile />
       </div>
     </div>
