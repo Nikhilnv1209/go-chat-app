@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Search, UserPlus, X } from 'lucide-react';
+import { Search, UserPlus, X, Plus } from 'lucide-react';
 import { useDebounce } from '@/hooks/use-debounce';
 import { conversationApi } from '@/lib/conversationApi';
 import { useAppSelector } from '@/store/hooks';
@@ -13,7 +13,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogDescription, // Added DialogDescription
+  DialogDescription,
   DialogTrigger,
 } from '@/components/ui/dialog';
 import {
@@ -23,10 +23,16 @@ import {
   CommandInput,
   CommandItem,
   CommandList,
-} from '@/components/ui/command'; // Check if these are exported from command.tsx
+} from '@/components/ui/command';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { ReactNode } from 'react';
 
-export function NewChatDialog() {
+interface NewChatDialogProps {
+  trigger?: ReactNode;
+  variant?: 'button' | 'fab';
+}
+
+export function NewChatDialog({ trigger, variant = 'button' }: NewChatDialogProps = {}) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
@@ -58,20 +64,24 @@ export function NewChatDialog() {
   }, [debouncedQuery]);
 
   const handleStartChat = (targetUser: User) => {
-    // Navigate to DM URL: /dashboard/chat/dm/{targetId}
     setOpen(false);
     router.push(`/dashboard/chat/dm/${targetUser.id}`);
   };
 
+  // If a custom trigger is provided, use it; otherwise use the default button
+  const defaultTrigger = (
+    <Button
+        className="w-full justify-start gap-2 bg-[#7678ed] hover:bg-[#6567d9] text-white shadow-sm transition-all"
+    >
+      <UserPlus className="w-4 h-4" />
+      <span>New Chat</span>
+    </Button>
+  );
+
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button
-            className="w-full justify-start gap-2 bg-[#7678ed] hover:bg-[#6567d9] text-white shadow-sm transition-all"
-        >
-          <UserPlus className="w-4 h-4" />
-          <span>New Chat</span>
-        </Button>
+        {trigger || defaultTrigger}
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px] bg-white p-0 gap-0 overflow-hidden border-0 shadow-2xl">
         <div className="p-6 pb-2 border-b border-[#7678ed]/10 bg-[#f9fafc]">
