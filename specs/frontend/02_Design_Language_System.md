@@ -132,6 +132,8 @@ We use a custom color palette based on the approved design reference with Poppin
 - **Profile Avatar**: Coral gradient `from-[#ff7a55] to-[#e66a47]`
 
 ### Sidebar (Chat List)
+
+#### Desktop Sidebar
 - **Background**: `bg-white`
 - **Search**: Lavender background `bg-[#e8e8f5]`
 - **Conversation Item**:
@@ -139,14 +141,51 @@ We use a custom color palette based on the approved design reference with Poppin
   - Active: `bg-[#7678ed]/10`
   - Border: `border-[#7678ed]/5`
 
-- **Avatars**:
-  - DM: Purple gradient `from-[#7678ed] to-[#5a5cd9]`
-  - Group: Coral gradient `from-[#ff7a55] to-[#e66a47]`
+#### Mobile Sidebar (Premium Design)
+- **Header Background**: `bg-gradient-to-b from-[#7678ed] via-[#6d6fe0] to-[#9ca3af]`
+- **Floating Content Card**:
+  - Background: `bg-[#f9fafc]`
+  - Border Radius: `rounded-t-3xl` (top only)
+  - Shadow: `shadow-2xl`
+  - Spacing: `mt-2` (small gap from gradient)
 
-- **Unread Badge**: `bg-[#ff7a55]` (Coral)
+- **Date Display**:
+  - Format: `DD.MM WEEKDAY` (e.g., "01.02 SUN")
+  - Size: `text-5xl font-normal`
+  - Color: `text-white`
+  - Leading zero padding for day/month
+
+- **Filter Tabs** (WhatsApp-style):
+  - Background: `bg-white/70` (inactive), transparent (active)
+  - Text: `text-[#202022]/55` (inactive), `text-[#8a8cf5]` (active)
+  - Indicator: Bottom underline (`w-6 h-0.5 bg-[#8a8cf5]`) for active tab
+  - Padding: `px-2 py-2`
+  - Border Radius: `rounded-lg`
+
+- **Conversation List**:
+  - Item Padding: `px-4 py-2.5`
+  - Separator: `h-px bg-gray-200/60 mx-4` (subtle dividers)
+  - Hover: `hover:bg-white/50`
+  - Active: `bg-[#8a8cf5]/12`
+  - Avatar Size: `w-11 h-11`
+  - Avatar Shape: `rounded-full` (circular)
+
+- **Daily Quote Card**:
+  - Background: `bg-white/10 backdrop-blur-sm`
+  - Border: `border border-white/20`
+  - Border Radius: `rounded-2xl`
+  - Padding: `p-4`
+  - Quote Text: `text-white/95 text-sm italic`
+  - Author: `text-white/60 text-xs text-right`
+
+- **Unread Badge**: `bg-[#ff7a55]` (Coral), smaller `min-w-[16px] h-4.5`
 - **Folder Badges**:
-  - Work: `bg-[#7678ed]/20 text-[#7678ed]`
+  - Work: `bg-[#7678ed]/20 text-[#8a8cf5]`
   - Friends: `bg-green-500/20 text-green-600`
+
+- **Avatars**:
+  - DM: Purple gradient `from-[#8a8cf5] to-[#7678ed]`
+  - Group: Coral gradient `from-[#ff7a55] to-[#e66a47]`
 
 ## 5. Motion & Animations
 

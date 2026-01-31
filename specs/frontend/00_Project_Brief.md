@@ -1,8 +1,24 @@
 # Project Brief (Analysis Phase)
 
 **Status**: Approved
-**Version**: 1.0
+**Version**: 1.1
 **Owner**: Business Analyst Agent
+
+---
+
+## Changelog
+
+### v1.1 (2026-02-01)
+- **Mobile Sidebar Redesign**: Implemented premium mobile-first chat sidebar with:
+  - Separated mobile/desktop components for better architecture
+  - Gradient header background with floating card design
+  - Daily inspirational quotes feature (13 rotating quotes)
+  - Circular avatars with subtle separator lines
+  - WhatsApp-style filter tabs (All/Work/Friends/Archive)
+  - Optimized spacing and color palette for soothing UX
+  - Date display format: `DD.MM WEEKDAY` (e.g., "01.02 SUN")
+
+---
 
 ## 1. Project Context
 
